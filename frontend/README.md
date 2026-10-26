@@ -75,6 +75,43 @@ not npm or source tooling. The Nginx template is rendered at startup; only
 entrypoint. Shell files are normalized to LF via `.gitattributes`, and the
 Dockerfile sets executable permissions.
 
+## GitHub image publishing
+
+The [publishing workflow](../.github/workflows/publish-frontend.yml) builds and
+publishes this frontend on every push to `main`. It can also be run manually
+from the Actions tab, but only for `main`.
+
+The image name is `ghcr.io/<owner>/<repository>-frontend`, with owner/repository
+names converted to lowercase. Each successful build publishes two tags pointing
+to the same image version:
+
+- `latest`: the newest published build.
+- `build-<workflow-run-id>-<attempt>`: a unique tag for that build, including reruns.
+
+After publishing succeeds, the workflow keeps the **five newest image versions**
+and deletes older versions of this frontend package, including their build tags.
+The two tags do not count as separate images. A unique OCI version label ensures
+even repeated builds of the same commit get distinct image versions. Publishing
+and cleanup are serialized to avoid races.
+
+Images target Linux AMD64, matching the recovered deployment. Provenance/SBOM
+attestations are disabled so separate registry manifests do not consume image
+retention slots. Build caching uses GitHub Actions' cache rather than a separate
+registry image.
+
+The workflow uses `GITHUB_TOKEN` with `contents: read` and `packages: write`; no
+Docker Hub credentials or personal access token are required. The OCI source
+label associates the package with this repository. For an existing package,
+ensure this repository has **Admin** access under the package's Actions access
+settings so its workflow token can delete old versions. Organization policies
+must also permit Actions to publish packages. Cleanup failures fail the workflow
+rather than silently skipping retention.
+
+No GitHub remote was configured when this workflow was added. It will run after
+the repository is pushed to GitHub and Actions is enabled. Image visibility
+follows the GHCR package settings; private images require authentication to pull.
+Published images still require `TTS_UPSTREAM_URL` at container startup.
+
 ## Tests
 
 ```powershell

@@ -1,0 +1,12 @@
+enabled: true
+exempt: ["**/*.config.*", "**/*.test.*", "**/__tests__/**", "**/migrations/**"]
+capabilities:
+  - name: speech-generation
+    match: ["frontend/app.js", "frontend/index.html", "frontend/styles.css", "frontend/public/**", "frontend/playwright.config.js", "frontend/tests/e2e/**"]
+    spec: capabilities/speech-generation/speech-generation.spec.md
+  - name: frontend-serving
+    match: ["frontend/Dockerfile", "frontend/compose.yaml", "frontend/.dockerignore", "frontend/.gitattributes", "frontend/.gitignore", "frontend/.env.example", "frontend/.npmrc", "frontend/.node-version", "frontend/package.json", "frontend/package-lock.json", "frontend/vite.config.js", "frontend/config/**", "frontend/docker/**", "frontend/tests/config.test.js", "frontend/tests/dev.test.js", "frontend/tests/docker.test.js"]
+    spec: capabilities/frontend-serving/frontend-serving.spec.md
+  - name: frontend-image-publishing
+    match: [".github/workflows/publish-frontend.yml"]
+    spec: capabilities/frontend-image-publishing/frontend-image-publishing.spec.md

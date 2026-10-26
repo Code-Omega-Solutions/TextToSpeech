@@ -1,0 +1,21 @@
+# Local data, logs, and tooling state
+/data/
+/logs/
+/.specify/
+*.log
+
+# Dependencies, builds, and test output
+node_modules/
+dist/
+playwright-report/
+test-results/
+
+# Local environment configuration
+.env
+.env.*
+!.env.example
+
+# Operating system metadata
+.DS_Store
+Thumbs.db
+desktop.ini

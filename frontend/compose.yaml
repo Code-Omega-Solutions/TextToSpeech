@@ -1,0 +1,9 @@
+name: private-speech-studio-frontend
+services:
+  frontend:
+    build: .
+    image: private-speech-studio-frontend:local
+    ports:
+      - "127.0.0.1:8081:8080"
+    environment:
+      TTS_UPSTREAM_URL: ${TTS_UPSTREAM_URL:?Set TTS_UPSTREAM_URL to the authorized speech service origin}

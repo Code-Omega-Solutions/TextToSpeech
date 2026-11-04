@@ -10,17 +10,36 @@ and registers these implemented capabilities:
 | Browser speech generation | [Speech generation](../capabilities/speech-generation/speech-generation.spec.md) | Draft adoption of implemented behavior |
 | Local development and container serving | [Frontend serving](../capabilities/frontend-serving/frontend-serving.spec.md) | Draft adoption of implemented behavior |
 | Frontend image publication | [Image publishing](../capabilities/frontend-image-publishing/frontend-image-publishing.spec.md) | Draft adoption of implemented behavior |
+| macOS backend synthesis | [Backend synthesis](../capabilities/backend-synthesis/backend-synthesis.spec.md) | Draft adoption of recovered source behavior; native runtime not qualified |
+| Project reuse and third-party notices | [Project licensing](../capabilities/project-licensing/project-licensing.spec.md) | Draft adoption of proposed custom attribution terms; legal and rights review pending |
 
-The [improved backend feature](001-macos-backend/spec.md) and its
-[requirements checklist](001-macos-backend/checklists/requirements.md) describe
-proposed work, not shipped behavior. Do not register an implemented backend
-capability or fold these requirements into current behavior until implementation
-and validation provide evidence.
+The [backend living spec](../capabilities/backend-synthesis/backend-synthesis.spec.md)
+records behavior implemented in [backend](../backend/) and traced to its mocked
+tests in the companion [coverage map](../capabilities/backend-synthesis/backend-synthesis.coverage.md).
+Its draft/adopted markers remain until the requirements are reviewed against the
+code and evidence. The [backend feature specification](001-macos-backend/spec.md)
+and [requirements checklist](001-macos-backend/checklists/requirements.md)
+describe remaining proposed work and release gates; they do not imply that the
+installer, deployment process, or native platform qualification exists.
 
-Notably, the proposed backend requires authenticated server-side integration and
-coordinated 32 KiB request limits. Current serving remains unauthenticated at
-the proxy-integration layer with a 16 KiB Nginx limit. Living specs preserve that
-distinction rather than declaring future safeguards already delivered.
+The backend enforces bearer authentication by default, but the frontend proxy
+does not inject a backend credential. The proxy also retains its existing 16 KiB
+request-body limit; the proposed coordinated 32 KiB limits and authenticated
+proxy-to-backend integration are not implemented. Keep backend authentication
+distinct from proxy authentication when changing or describing either surface.
+
+The root [LICENSE](../LICENSE) is a proposed custom attribution license, not an
+OSI-approved standard license or legal advice. Its use is subject to legal
+approval and confirmation of rights to recovered materials. The [third-party notice](../THIRD_PARTY_NOTICES.md) records the lockfile audit
+and container distribution boundaries. The rebuilt frontend image retains
+Debian package copyright/license files, embeds a runtime package inventory and
+the [written source offer](../SOURCE_OFFER.md), and exposes OCI source/revision
+and notice-location labels. The offer requires actual source fulfillment by
+the publisher; image metadata or an inventory alone is not source delivery.
+The next successful publish is configured to remove older Alpine-based
+versions from GHCR, but cannot recall copies already downloaded. Neither
+document relicenses third-party packages, Apple speech components, or external
+runtime tools.
 
 ## Local tooling
 
@@ -49,14 +68,20 @@ Use an installed Python 3 interpreter below (`python3` on many macOS/Linux hosts
 ```powershell
 python .specify\extensions\companion\scripts\living_validate.py --json
 python .specify\extensions\companion\scripts\resolve-spec-paths.py --changed frontend/app.js --json
+python .specify\extensions\companion\scripts\resolve-spec-paths.py --changed backend/app/routers.py --json
 python .specify\extensions\companion\scripts\resolve-spec-paths.py --headings speech-generation --json
+python .specify\extensions\companion\scripts\resolve-spec-paths.py --headings backend-synthesis --json
 python .specify\extensions\companion\scripts\check-coverage.py --json
 python .specify\extensions\companion\scripts\drift.py --working --json
+python -m unittest discover -s checks/tests -v
+git diff --check
 ```
 
 Shape validation reports findings in JSON but does not return a failing exit code
 for every finding. Inspect error/warning counts and skipped-file reasons; exit
-status alone is not a quality gate.
+status alone is not a quality gate. The release-integrity unit checks protect
+required license/attribution wording and the explicit third-party-audit boundary;
+they are not legal or ownership verification.
 
 ## Keeping specifications alive
 
@@ -72,16 +97,18 @@ status alone is not a quality gate.
 
 Sibling coverage documents map existing test files to requirements. These are
 traceability links, not execution results or assertion-completeness guarantees.
-Image-publication requirements deliberately remain unmapped until regression
-tests exist for their behavior.
+The backend tests mock macOS executables and do not establish native runtime
+qualification. Image-publication requirements deliberately remain unmapped until
+regression tests exist for their behavior.
 
 With an optional Companion-enabled agent integration, its living-sync command
 can assist updates. Plain CLI/Python validation works without adding agent prompts
 or custom instructions to this repository.
 
-Backend planning should identify changes to existing frontend capabilities and
-define a separate backend capability only when its implementation exists.
-Keep license approval and deployment authorization as explicit gates.
+Backend planning should update the backend and affected frontend capabilities
+together when integration behavior changes. Keep legal approval of the custom
+license, recovered-source rights, third-party review, native qualification, and
+deployment authorization as explicit gates.
 
 ## Public-information boundary
 

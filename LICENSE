@@ -1,0 +1,72 @@
+Code-Omega Attribution License 1.0
+
+Copyright (c) 2026 Code-Omega-Solutions
+
+This license is a proposed custom license. It is not an OSI-approved license
+and has not been reviewed by legal counsel.
+
+1. Definitions
+
+"Work" means the source code, documentation, and other materials in the
+Code-Omega-Solutions/TextToSpeech project that are owned by the copyright holder
+and are accompanied by or identified as subject to this license.
+
+"Derivative Work" means a work that is based on, incorporates, modifies, or
+contains a substantial portion of the Work.
+
+2. Permission
+
+Subject to the conditions below, the copyright holder grants every recipient
+permission, worldwide, royalty-free, and non-exclusively, to use, reproduce,
+modify, prepare Derivative Works of, publicly display, perform, distribute, and
+sublicense the Work and Derivative Works for any purpose, including commercial
+and non-commercial purposes.
+
+You may choose different terms for your own contributions and additions to a
+Derivative Work, and you are not required to disclose source code, provided you
+continue to comply with the attribution and notice conditions below for the
+Work.
+
+3. Conditions
+
+Every Derivative Work must include a reasonably prominent statement in its
+source, documentation, credits, About information, or other attribution
+materials identifying the project and stating:
+
+"This software is based on TextToSpeech by Code-Omega-Solutions."
+
+Where practical, include the project URL:
+https://github.com/Code-Omega-Solutions/TextToSpeech
+
+When you distribute the Work or a Derivative Work:
+
+a. retain this license and the copyright notice above with source distributions;
+
+b. include the applicable copyright and license notices with binary or other
+   distributions in their accompanying documentation, notices, or other
+   materials customarily provided with the distribution; and
+
+c. retain the attribution statement in the Derivative Work.
+
+You may not imply that the copyright holder endorses you or your Derivative
+Work without prior written permission. This license does not grant permission
+to use project names, logos, or trademarks except as needed for the attribution
+required above.
+
+4. Third-party materials
+
+Materials not owned by the copyright holder, including dependencies, tools,
+fonts, media, and operating-system components, are not relicensed by this
+license. Their respective license terms continue to apply. See
+THIRD_PARTY_NOTICES.md and the dependency lockfiles for the current inventory.
+
+5. Disclaimer
+
+THE WORK IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+PARTICULAR PURPOSE, AND NONINFRINGEMENT. IN NO EVENT SHALL THE COPYRIGHT
+HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY,
+WHETHER IN AN ACTION OF CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF, OR
+IN CONNECTION WITH THE WORK OR THE USE OR OTHER DEALINGS IN THE WORK.
+
+This license does not grant patent rights.

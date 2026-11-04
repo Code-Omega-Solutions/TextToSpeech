@@ -68,12 +68,15 @@ No credentials or machine-specific private addresses are included in the source.
 docker compose down
 ```
 
-The multi-stage Dockerfile uses version-pinned Node and Nginx images. Its runtime
-contains only the built static assets and recovered deployment configuration,
-not npm or source tooling. The Nginx template is rendered at startup; only
-`TTS_UPSTREAM_URL` is substituted. Startup validates the origin using the recovered
-entrypoint. Shell files are normalized to LF via `.gitattributes`, and the
-Dockerfile sets executable permissions.
+The multi-stage Dockerfile pins the Node build image and Debian-based Nginx
+runtime by digest. Its runtime contains the built static assets, Nginx and
+runtime configuration, project notices, a Debian package/version/source
+inventory, and a written source offer; it does not contain npm or source
+tooling. Debian package copyright and license files are retained under
+`/usr/share/doc/*/copyright`. The Nginx template is rendered at startup; only
+`TTS_UPSTREAM_URL` is substituted. Startup validates the origin using the
+recovered entrypoint. Shell files are normalized to LF via `.gitattributes`,
+and the Dockerfile sets executable permissions.
 
 ## GitHub image publishing
 
@@ -88,16 +91,28 @@ to the same image version:
 - `latest`: the newest published build.
 - `build-<workflow-run-id>-<attempt>`: a unique tag for that build, including reruns.
 
-After publishing succeeds, the workflow keeps the **five newest image versions**
+After publishing succeeds, the workflow keeps only the **newest image version**
 and deletes older versions of this frontend package, including their build tags.
-The two tags do not count as separate images. A unique OCI version label ensures
-even repeated builds of the same commit get distinct image versions. Publishing
-and cleanup are serialized to avoid races.
+This intentionally removes previously published Alpine-based versions that
+lacked the current package notices and source offer. The two tags do not count
+as separate images. A unique OCI version label ensures even repeated builds of
+the same commit get distinct image versions. Publishing and cleanup are
+serialized to avoid races.
 
 Images target Linux AMD64, matching the recovered deployment. Provenance/SBOM
 attestations are disabled so separate registry manifests do not consume image
-retention slots. Build caching uses GitHub Actions' cache rather than a separate
-registry image.
+retention slots. Each image instead includes its runtime package/version/source
+inventory and carries OCI source, revision, version, license-scope and
+notice-location labels.
+Build caching uses GitHub Actions' cache rather than a separate registry image.
+
+The image includes Debian's per-package copyright/license files and the
+project's [third-party notices](../THIRD_PARTY_NOTICES.md) and
+[source offer](../SOURCE_OFFER.md). The source offer requires the publisher to
+fulfill source requests for at least three years after each image version is
+first distributed. Previously published Alpine-based image digests remain unchanged until the
+next successful publication cleanup; rebuilding and publishing is required for
+the new runtime and metadata to take effect.
 
 The workflow uses `GITHUB_TOKEN` with `contents: read` and `packages: write`; no
 Docker Hub credentials or personal access token are required. The OCI source
@@ -195,9 +210,18 @@ connected after success; it does not poll health continuously. No frontend text
 storage, telemetry, external fonts, or remote assets are introduced. The frontend
 does not determine the backend's own storage/logging policy.
 
-Future backend restoration should satisfy this contract and update the
-server-side origin configuration. No frontend redesign or backend restoration
-is required to run this project against the existing service.
+The recovered backend baseline is in `../backend`; its current behavior is
+documented in the [backend living spec](../capabilities/backend-synthesis/backend-synthesis.spec.md).
+The backend requires a bearer credential by default, but this frontend does not
+send one. A deployment therefore needs an explicitly authorized integration
+arrangement; disabling backend authentication is appropriate only on a fully
+isolated, trusted network. Backend deployment and native qualification remain
+separate from frontend use against an already authorized service.
+
+The repository's [proposed custom attribution license](../LICENSE) is not an
+OSI-approved standard license and remains subject to legal and rights review.
+See [third-party notices](../THIRD_PARTY_NOTICES.md) for the scope of dependency
+and runtime components not covered by the project license.
 
 ## Recovery provenance
 

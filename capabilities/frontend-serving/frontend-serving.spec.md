@@ -49,14 +49,17 @@ Read timeouts are 10, 15 and 75 seconds respectively.
 - **THEN** it receives 404 or 403 respectively, without forwarding to an arbitrary backend route.
 
 ### Production serving preserves isolation and response safeguards
-<!-- touches: frontend/Dockerfile, frontend/compose.yaml, frontend/.dockerignore, frontend/.gitattributes, frontend/.gitignore, frontend/docker/**, frontend/vite.config.js, frontend/tests/docker.test.js -->
+<!-- touches: frontend/Dockerfile, frontend/Dockerfile.dockerignore, frontend/compose.yaml, frontend/.dockerignore, frontend/.gitattributes, frontend/.gitignore, frontend/docker/**, frontend/vite.config.js, frontend/tests/docker.test.js, LICENSE, NOTICE, SOURCE_OFFER.md, THIRD_PARTY_NOTICES.md -->
 <!-- adopted: frontend/Dockerfile, frontend/compose.yaml, frontend/docker/default.conf.template, frontend/tests/docker.test.js -->
 
-The production container SHALL contain built assets and runtime configuration,
-not source tooling or local environment files. Standalone Compose binds
-loopback port 8081. Nginx applies the existing CSP, anti-framing,
-no-sniff and referrer safeguards, enforces a 16 KiB request-body limit,
-and disables speech proxy buffering.
+The production container SHALL contain built assets, runtime configuration,
+project notices, a written corresponding-source offer and a versioned runtime
+package inventory, not source tooling or local environment files. The image
+SHALL preserve Debian package copyright/license files and expose OCI labels
+linking to the source revision and bundled notices. Standalone Compose binds
+loopback port 8081. Nginx applies the existing CSP, anti-framing, no-sniff and
+referrer safeguards, enforces a 16 KiB request-body limit, and disables speech
+proxy buffering.
 
 #### Scenario: deploying alongside the original frontend
 - **WHEN** the standalone Compose frontend is started
@@ -69,3 +72,4 @@ and disables speech proxy buffering.
   proxy. The proposed backend requires coordinated 32 KiB limits and server-side
   authentication, not a silent change to this baseline.
 - External backend availability and deployment authorization remain operator responsibilities.
+- The source offer requires the publisher to retain and fulfill corresponding-source requests for at least three years.

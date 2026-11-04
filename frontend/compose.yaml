@@ -1,7 +1,9 @@
 name: private-speech-studio-frontend
 services:
   frontend:
-    build: .
+    build:
+      context: ..
+      dockerfile: frontend/Dockerfile
     image: private-speech-studio-frontend:local
     ports:
       - "127.0.0.1:8081:8080"

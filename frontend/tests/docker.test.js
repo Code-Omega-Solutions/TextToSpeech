@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import { setTimeout } from "node:timers/promises";
 import { test } from "node:test";
 
-const root = fileURLToPath(new URL("..", import.meta.url));
+const root = fileURLToPath(new URL("../..", import.meta.url));
 const image = "private-speech-studio-frontend:local";
 const port = 8081;
 const audio = Buffer.from([82, 73, 70, 70, 0, 1, 255, 128]);
@@ -37,7 +37,37 @@ async function waitForFrontend(url) {
 }
 
 test("restored Docker image preserves the static and API contract", { timeout: 240_000 }, async (t) => {
-  docker("build", "-t", image, ".");
+  docker(
+    "build",
+    "-f", "frontend/Dockerfile",
+    "--build-arg", "OCI_REVISION=test-revision",
+    "--build-arg", "OCI_VERSION=test-version",
+    "-t", image,
+    ".",
+  );
+  const noticesDir = "/usr/share/doc/texttospeech-frontend";
+  await t.test("image contains licenses, source offer and traceable metadata", () => {
+    const labels = JSON.parse(docker("image", "inspect", "--format", "{{json .Config.Labels}}", image));
+    assert.equal(labels["org.opencontainers.image.source"], "https://github.com/Code-Omega-Solutions/TextToSpeech");
+    assert.equal(labels["org.opencontainers.image.revision"], "test-revision");
+    assert.equal(labels["org.opencontainers.image.version"], "test-version");
+    assert.equal(
+      labels["org.opencontainers.image.documentation"],
+      "https://github.com/Code-Omega-Solutions/TextToSpeech/blob/test-revision/THIRD_PARTY_NOTICES.md",
+    );
+    assert.match(labels["com.code-omega-solutions.license-scope"], /^Mixed;/);
+    assert.equal(labels["com.code-omega-solutions.third-party-notices"], `${noticesDir}/THIRD_PARTY_NOTICES.md`);
+
+    const packageCount = Number(docker(
+      "run", "--rm", "--entrypoint", "/bin/sh", image,
+      "-c", `set -eu; test -s ${noticesDir}/LICENSE; test -s ${noticesDir}/NOTICE; test -s ${noticesDir}/THIRD_PARTY_NOTICES.md; test -s ${noticesDir}/SOURCE_OFFER.md; test -s ${noticesDir}/RUNTIME-PACKAGES.txt; for package in $(dpkg-query -W | cut -f1); do package=\${package%%:*}; test -s /usr/share/doc/$package/copyright; done; wc -l < ${noticesDir}/RUNTIME-PACKAGES.txt`,
+    ));
+    assert.ok(packageCount >= 100, `Expected Debian runtime package inventory, got ${packageCount}`);
+    const offer = docker("run", "--rm", "--entrypoint", "cat", image, `${noticesDir}/SOURCE_OFFER.md`);
+    assert.match(offer, /patrik\.gfeller@code-omega\.ch/);
+    assert.match(offer, /at least three years/);
+  });
+
   const requests = [];
   const fixture = createServer(async (request, response) => {
     let body = "";

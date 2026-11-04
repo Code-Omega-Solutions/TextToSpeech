@@ -1,0 +1,12 @@
+TextToSpeech
+Copyright (c) 2026 Code-Omega-Solutions
+
+This project is distributed under the proposed Code-Omega Attribution License
+1.0 in the LICENSE file. Derivative Works must include the attribution
+statement required by that license; distributed copies must retain applicable
+notices.
+
+Third-party packages, tools, operating-system components, and other materials
+remain subject to their own terms. See THIRD_PARTY_NOTICES.md, SOURCE_OFFER.md,
+and the project lockfiles. This project does not grant rights to Apple's
+speech engine or installed system voices.

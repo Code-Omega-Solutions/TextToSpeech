@@ -1,0 +1,27 @@
+[project]
+name = "bilingual-macos-speech"
+version = "0.1.0"
+description = "Authenticated HTTP speech synthesis service for macOS say"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115,<1",
+    "langid>=1.1.6",
+    "pydantic>=2.9,<3",
+    "uvicorn[standard]>=0.30,<1",
+]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.27,<1",
+    "pytest>=8,<9",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+pythonpath = ["."]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"

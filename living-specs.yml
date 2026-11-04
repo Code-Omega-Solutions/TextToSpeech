@@ -5,8 +5,14 @@ capabilities:
     match: ["frontend/app.js", "frontend/index.html", "frontend/styles.css", "frontend/public/**", "frontend/playwright.config.js", "frontend/tests/e2e/**"]
     spec: capabilities/speech-generation/speech-generation.spec.md
   - name: frontend-serving
-    match: ["frontend/Dockerfile", "frontend/compose.yaml", "frontend/.dockerignore", "frontend/.gitattributes", "frontend/.gitignore", "frontend/.env.example", "frontend/.npmrc", "frontend/.node-version", "frontend/package.json", "frontend/package-lock.json", "frontend/vite.config.js", "frontend/config/**", "frontend/docker/**", "frontend/tests/config.test.js", "frontend/tests/dev.test.js", "frontend/tests/docker.test.js"]
+    match: ["frontend/Dockerfile", "frontend/Dockerfile.dockerignore", "frontend/compose.yaml", "frontend/.dockerignore", "frontend/.gitattributes", "frontend/.gitignore", "frontend/.env.example", "frontend/.npmrc", "frontend/.node-version", "frontend/package.json", "frontend/package-lock.json", "frontend/vite.config.js", "frontend/config/**", "frontend/docker/**", "frontend/tests/config.test.js", "frontend/tests/dev.test.js", "frontend/tests/docker.test.js"]
     spec: capabilities/frontend-serving/frontend-serving.spec.md
   - name: frontend-image-publishing
     match: [".github/workflows/publish-frontend.yml"]
     spec: capabilities/frontend-image-publishing/frontend-image-publishing.spec.md
+  - name: backend-synthesis
+    match: ["backend/app/config.py", "backend/app/language.py", "backend/app/main.py", "backend/app/models.py", "backend/app/routers.py", "backend/app/services.py", "backend/app/voices.py", "backend/tests/test_*.py"]
+    spec: capabilities/backend-synthesis/backend-synthesis.spec.md
+  - name: project-licensing
+    match: ["LICENSE", "NOTICE", "SOURCE_OFFER.md", "THIRD_PARTY_NOTICES.md", "backend/README.md", "backend/uv.lock", "frontend/README.md", "frontend/Dockerfile", "frontend/package-lock.json", "frontend/tests/docker.test.js", "checks/tests/test_license_integrity.py"]
+    spec: capabilities/project-licensing/project-licensing.spec.md

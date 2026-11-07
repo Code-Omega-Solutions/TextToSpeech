@@ -2,8 +2,8 @@
 
 ## Current behavior versus proposed changes
 
-[living-specs.yml](../living-specs.yml) enables Spec Kit Companion living specs
-and registers these implemented capabilities:
+[living-specs.yml](../living-specs.yml) is the repository's capability registry
+for these implemented areas:
 
 | Capability | Living specification | Status |
 | --- | --- | --- |
@@ -12,6 +12,10 @@ and registers these implemented capabilities:
 | Frontend image publication | [Image publishing](../capabilities/frontend-image-publishing/frontend-image-publishing.spec.md) | Draft adoption of implemented behavior |
 | macOS backend synthesis | [Backend synthesis](../capabilities/backend-synthesis/backend-synthesis.spec.md) | Draft adoption of recovered source behavior; native runtime not qualified |
 | Project reuse and third-party notices | [Project licensing](../capabilities/project-licensing/project-licensing.spec.md) | Draft adoption of proposed custom attribution terms; legal and rights review pending |
+
+The [project constitution](../.specify/memory/constitution.md) is the durable
+Spec Kit policy. Stock Spec Kit does not validate this repository-specific
+registry or its coverage maps.
 
 The [backend living spec](../capabilities/backend-synthesis/backend-synthesis.spec.md)
 records behavior implemented in [backend](../backend/) and traced to its mocked
@@ -43,53 +47,47 @@ runtime tools.
 
 ## Local tooling
 
-This setup was validated with Spec Kit `1.2.4.dev0`, Companion `0.25.0`,
-and Python 3.12. Companion scripts use the Python standard library.
-The registry and specifications are versionable; generated tooling under
-`.specify` remains ignored and contains no durable requirements.
+This checkout was initialized with Spec Kit `1.2.2.dev0` and the Copilot
+integration. Generated scripts, templates, and integration metadata under
+`.specify` are ignored; the constitution is explicitly tracked. The Copilot
+skills generated under `.github/skills` are versionable.
 
 For a fresh checkout, install Spec Kit using its
 [official instructions](https://github.com/github/spec-kit), then initialize
-shared tooling from the repository root and install Companion:
+shared tooling from the repository root:
 
 ```powershell
-specify init --here --integration none --script ps --non-interactive --force
-specify extension add companion --version 0.25.0
+specify init --here --script ps --non-interactive --force
 ```
 
-The initialization command is for a checkout without existing local Spec Kit
-customization. Do not force-initialize over customized local tooling.
-Review downloaded tooling before installation. Use a compatible release if the
-tested development version or extension version is unavailable; rerun validation
-after upgrades. No application service installation or restart is involved.
+Non-interactive initialization defaults to Copilot. `--force` merges scaffold
+files into a nonempty checkout and may overwrite conflicts; inspect existing
+`.specify` and `.github/skills` files first, and do not force over customized
+tooling. Keep the constitution tracked when updating the generated scaffold.
+Spec Kit initialization does not install or restart application services.
 
-Use an installed Python 3 interpreter below (`python3` on many macOS/Linux hosts):
+The Companion project currently provides a separate VS Code extension; it is
+not the source of the legacy Python validators previously referenced here.
+Those validator scripts are not present in this checkout, so registry shape and
+coverage must be reviewed directly alongside the repository's tests.
 
 ```powershell
-python .specify\extensions\companion\scripts\living_validate.py --json
-python .specify\extensions\companion\scripts\resolve-spec-paths.py --changed frontend/app.js --json
-python .specify\extensions\companion\scripts\resolve-spec-paths.py --changed backend/app/routers.py --json
-python .specify\extensions\companion\scripts\resolve-spec-paths.py --headings speech-generation --json
-python .specify\extensions\companion\scripts\resolve-spec-paths.py --headings backend-synthesis --json
-python .specify\extensions\companion\scripts\check-coverage.py --json
-python .specify\extensions\companion\scripts\drift.py --working --json
-python -m unittest discover -s checks/tests -v
+python3 -m unittest discover -s checks/tests -v
 git diff --check
 ```
 
-Shape validation reports findings in JSON but does not return a failing exit code
-for every finding. Inspect error/warning counts and skipped-file reasons; exit
-status alone is not a quality gate. The release-integrity unit checks protect
-required license/attribution wording and the explicit third-party-audit boundary;
-they are not legal or ownership verification.
+These release-integrity tests protect required license/attribution wording and
+the explicit third-party-audit boundary; they are not legal or ownership
+verification.
 
 ## Keeping specifications alive
 
 1. Resolve changed files to their registered capabilities before changing behavior.
 2. Edit the affected requirement and its WHEN/THEN scenarios with the code change.
    Preserve unrelated requirements. Keep `touches` markers aligned with code.
-3. Validate shape and coverage. Test observable behavior separately; shape validation
-   does not prove an implementation satisfies its specification.
+3. Review registry paths and coverage maps, then run focused behavior tests.
+   Documentation and coverage links do not prove an implementation satisfies
+   its specification.
 4. Review adopted requirements against code and tests before removing their
    `adopted` markers and draft banners.
 5. Commit the code and matching living-spec changes together. Drift checks require
@@ -101,9 +99,8 @@ The backend tests mock macOS executables and do not establish native runtime
 qualification. Image-publication requirements deliberately remain unmapped until
 regression tests exist for their behavior.
 
-With an optional Companion-enabled agent integration, its living-sync command
-can assist updates. Plain CLI/Python validation works without adding agent prompts
-or custom instructions to this repository.
+The Companion VS Code extension is optional and does not replace repository
+tests or review of the registry and coverage maps.
 
 Backend planning should update the backend and affected frontend capabilities
 together when integration behavior changes. Keep legal approval of the custom

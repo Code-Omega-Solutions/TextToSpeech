@@ -4,6 +4,13 @@
 /.specify/
 *.log
 
+# The project constitution is durable; other Spec Kit scaffolding is local.
+!/.specify/
+/.specify/*
+!/.specify/memory/
+/.specify/memory/*
+!/.specify/memory/constitution.md
+
 # Dependencies, builds, and test output
 __pycache__/
 *.py[cod]
@@ -22,3 +29,20 @@ test-results/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# memory-sync: rebuildable index and SQLite side files stay local
+data/rag-index/
+data/memory-store/*/*.db-wal
+data/memory-store/*/*.db-shm
+data/memory-store/*.db
+data/memory-store/*.db-wal
+data/memory-store/*.db-shm
+logs/mcp-diagnostics.log
+
+# memory-sync: keep the committed memory store out of broader ignore rules
+!data/
+!data/memory-store/
+!data/memory-store/*/
+!data/memory-store/*/memories.db
+!data/memory-store/*/memories.json
+!.memory-store.json

@@ -11,8 +11,10 @@ capabilities:
     match: [".github/workflows/publish-frontend.yml"]
     spec: capabilities/frontend-image-publishing/frontend-image-publishing.spec.md
   - name: backend-synthesis
-    match: ["backend/app/config.py", "backend/app/language.py", "backend/app/main.py", "backend/app/models.py", "backend/app/routers.py", "backend/app/services.py", "backend/app/voices.py", "backend/tests/test_*.py"]
+    match: ["backend/app/config.py", "backend/app/language.py", "backend/app/main.py", "backend/app/models.py", "backend/app/routers.py", "backend/app/services.py", "backend/app/voices.py", "backend/tests/test_api.py", "backend/tests/test_config.py", "backend/tests/test_language.py", "backend/tests/test_models.py", "backend/tests/test_services.py", "backend/tests/test_voices.py"]
     spec: capabilities/backend-synthesis/backend-synthesis.spec.md
   - name: project-licensing
     match: ["LICENSE", "NOTICE", "SOURCE_OFFER.md", "THIRD_PARTY_NOTICES.md", "backend/README.md", "backend/uv.lock", "frontend/README.md", "frontend/Dockerfile", "frontend/package-lock.json", "frontend/tests/docker.test.js", "checks/tests/test_license_integrity.py"]
     spec: capabilities/project-licensing/project-licensing.spec.md
+  - name: backend-prerequisite-management
+    match: ["backend/prerequisites.py", "backend/setup.py", "backend/service/**", "backend/tests/test_prerequisites.py", "backend/tests/test_setup.py", "backend/tests/test_service_example.py"]

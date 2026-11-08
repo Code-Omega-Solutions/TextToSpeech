@@ -23,18 +23,35 @@ npm ci
 Copy-Item .env.example .env
 ```
 
-Edit `.env` and set `TTS_UPSTREAM_URL` to the existing speech service's origin,
-for example `http://localhost:8000` if it is reachable there **from the host**.
-Do not include credentials, a path, query, fragment, or trailing slash.
+Edit `.env` and set `TTS_UPSTREAM_URL` to the authorized speech-service origin,
+for example `http://localhost:8000` only if that service is reachable there
+**from the host**. Do not include credentials, a path, query, fragment, or
+trailing slash.
+
+The development and preview proxy also needs a server-side backend credential.
+Choose exactly one:
+
+- Set `TTS_API_KEY` in the process environment or this ignored `.env` file; or
+- Set `TTS_API_KEY_FILE` to an existing protected credential file outside the
+  checkout. It must be a regular file owned by the process user, with no group
+  or other access (for example, `chmod 600 /path/to/tts-api-key` on macOS/Linux).
+
+The file may contain one trailing newline and is limited to 4096 bytes. Do not
+set both variables, commit `.env` or the secret file, or put a secret in a
+`VITE_` variable. The proxy reads the value on the server and replaces the
+upstream `Authorization` header; it is not exposed to browser assets or logs.
+Keep credentials out of shell history and use your organization's approved
+secret-provisioning method.
 
 ```powershell
 npm run dev
 ```
 
-Open <http://127.0.0.1:5173>. The server fails if that port is occupied. Vite
-proxies only the three documented API endpoints; the browser never receives the
-configured upstream origin. Missing/invalid upstream configuration fails startup.
-The value may also be supplied as a process environment variable.
+Open <http://127.0.0.1:5173>. The server fails if that port is occupied and
+listens on loopback only. Vite proxies only the three documented API endpoints;
+the browser never receives the configured upstream origin or credential.
+Missing/invalid upstream or credential configuration fails startup. Both
+settings may also be supplied through the process environment.
 
 ```powershell
 npm run build
@@ -48,7 +65,7 @@ Vite development/preview are local tools, not production servers.
 
 ## Docker deployment
 
-With `.env` configured:
+With `.env` configured, including `TTS_UPSTREAM_URL` and `TTS_API_KEY_FILE`:
 
 ```powershell
 docker compose up --build -d
@@ -62,7 +79,21 @@ or start a backend.
 The origin must be reachable **from inside the container**. For a service on
 the Docker Desktop host, use `http://host.docker.internal:8000`, not `localhost`.
 Use the authorized machine's reachable origin if the backend runs elsewhere.
-No credentials or machine-specific private addresses are included in the source.
+Compose accepts only the protected file form for the container credential:
+`TTS_API_KEY_FILE` points to a local, protected source file and Compose mounts it
+read-only as a secret. The container rejects `TTS_API_KEY`; do not bake a
+credential into the image or commit the secret file. No credential values or
+machine-specific private addresses are included in the source.
+
+Compose publishes the frontend on `127.0.0.1:8081`; this is a loopback
+reachability boundary, not user authentication or authorization. The frontend
+does not implement TLS termination or client access control. Do not expose its
+container port directly to an untrusted network. If remote access is required,
+place it behind a separately reviewed TLS-terminating reverse proxy and
+configure that boundary's client authentication/access controls; review the
+upstream connection's transport separately. A server-side backend credential
+authenticates proxy-to-backend requests only and does not authenticate browser
+users.
 
 ```powershell
 docker compose down
@@ -113,6 +144,12 @@ fulfill source requests for at least three years after each image version is
 first distributed. Previously published Alpine-based image digests remain unchanged until the
 next successful publication cleanup; rebuilding and publishing is required for
 the new runtime and metadata to take effect.
+
+The workflow's cleanup removes older registry versions after a successful
+publish; it cannot recall copies already pulled or otherwise redistribute them.
+Cleanup is a destructive retention policy, not legal approval or proof of
+compliance. Review the exact release and its source-offer fulfillment before
+publishing.
 
 The workflow uses `GITHUB_TOKEN` with `contents: read` and `packages: write`; no
 Docker Hub credentials or personal access token are required. The OCI source
@@ -199,11 +236,11 @@ available through an object URL for playback and download as `speech.mp3` or
 available, otherwise an HTTP-status message. Network, empty-audio, clipboard,
 and blocked-autoplay states have user-visible feedback.
 
-The recovered Nginx configuration retains a 16 KiB request-body limit, speech
+The recovered Nginx configuration enforces a 32 KiB request-body limit, speech
 POST restriction, 5-second connection timeout, read timeouts of 10/15/75 seconds
 for health/readiness/speech, disabled speech proxy buffering, security headers,
 and 404 responses for unknown static paths. The 5,000-unit text limit and
-16 KiB encoded request limit are distinct existing constraints.
+32 KiB encoded request limit are distinct constraints.
 
 The original app marks the service unavailable after a generation failure and
 connected after success; it does not poll health continuously. No frontend text
@@ -212,11 +249,12 @@ does not determine the backend's own storage/logging policy.
 
 The recovered backend baseline is in `../backend`; its current behavior is
 documented in the [backend living spec](../capabilities/backend-synthesis/backend-synthesis.spec.md).
-The backend requires a bearer credential by default, but this frontend does not
-send one. A deployment therefore needs an explicitly authorized integration
-arrangement; disabling backend authentication is appropriate only on a fully
-isolated, trusted network. Backend deployment and native qualification remain
-separate from frontend use against an already authorized service.
+The backend requires a bearer credential by default. Both frontend proxies
+replace the upstream authorization header with their server-side credential;
+they do not authenticate browser users. Keep that distinction explicit.
+Disabling backend authentication is appropriate only on a fully isolated,
+trusted network. Backend deployment and native qualification remain separate
+from frontend use against an already authorized service.
 
 The repository's [proposed custom attribution license](../LICENSE) is not an
 OSI-approved standard license and remains subject to legal and rights review.

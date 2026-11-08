@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass
+import stat
+from dataclasses import dataclass, field
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 
 class _SettingsValues(BaseModel):
-    model_config = ConfigDict(frozen=True)
+    model_config = ConfigDict(frozen=True, hide_input_in_errors=True)
 
     api_key: str | None = None
     auth_enabled: bool = True
@@ -22,6 +23,7 @@ class _SettingsValues(BaseModel):
     max_concurrent_synthesis: int = Field(default=2, ge=1, le=8)
     request_timeout_seconds: int = Field(default=60, ge=1, le=180)
     max_output_bytes: int = Field(default=26_214_400, ge=1_048_576, le=104_857_600)
+    max_temp_bytes: int = Field(default=268_435_456, ge=1, le=1_073_741_824)
     say_path: str = "/usr/bin/say"
     ffmpeg_path: str = "ffmpeg"
 
@@ -55,7 +57,7 @@ class _SettingsValues(BaseModel):
 
 @dataclass(frozen=True)
 class Settings:
-    api_key: str | None
+    api_key: str | None = field(repr=False)
     auth_enabled: bool
     host: str
     port: int
@@ -68,6 +70,7 @@ class Settings:
     max_concurrent_synthesis: int
     request_timeout_seconds: int
     max_output_bytes: int
+    max_temp_bytes: int
     say_path: str
     ffmpeg_path: str
 
@@ -87,6 +90,7 @@ class Settings:
             "TTS_MAX_CONCURRENT_SYNTHESIS": "max_concurrent_synthesis",
             "TTS_REQUEST_TIMEOUT_SECONDS": "request_timeout_seconds",
             "TTS_MAX_OUTPUT_BYTES": "max_output_bytes",
+            "TTS_MAX_TEMP_BYTES": "max_temp_bytes",
             "TTS_SAY_PATH": "say_path",
             "TTS_FFMPEG_PATH": "ffmpeg_path",
         }
@@ -95,5 +99,29 @@ class Settings:
             for env_name, field in env_to_field.items()
             if env_name in os.environ
         }
+        if "TTS_API_KEY_FILE" in os.environ:
+            if "TTS_API_KEY" in os.environ:
+                raise ValueError("TTS_API_KEY and TTS_API_KEY_FILE cannot both be set")
+            values["api_key"] = _read_credential_file(os.environ["TTS_API_KEY_FILE"])
         parsed = _SettingsValues.model_validate(values)
         return cls(**parsed.model_dump())
+
+
+def _read_credential_file(path: str) -> str:
+    if not path:
+        raise ValueError("Credential file is unavailable or not protected")
+    try:
+        fd = os.open(path, os.O_RDONLY | os.O_NONBLOCK | os.O_NOFOLLOW)
+        with os.fdopen(fd, "rb") as credential_file:
+            info = os.fstat(credential_file.fileno())
+            if not stat.S_ISREG(info.st_mode) or info.st_uid != os.geteuid() or info.st_mode & 0o077:
+                raise ValueError("Credential file is unavailable or not protected")
+            contents = credential_file.read(4097)
+        if len(contents) > 4096:
+            raise ValueError("Credential file is invalid")
+        credential = contents.decode("utf-8").removesuffix("\n")
+        if not credential.strip() or "\n" in credential or "\r" in credential:
+            raise ValueError("Credential file is invalid")
+        return credential
+    except (OSError, UnicodeError):
+        raise ValueError("Credential file is unavailable or not protected") from None

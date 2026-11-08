@@ -39,7 +39,7 @@ RUN set -eu; \
     done; \
     test -s /usr/share/doc/texttospeech-frontend/RUNTIME-PACKAGES.txt; \
     test -s /usr/share/doc/texttospeech-frontend/SOURCE_OFFER.md
-ENV NGINX_ENVSUBST_FILTER=^TTS_UPSTREAM_URL$
+ENV NGINX_ENVSUBST_FILTER=^(TTS_UPSTREAM_URL|TTS_API_KEY)$
 EXPOSE 8080
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["nginx", "-g", "daemon off;"]

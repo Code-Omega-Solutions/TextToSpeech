@@ -6,6 +6,9 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class LicenseIntegrityTests(unittest.TestCase):
+    def assert_text_contains(self, expected, actual):
+        self.assertTrue(expected in actual, f"required publication text missing: {expected!r}")
+
     def test_license_keeps_requested_reuse_and_attribution_terms(self):
         license_text = " ".join((ROOT / "LICENSE").read_text(encoding="utf-8").split())
 
@@ -40,6 +43,43 @@ class LicenseIntegrityTests(unittest.TestCase):
         self.assertIn("complete corresponding source code", offer_text)
         self.assertIn("any recipient", offer_text)
         self.assertTrue((ROOT / "NOTICE").is_file())
+
+    def test_distribution_inventory_preserves_each_component_boundary(self):
+        notice_text = " ".join(
+            (ROOT / "THIRD_PARTY_NOTICES.md")
+            .read_text(encoding="utf-8")
+            .split()
+        )
+
+        self.assert_text_contains("for project-owned materials only", notice_text)
+        self.assert_text_contains("does not replace, extend, or relicense", notice_text)
+        self.assert_text_contains("package/version/source inventory", notice_text)
+        self.assert_text_contains("copyright files", notice_text)
+        self.assert_text_contains("source offer", notice_text)
+        self.assert_text_contains("macOS `/usr/bin/say`", notice_text)
+        self.assert_text_contains("not included in this source tree", notice_text)
+
+    def test_publication_documents_keep_legal_source_and_qualification_gates(self):
+        backend_readme = " ".join(
+            (ROOT / "backend/README.md").read_text(encoding="utf-8").split()
+        )
+        specs_readme = " ".join(
+            (ROOT / "specs/README.md").read_text(encoding="utf-8").split()
+        )
+        notice_text = " ".join(
+            (ROOT / "THIRD_PARTY_NOTICES.md")
+            .read_text(encoding="utf-8")
+            .split()
+        )
+
+        self.assert_text_contains("not evidence of native macOS qualification", backend_readme)
+        self.assert_text_contains("does not authorize release", backend_readme)
+        self.assert_text_contains("rights to recovered source", backend_readme)
+        self.assert_text_contains("reachable history", specs_readme)
+        self.assert_text_contains("legal approval", specs_readme)
+        self.assert_text_contains("recovered-source rights", specs_readme)
+        self.assert_text_contains("cannot recall copies already downloaded", notice_text)
+        self.assert_text_contains("not legal advice", notice_text)
 
 
 if __name__ == "__main__":

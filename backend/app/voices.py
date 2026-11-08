@@ -21,6 +21,11 @@ def configured_voices(settings: Settings) -> dict[str, str]:
     }
 
 
+def required_voices(settings: Settings) -> dict[str, str]:
+    voices = configured_voices(settings)
+    return {locale: voices[locale] for locale in ("de-DE", "en-US")}
+
+
 def available_voices(say_path: str, timeout: float = 5.0) -> set[str]:
     try:
         result = subprocess.run(

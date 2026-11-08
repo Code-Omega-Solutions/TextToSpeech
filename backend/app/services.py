@@ -73,6 +73,28 @@ class SynthesisResult:
     filename: str
 
 
+def available_codecs(ffmpeg_path: str, timeout: float = 5.0) -> set[str]:
+    try:
+        result = subprocess.run(
+            [ffmpeg_path, "-hide_banner", "-encoders"],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+            shell=False,
+        )
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        raise SynthesisUnavailable from exc
+    if result.returncode != 0:
+        raise SynthesisUnavailable
+    codecs = set()
+    for line in f"{result.stdout}\n{result.stderr}".splitlines():
+        fields = line.split()
+        if len(fields) >= 2 and fields[0].startswith("A"):
+            codecs.add(fields[1])
+    return codecs
+
+
 def _is_sentence_ending(text: str, match: re.Match[str]) -> bool:
     if match.end() == len(text) or "!" in match.group() or "?" in match.group():
         return True
@@ -139,20 +161,41 @@ class SpeechService:
     def release_permit(self) -> None:
         self._permits.release()
 
-    def synthesize(self, text: str, language: str, speed: float, response_format: str) -> SynthesisResult:
+    def synthesize(
+        self,
+        text: str,
+        language: str,
+        speed: float,
+        response_format: str,
+        cancel_event: threading.Event | None = None,
+    ) -> SynthesisResult:
         if not self.try_acquire():
             raise SynthesisCapacityExceeded
         try:
-            return self.synthesize_reserved(text, language, speed, response_format)
+            return self.synthesize_reserved(
+                text, language, speed, response_format, cancel_event
+            )
         finally:
             self.release_permit()
 
     def synthesize_reserved(
-        self, text: str, language: str, speed: float, response_format: str
+        self,
+        text: str,
+        language: str,
+        speed: float,
+        response_format: str,
+        cancel_event: threading.Event | None = None,
     ) -> SynthesisResult:
-        return self._synthesize(text, language, speed, response_format)
+        return self._synthesize(text, language, speed, response_format, cancel_event)
 
-    def _synthesize(self, text: str, language: str, speed: float, response_format: str) -> SynthesisResult:
+    def _synthesize(
+        self,
+        text: str,
+        language: str,
+        speed: float,
+        response_format: str,
+        cancel_event: threading.Event | None = None,
+    ) -> SynthesisResult:
         settings = self.settings
         deadline = time.monotonic() + settings.request_timeout_seconds
         segments = _speech_segments(text)
@@ -176,7 +219,11 @@ class SpeechService:
             for index, (segment_text, pause) in enumerate(segments):
                 input_path = directory / f"input-{index}.txt"
                 raw_path = directory / f"speech-{index}.aiff"
-                input_path.write_text(segment_text, encoding="utf-8")
+                encoded_segment = segment_text.encode("utf-8")
+                if self._temporary_size(directory) + len(encoded_segment) > settings.max_temp_bytes:
+                    raise SynthesisFailure
+                input_path.write_bytes(encoded_segment)
+                self._check_temp_budget(directory)
                 self._run(
                     [
                         settings.say_path,
@@ -190,7 +237,10 @@ class SpeechService:
                         str(raw_path),
                     ],
                     deadline,
+                    directory,
+                    cancel_event,
                 )
+                self._check_temp_budget(directory)
                 raw_paths.append(raw_path)
                 pauses.append(pause)
 
@@ -264,7 +314,8 @@ class SpeechService:
                     ["-c:a", "pcm_s16le", "-ac", "1", "-ar", "44100"]
                 )
             ffmpeg_args.extend(["-fs", str(settings.max_output_bytes + 1), str(output_path)])
-            self._run(ffmpeg_args, deadline)
+            self._run(ffmpeg_args, deadline, directory, cancel_event)
+            self._check_temp_budget(directory)
 
             try:
                 output_size = output_path.stat().st_size
@@ -288,18 +339,76 @@ class SpeechService:
             raise SynthesisTimeout
         return remaining
 
-    def _run(self, arguments: list[str], deadline: float) -> None:
+    @staticmethod
+    def _temporary_size(directory: Path) -> int:
+        total_size = 0
+        for path in directory.rglob("*"):
+            try:
+                details = path.lstat()
+            except FileNotFoundError:
+                continue
+            if path.is_file() and not path.is_symlink():
+                total_size += details.st_size
+        return total_size
+
+    def _check_temp_budget(self, directory: Path) -> None:
+        if self._temporary_size(directory) > self.settings.max_temp_bytes:
+            raise SynthesisFailure
+
+    @staticmethod
+    def _terminate_child(process: subprocess.Popen) -> None:
+        if process.poll() is not None:
+            return
         try:
-            result = subprocess.run(
+            process.terminate()
+        except OSError:
+            return
+        try:
+            process.wait(timeout=0.5)
+        except subprocess.TimeoutExpired:
+            try:
+                process.kill()
+            except OSError:
+                return
+            try:
+                process.wait(timeout=0.5)
+            except subprocess.TimeoutExpired:
+                pass
+
+    def _run(
+        self,
+        arguments: list[str],
+        deadline: float,
+        directory: Path | None = None,
+        cancel_event: threading.Event | None = None,
+    ) -> None:
+        try:
+            process = subprocess.Popen(
                 arguments,
-                check=False,
-                capture_output=True,
-                timeout=self._remaining(deadline),
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
                 shell=False,
             )
-        except subprocess.TimeoutExpired as exc:
-            raise SynthesisTimeout from exc
         except OSError as exc:
             raise SynthesisUnavailable from exc
-        if result.returncode != 0:
-            raise SynthesisFailure
+        try:
+            while True:
+                if cancel_event is not None and cancel_event.is_set():
+                    raise SynthesisFailure
+                try:
+                    process.wait(timeout=min(self._remaining(deadline), 0.05))
+                    break
+                except subprocess.TimeoutExpired:
+                    if directory is not None:
+                        self._check_temp_budget(directory)
+            if directory is not None:
+                self._check_temp_budget(directory)
+            if process.returncode != 0:
+                raise SynthesisFailure
+        except SynthesisTimeout:
+            self._terminate_child(process)
+            raise
+        except BaseException:
+            self._terminate_child(process)
+            raise

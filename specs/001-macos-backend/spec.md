@@ -393,3 +393,249 @@ then reproduce environment setup and mocked tests without private network access
   rights to all recovered source, and third-party license review remain explicit
   release gates; the presence of LICENSE or NOTICE alone grants no extra rights.
 - No commit, push, installation, or deployment is part of this specification task.
+
+## MODIFIED Requirements
+<!-- capability: backend-synthesis -->
+
+### Speech generation is authenticated by default
+
+The service SHALL require one nonempty credential from `TTS_API_KEY` or a
+read-only protected `TTS_API_KEY_FILE` by default. Configuring both sources
+SHALL prevent startup. `TTS_AUTH_ENABLED=false` disables authentication.
+Health and readiness routes do not require authentication. Responses and logs
+SHALL not disclose credential values or credential-file paths.
+
+#### Scenario: a speech request uses a protected credential file
+- **WHEN** authentication is enabled, only the protected credential file is configured, and a request presents its matching bearer token
+- **THEN** the service authenticates the request without disclosing the file contents or path.
+
+#### Scenario: credential sources conflict
+- **WHEN** both credential sources are configured
+- **THEN** startup fails before serving requests and diagnostics disclose neither value.
+
+#### Scenario: a speech request has no valid bearer token
+- **WHEN** authentication is enabled and a speech request omits or supplies an invalid token
+- **THEN** the service returns 401 before synthesis.
+
+#### Scenario: health and readiness are checked without authentication
+- **WHEN** a caller requests health or readiness without a bearer token
+- **THEN** the route reports its service state without an authentication challenge.
+
+#### Scenario: authentication is explicitly disabled
+- **WHEN** `TTS_AUTH_ENABLED` is false and no credential is configured
+- **THEN** a valid speech request can proceed without an Authorization header.
+
+### Speech requests are validated against the supported contract
+
+The speech route SHALL accept `POST /v1/audio/speech` with trimmed nonempty
+`input` up to 5,000 UTF-16 code units, optional `model` fixed to `macos-say`,
+optional language (`de`, `de-DE`, `en`, `en-US`, or `en-GB`), optional bounded
+`voice` hint, `response_format` of `mp3` or `wav`, and finite speed from 0.5
+through 2.0. Defaults are `macos-say`, MP3, and speed 1.0. Unknown fields and
+invalid values are rejected with a safe 422 response. The backend SHALL enforce
+a 32 KiB encoded request-body limit while streaming, independent of
+`Content-Length`.
+
+#### Scenario: a request contains an invalid field or value
+- **WHEN** a request contains an unsupported language, format, model, speed, an unknown field, or invalid input
+- **THEN** the service returns 422 without exposing submitted text or starting synthesis.
+
+#### Scenario: a streamed request exceeds the encoded body limit
+- **WHEN** a request body exceeds 32 KiB, including chunked input or a misleading `Content-Length`
+- **THEN** the service rejects it before parsing or synthesis.
+
+### Synthesis uses configured system voices and bounded subprocesses
+
+The service SHALL use configured macOS voices, scale the configured base
+words-per-minute rate by request speed, and use ffmpeg to produce mono 44.1 kHz
+PCM WAV or 128 kbps MP3. It SHALL preserve sentence and paragraph pauses, reject
+more than 100 speech segments, limit simultaneous synthesis without queueing,
+and enforce a total request timeout, generated-audio byte limit, and
+temporary-disk budget. Cancellation or failure SHALL stop work for that request,
+make partial audio unavailable, and release its synthesis capacity.
+
+#### Scenario: synthesis prerequisites or capacity are unavailable
+- **WHEN** all synthesis permits are occupied or a required executable or voice is unavailable
+- **THEN** the service rejects the request with 503 without queuing it.
+
+#### Scenario: synthesis is cancelled or exceeds a resource bound
+- **WHEN** a request is cancelled or exceeds its deadline, segment, output-size, or temporary-disk limit
+- **THEN** the service returns a bounded error, makes partial audio unavailable, and frees capacity for later requests.
+
+#### Scenario: a valid synthesis request completes
+- **WHEN** a valid request is synthesized with an available configured voice
+- **THEN** the service returns the requested audio format with the configured rate and preserved sentence and paragraph pauses.
+
+### Health and readiness report distinct service states
+
+`GET /healthz` SHALL report process liveness without probing executables.
+`GET /readyz` SHALL report readiness only when `say`, ffmpeg's required MP3 and
+WAV encoders, and the configured German and US English voices are available.
+UK English is optional for readiness.
+
+#### Scenario: a readiness prerequisite is unavailable
+- **WHEN** `say`, a required ffmpeg encoder, or a configured German or US English voice is unavailable
+- **THEN** `/readyz` returns 503 while `/healthz` remains an independent liveness check.
+
+### Errors and logs avoid speech text and credentials
+
+The service SHALL return safe validation and synthesis errors, assign request
+IDs, and log only operational metadata. Responses and logs SHALL exclude
+submitted speech text, bearer credentials, raw request bodies, raw subprocess
+output, query strings, and private machine paths.
+
+#### Scenario: validation or synthesis fails
+- **WHEN** validation or synthesis fails for a request containing speech text, credentials, or a query string
+- **THEN** the response and correlated logs contain a request ID and safe diagnostics without those values, raw subprocess output, or private paths.
+
+## MODIFIED Requirements
+<!-- capability: frontend-serving -->
+
+### Upstream configuration is explicit and server-side
+
+Serving SHALL require `TTS_UPSTREAM_URL` as an HTTP(S) origin without credentials,
+path, query, fragment or trailing slash. Development and production serving
+SHALL load exactly one backend credential source on the server. Credential files
+SHALL be read-only and protected; conflicting sources SHALL prevent startup.
+The upstream URL, credential, and generated credential configuration SHALL not
+be injected into browser assets.
+
+#### Scenario: proxy credentials are missing or conflicting
+- **WHEN** a configured server lacks a required backend credential or has conflicting sources
+- **THEN** startup fails with a safe configuration error before accepting proxied requests.
+
+#### Scenario: production serving uses a credential file
+- **WHEN** production serving is configured with a protected backend credential file
+- **THEN** it reads the credential server-side without modifying the file.
+
+#### Scenario: browser assets are built or served
+- **WHEN** the frontend is built or serves browser assets with an upstream URL and credential configured
+- **THEN** those assets contain neither the URL nor the credential or generated credential configuration.
+
+### API forwarding is restricted to the known service routes
+
+Serving SHALL forward `/api/healthz`, `/api/readyz` and
+`/api/v1/audio/speech` to their corresponding upstream paths without `/api`.
+Health, readiness, and speech read timeouts SHALL remain 10, 15, and 75 seconds.
+Speech generation requires POST. Unknown static/API paths return 404. The proxy
+replaces any client-provided upstream Authorization header with its configured
+credential and enforces a 32 KiB speech-body limit while streaming.
+
+#### Scenario: an unknown route or wrong speech method is received
+- **WHEN** a client requests an unknown route or uses GET for speech generation
+- **THEN** the proxy returns 404 or 403 without forwarding the request to an arbitrary upstream route.
+
+#### Scenario: a speech request exceeds the body limit
+- **WHEN** a client streams more than 32 KiB to the speech route
+- **THEN** the proxy rejects the request without forwarding its body upstream.
+
+#### Scenario: a client supplies an Authorization header
+- **WHEN** a proxied request contains a client-provided Authorization header
+- **THEN** the upstream receives only the server-configured backend credential.
+
+### Production serving preserves isolation and response safeguards
+
+The production container SHALL contain built assets, runtime configuration,
+project notices, a written corresponding-source offer and a versioned runtime
+package inventory, not source tooling or local environment files.
+The image SHALL preserve Debian package copyright/license files and expose OCI
+labels linking to the source revision and bundled notices. Standalone Compose
+binds loopback port 8081. Nginx applies the existing CSP, anti-framing, no-sniff
+and referrer safeguards, enforces a 32 KiB request-body limit, and disables
+speech proxy buffering.
+
+#### Scenario: deploying the standalone frontend container
+- **WHEN** the standalone Compose frontend starts
+- **THEN** it uses its own service identity on loopback port 8081 without replacing the existing port-8080 service.
+
+## MODIFIED Requirements
+<!-- capability: backend-prerequisite-management -->
+
+### Check-only inspection reports a stable diagnostic for each prerequisite
+
+The prerequisite checker SHALL inspect platform, architecture, Python, `say`,
+environment tooling, ffmpeg codecs, required and optional voices, configuration,
+credential accessibility, destination access, disk space, and port availability.
+Each result SHALL include a stable identifier, status, reason, and remediation
+in human-readable or JSON output.
+
+#### Scenario: a supported and ready machine is inspected
+- **WHEN** the operator runs check-only inspection
+- **THEN** it reports a result for each listed prerequisite with its identifier, status, reason, and remediation.
+
+### Check-only inspection leaves the machine unchanged
+
+Inspection SHALL not install or download software, write files, import the
+application, register services, or synthesize speech.
+
+#### Scenario: check-only inspection completes
+- **WHEN** the operator runs inspection on a machine with missing or available prerequisites
+- **THEN** the command leaves files, packages, credentials, and services unchanged.
+
+### Timed-out prerequisite checks return actionable diagnostics
+
+Prerequisite checks SHALL be noninteractive and bounded. A blocker or timeout
+SHALL produce a named diagnostic with its reason and remediation, and inspection
+SHALL exit nonzero without exposing raw command output, secrets, or private
+paths.
+
+#### Scenario: a prerequisite check is blocked or times out
+- **WHEN** a required prerequisite is missing or a check exceeds its bound
+- **THEN** inspection reports the named result, exits nonzero, and omits raw output, secrets, and private paths.
+
+### Setup requires acceptance of the exact proposed changes
+
+Setup SHALL display its planned changes and require explicit acceptance of that
+exact plan before making changes.
+
+#### Scenario: a setup plan is not accepted
+- **WHEN** the operator requests setup without accepting the displayed plan identifier
+- **THEN** setup reports the plan and performs no installation or environment mutation.
+
+### Setup changes only a dedicated user-owned environment
+
+Setup SHALL make changes only in a dedicated, user-owned environment. It SHALL
+not bootstrap missing package managers, install global packages, overwrite an
+unmanaged environment or existing credentials, escalate privileges, or register
+or start services.
+
+#### Scenario: setup encounters an unmanaged destination or credential
+- **WHEN** the selected destination is unmanaged or contains existing credentials
+- **THEN** setup leaves it unchanged and reports that operator action is required.
+
+### Setup does not overlap changes to the same destination
+
+Setup SHALL serialize changes targeting the same environment.
+
+#### Scenario: setup attempts overlap for one destination
+- **WHEN** two setup attempts target the same environment at once
+- **THEN** their changes do not run concurrently.
+
+### Setup verifies locked dependencies and readiness before reporting success
+
+Setup SHALL install dependencies from the backend lockfile, verify the installed
+dependencies, and recheck readiness before reporting success.
+
+#### Scenario: an accepted setup completes
+- **WHEN** the operator accepts the displayed plan and setup finishes installing dependencies
+- **THEN** setup reports success only after the locked dependencies and readiness checks pass.
+
+### Failed setup removes only artifacts created by that attempt
+
+When setup fails, it SHALL remove only artifacts created by the current attempt.
+Prerequisites requiring manual installation SHALL remain explicit incomplete
+results.
+
+#### Scenario: setup fails with manual prerequisites still missing
+- **WHEN** an accepted setup fails after creating environment artifacts and a manual prerequisite is unavailable
+- **THEN** setup removes its created artifacts, preserves existing files, and reports the manual prerequisite as incomplete.
+
+### The launchd example requires explicit operator configuration
+
+The launchd example SHALL use operator-selected executable and working paths, a
+safe `PATH`, and a protected credential-file reference. It SHALL contain no
+real username, host path, or secret and SHALL not start automatically.
+
+#### Scenario: an operator reviews the launchd example
+- **WHEN** the example is inspected before deliberate configuration
+- **THEN** it has operator-selected path placeholders, references only a protected credential file, and requires explicit service registration.

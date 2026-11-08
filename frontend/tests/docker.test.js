@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
+import { chmod, unlink, writeFile } from "node:fs/promises";
 import { once } from "node:events";
-import { createServer } from "node:http";
+import { createServer, request as httpRequest } from "node:http";
 import { fileURLToPath } from "node:url";
 import { setTimeout } from "node:timers/promises";
 import { test } from "node:test";
@@ -10,6 +11,9 @@ const root = fileURLToPath(new URL("../..", import.meta.url));
 const image = "private-speech-studio-frontend:local";
 const port = 8081;
 const audio = Buffer.from([82, 73, 70, 70, 0, 1, 255, 128]);
+const secret = "synthetic-container-secret";
+const secretPath = fileURLToPath(new URL("./proxy-secret.fixture", import.meta.url));
+const dockerAvailable = spawnSync("docker", ["--version"], { encoding: "utf8" }).status === 0;
 
 function docker(...args) {
   return execFileSync("docker", args, {
@@ -36,7 +40,33 @@ async function waitForFrontend(url) {
   throw new Error("Isolated frontend did not become responsive.", { cause: lastError });
 }
 
-test("restored Docker image preserves the static and API contract", { timeout: 240_000 }, async (t) => {
+function postChunked(url, path, body, headers = {}) {
+  const target = new URL(path, url);
+  return new Promise((resolve, reject) => {
+    const request = httpRequest(
+      target,
+      { method: "POST", headers: { "Content-Type": "application/json", ...headers } },
+      (response) => {
+        const chunks = [];
+        response.on("data", (chunk) => chunks.push(chunk));
+        response.on("end", () => resolve({
+          status: response.statusCode,
+          body: Buffer.concat(chunks),
+        }));
+      },
+    );
+    request.on("error", reject);
+    for (let offset = 0; offset < body.length; offset += 4096) {
+      request.write(body.subarray(offset, offset + 4096));
+    }
+    request.end();
+  });
+}
+
+test("restored Docker image preserves the static and API contract", {
+  timeout: 240_000,
+  skip: !dockerAvailable && "Docker is unavailable",
+}, async (t) => {
   docker(
     "build",
     "-f", "frontend/Dockerfile",
@@ -72,7 +102,12 @@ test("restored Docker image preserves the static and API contract", { timeout: 2
   const fixture = createServer(async (request, response) => {
     let body = "";
     for await (const chunk of request) body += chunk;
-    requests.push({ method: request.method, url: request.url, body });
+    requests.push({
+      method: request.method,
+      url: request.url,
+      body,
+      authorization: request.headers.authorization,
+    });
     const speech = request.url === "/v1/audio/speech";
     response.writeHead(200, {
       "Content-Type": speech ? "audio/wav" : "application/json",
@@ -85,12 +120,16 @@ test("restored Docker image preserves the static and API contract", { timeout: 2
   const upstreamPort = fixture.address().port;
   let container;
   try {
+    await writeFile(secretPath, `${secret}\n`, { mode: 0o400 });
+    await chmod(secretPath, 0o400);
     container = docker(
       "create",
       "--name", `speech-frontend-verification-${process.pid}`,
       "--add-host", "host.docker.internal:host-gateway",
       "--publish", `127.0.0.1:${port}:8080`,
       "--env", `TTS_UPSTREAM_URL=http://host.docker.internal:${upstreamPort}`,
+      "--env", "TTS_API_KEY_FILE=/run/secrets/tts_api_key",
+      "--mount", `type=bind,src=${secretPath},dst=/run/secrets/tts_api_key,readonly`,
       image,
     );
     docker("start", container);
@@ -103,6 +142,7 @@ test("restored Docker image preserves the static and API contract", { timeout: 2
       const response = await fetch(url);
       const html = await response.text();
       assert.match(html, /Private Speech Studio/);
+      assert.ok(!html.includes(secret));
       assert.equal(response.headers.get("x-content-type-options"), "nosniff");
       assert.equal(response.headers.get("x-frame-options"), "DENY");
       assert.equal(response.headers.get("referrer-policy"), "no-referrer");
@@ -110,8 +150,14 @@ test("restored Docker image preserves the static and API contract", { timeout: 2
       const assets = [...html.matchAll(/(?:src|href)="([^"]+\.(?:js|css|svg))"/g)].map((match) => match[1]);
       assert.equal(assets.length, 3);
       for (const asset of assets) {
-        assert.equal((await fetch(`${url}${asset}`)).status, 200, asset);
+        const assetResponse = await fetch(`${url}${asset}`);
+        assert.equal(assetResponse.status, 200, asset);
+        assert.ok(!(await assetResponse.text()).includes(secret), `secret leaked in ${asset}`);
       }
+      assert.equal(docker("exec", container, "stat", "-c", "%a", "/etc/nginx/conf.d/default.conf"), "600");
+      assert.equal(docker("exec", container, "sh", "-c",
+        "test -r /run/secrets/tts_api_key && ! (echo x >> /run/secrets/tts_api_key)"), "");
+      assert.ok(!docker("logs", container).includes(secret), "secret must not appear in logs");
       for (const path of ["/missing", "/missing.js", "/api/not-allowed", "/.env", "/app.js"]) {
         const missing = await fetch(`${url}${path}`);
         assert.equal(missing.status, 404, path);
@@ -129,7 +175,10 @@ test("restored Docker image preserves the static and API contract", { timeout: 2
       const payload = { input: "Frontend proxy test", response_format: "wav", speed: 1.3, language: "de-DE" };
       const response = await fetch(`${url}/api/v1/audio/speech`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer attacker-supplied-value",
+        },
         body: JSON.stringify(payload),
       });
       assert.equal(response.status, 200);
@@ -137,21 +186,44 @@ test("restored Docker image preserves the static and API contract", { timeout: 2
       assert.deepEqual(Buffer.from(await response.arrayBuffer()), audio);
       const forwarded = requests.at(-1);
       assert.equal(forwarded.method, "POST");
+      assert.equal(forwarded.authorization, `Bearer ${secret}`);
       assert.deepEqual(JSON.parse(forwarded.body), payload);
       assert.deepEqual(requests.map((request) => request.url), ["/healthz", "/readyz", "/v1/audio/speech"]);
     });
 
-    await t.test("method restriction and original 16k body limit", async () => {
+    await t.test("method restriction and exact streamed 32 KiB body limit", async () => {
       const count = requests.length;
       assert.equal((await fetch(`${url}/api/v1/audio/speech`)).status, 403);
-      assert.equal((await fetch(`${url}/api/v1/audio/speech`, {
-        method: "POST",
-        body: "x".repeat(16 * 1024 + 1),
-      })).status, 413);
-      assert.equal(requests.length, count);
+      const payload = Buffer.from('{"input":"ok"}');
+      const exact = Buffer.concat([Buffer.alloc(32 * 1024 - payload.length, 0x20), payload]);
+      assert.equal(exact.length, 32 * 1024);
+      const exactResponse = await postChunked(url, "/api/v1/audio/speech", exact, {
+        Authorization: "Bearer client-value-must-be-replaced",
+      });
+      assert.equal(exactResponse.status, 200);
+      assert.equal(requests.at(-1).authorization, `Bearer ${secret}`);
+      const acceptedCount = requests.length;
+      const oversized = await postChunked(
+        url,
+        "/api/v1/audio/speech",
+        Buffer.concat([exact, Buffer.from(" ")]),
+      );
+      assert.equal(oversized.status, 413);
+      assert.equal(requests.length, acceptedCount);
+      assert.equal(requests.length, count + 1);
     });
 
     await t.test("startup rejects missing or invalid upstream configuration", () => {
+      const missingCredential = spawnSync("docker", [
+        "run", "--rm",
+        "--env", "TTS_UPSTREAM_URL=http://speech.example",
+        "--env", "TTS_API_KEY_FILE=/run/secrets/missing",
+        image,
+      ], { encoding: "utf8", timeout: 30_000 });
+      assert.ifError(missingCredential.error);
+      assert.equal(missingCredential.status, 1);
+      assert.match(missingCredential.stderr, /readable regular TTS_API_KEY_FILE/);
+
       for (const upstream of [
         undefined, "ftp://service", "http://user:secret@service",
         "http://service/path", "http://service/", "http://service?key=value", "http://service#fragment",
@@ -165,6 +237,7 @@ test("restored Docker image preserves the static and API contract", { timeout: 2
     });
   } finally {
     if (container) docker("rm", "--force", container);
+    await unlink(secretPath).catch(() => {});
     fixture.closeAllConnections();
     await new Promise((resolve, reject) => fixture.close((error) => error ? reject(error) : resolve()));
   }

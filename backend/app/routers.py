@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import asyncio
 import hmac
 import logging
 import shutil
+import threading
 import time
 
 from fastapi import APIRouter, Header, HTTPException, Request
@@ -20,8 +22,14 @@ from app.services import (
     SpeechSegmentLimitExceeded,
     SynthesisTimeout,
     SynthesisUnavailable,
+    available_codecs,
 )
-from app.voices import VoiceInventoryError, available_voices, configured_voices, voice_available
+from app.voices import (
+    VoiceInventoryError,
+    available_voices,
+    required_voices,
+    voice_available,
+)
 
 
 logger = logging.getLogger(__name__)
@@ -69,21 +77,37 @@ def build_router(settings: Settings, speech_service: SpeechService) -> APIRouter
             selected_language = resolve_language(payload, settings)
             if not speech_service.try_acquire():
                 raise SynthesisCapacityExceeded
+            cancel_event = threading.Event()
             try:
-                result = await run_in_threadpool(
-                    speech_service.synthesize_reserved,
-                    payload.input,
-                    selected_language,
-                    payload.speed,
-                    payload.response_format,
+                synthesis = asyncio.create_task(
+                    run_in_threadpool(
+                        speech_service.synthesize_reserved,
+                        payload.input,
+                        selected_language,
+                        payload.speed,
+                        payload.response_format,
+                        cancel_event,
+                    )
                 )
+                try:
+                    result = await asyncio.shield(synthesis)
+                except asyncio.CancelledError:
+                    cancel_event.set()
+                    try:
+                        await asyncio.shield(synthesis)
+                    except Exception:
+                        pass
+                    raise
             finally:
                 speech_service.release_permit()
             status_code = 200
             return Response(
                 content=result.audio,
                 media_type=result.media_type,
-                headers={"Content-Disposition": f'inline; filename="{result.filename}"'},
+                headers={
+                    "Content-Disposition": f'inline; filename="{result.filename}"',
+                    "X-Content-Type-Options": "nosniff",
+                },
             )
         except HTTPException as exc:
             status_code = exc.status_code
@@ -146,17 +170,25 @@ def build_health_router(settings: Settings) -> APIRouter:
 
     @health.get("/readyz")
     async def readyz() -> Response:
+        if settings.auth_enabled and not settings.api_key:
+            return JSONResponse(status_code=503, content={"detail": "Authentication configuration unavailable."})
         if shutil.which(settings.say_path) is None:
             return JSONResponse(status_code=503, content={"detail": "say executable unavailable."})
         if shutil.which(settings.ffmpeg_path) is None:
             return JSONResponse(status_code=503, content={"detail": "ffmpeg executable unavailable."})
         try:
+            codecs = await run_in_threadpool(available_codecs, settings.ffmpeg_path)
+        except SynthesisUnavailable:
+            return JSONResponse(status_code=503, content={"detail": "Audio codecs unavailable."})
+        if not {"libmp3lame", "pcm_s16le"}.issubset(codecs):
+            return JSONResponse(status_code=503, content={"detail": "Required audio codecs unavailable."})
+        try:
             voices = await run_in_threadpool(available_voices, settings.say_path)
         except VoiceInventoryError:
             return JSONResponse(status_code=503, content={"detail": "Voice inventory unavailable."})
-        required_voices = configured_voices(settings)
+        needed_voices = required_voices(settings)
         if not all(
-            voice_available(required_voices[locale], voices) for locale in ("de-DE", "en-US")
+            voice_available(needed_voices[locale], voices) for locale in ("de-DE", "en-US")
         ):
             return JSONResponse(status_code=503, content={"detail": "Required speech voices unavailable."})
         return JSONResponse(status_code=200, content={"status": "ready"})

@@ -10,6 +10,19 @@ and file permissions, no shared accounts, and an approved local retention and
 backup policy. No Git repository, submodule, worktree, symlink or hard link may
 point from a publishable tree into private material.
 
+## Trial exception and continuing publication boundary
+
+The operator separately permitted interactive testing without network or
+filesystem isolation and authorized a reversible service switch while retaining
+the existing backend. The trial therefore does not meet the inference sandbox
+requirement below; offline settings are not proof that network access is
+blocked. This exception does not authorize publishing implementation, weights,
+recordings, private reports or other prototype artifacts, and does not resolve
+the qualification and rights gates. Keep such material outside the repository
+and review all staged documentation and history before any future publication.
+Canary and publication-channel checks below remain target gates, not a claim
+that every control has been demonstrated.
+
 The entire prototype source, tests, environments, weight caches, reference
 recordings, consent/derived voice data, text, generated audio, raw measurements,
 private reports, archives and copies stay inside that private boundary. Configure

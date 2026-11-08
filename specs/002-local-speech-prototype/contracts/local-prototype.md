@@ -7,6 +7,26 @@ body/text/segment/output/disk limits, speed, locale, timeout and cancellation
 behavior in `backend/app/` or reject the specific unsupported case explicitly.
 Do not silently substitute defaults or truncate input.
 
+## Current interactive trial deviation
+
+The operator separately authorized a reversible switch on the existing
+authenticated service endpoint and an admission-only pressure policy without
+network or filesystem isolation. The original service and configuration are
+preserved. The trial does not implement the proposed per-request selection
+headers or capability endpoint described below: it selects Qwen when its
+provisional initial admission check passes, otherwise native fallback, and uses fixed synthetic
+references. It reports actual engine, voice condition and fallback reason,
+plus `X-TTS-Completeness: unverified` for candidate output.
+
+The trial explicitly rejects unsupported voices, non-default speed, unsupported
+locales and text above 512 UTF-16 units. It supports WAV and MP3, German and
+US English, and exits its candidate worker after each request. It does not
+monitor in-flight pressure or prove natural model termination or complete
+speech. The free-page admission threshold is provisional and is not
+a measured safe reserve. These limitations are not conformance with the target
+contract below and do not authorize production use. The original strict
+contract remains the qualification target unless formally revised.
+
 ## Local selection and status
 
 Use the existing `POST /v1/audio/speech` JSON and binary MP3/WAV response.

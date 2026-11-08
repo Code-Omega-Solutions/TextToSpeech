@@ -6,14 +6,36 @@
 
 ## Summary
 
-Design a private, local-only backend evaluation of VoxCPM2 first, optionally
-Qwen3-TTS after separate approval, against the existing macOS `say` service.
-Keep the running service unchanged. A private supervisor admits, monitors and
-terminates isolated candidate workers; safe native fallback is explicit and
-never claims to preserve a cloned voice. Publishable documentation is separate
-from all implementation, weights, audio, text and evaluation artifacts.
-Nothing in this plan authorizes model downloads, implementation, deployment,
-redistribution, or publication of prototype code.
+Evaluate Qwen3-TTS privately against the existing macOS `say` service after
+the initial VoxCPM2 investigation did not complete its guarded loads. The
+operator authorized a reversible interactive test switch that preserves the
+original service, plus admission-only pressure checks and per-request worker
+exit. The original service is active again at the latest observation. The trial
+does not satisfy the proposed in-flight monitoring and measured
+reserve contract; this exception is for evaluation, not qualification.
+Publishable documentation stays separate from implementation, weights, audio,
+text and private results. No publication of prototype code is authorized.
+
+## Current trial status
+
+- Private Qwen English and German inference returned structurally validated
+  WAV and MP3 responses; an authenticated live request and an unauthenticated
+  rejection were checked. These checks do not establish intelligibility,
+  similarity or complete speech.
+- The interactive adapter supports German and US English, fixed synthetic
+  references, speed 1.0, WAV/MP3 and up to 512 UTF-16 units. Unsupported
+  options are rejected. Native fallback on unsafe initial admission reports
+  the engine and loss of clone conditioning.
+- Initial admission uses a provisional free-page threshold, not a
+  measured safe reservation. No pressure sampling occurs during generation;
+  peak memory, behavior under concurrent load and in-flight fallback are
+  unverified. Worker exit releases process-owned allocations but does not
+  guarantee immediate free-page recovery.
+- The interactive trial does not yet satisfy the full proposed capability contract,
+  complete-speech guarantee, rights review, baseline comparison, resource
+  policy or production qualification. Rollback is operator-controlled; the
+  original backend and launch configuration are retained. Automatic restoration
+  was implemented for activation failures, not proven for every failure mode.
 
 ## Technical Context
 
@@ -22,7 +44,8 @@ runtime version and exact package pins must be resolved per candidate before
 an approved experiment, in a separate environment.
 
 **Primary Dependencies**: Existing FastAPI, Pydantic, langid, macOS `say` and
-ffmpeg; candidate runtime and model dependencies are unapproved and isolated.
+ffmpeg; the private trial uses `qwen-tts==0.1.1` and pinned model weights.
+Dependency and rights review remains a release gate.
 
 **Storage**: An owner-only private workspace outside all repositories, build
 contexts, synced folders and published artifacts; explicit temporary and
@@ -33,11 +56,11 @@ contract, isolation and failure tests; native qualification only on an
 authorized Apple Silicon Mac.
 
 **Target Platform**: Evaluation target is macOS on Apple Silicon with 32 GiB
-unified memory. Planning was performed on Linux and establishes no native
-compatibility.
+unified memory. Native smoke tests succeeded, but platform qualification and
+safe operation under varied workloads remain unestablished.
 
-**Project Type**: Local backend prototype with a private evaluation harness;
-no public service or UI change.
+**Project Type**: Private backend prototype and evaluation harness, temporarily
+selected on the existing authenticated service endpoint for operator testing.
 
 **Performance Goals**: Record complete outputs, time to completion, peak
 memory and disk use; do not assert unmeasured quality or speed targets.
@@ -48,8 +71,9 @@ format, authentication, rate, capacity, timeout and temporary/output limits
 remain authoritative. Fail explicitly where equivalence cannot be proved.
 Total memory is not bounded by a model cache setting.
 
-**Scale/Scope**: Single authorized evaluator and at most one candidate worker;
-no production rollout, public frontend integration or multi-user voice store.
+**Scale/Scope**: Operator-controlled interactive trial and at most one
+candidate worker per process; no production rollout or multi-user voice store.
+Cross-process coordination remains unverified.
 
 ## Constitution Check
 
@@ -61,8 +85,11 @@ no production rollout, public frontend integration or multi-user voice store.
 | Observable verification | PASS: require tests and native evaluation, not mocks as proof. | PASS: quickstart specifies evidence and failure cases; actual target execution remains pending approval. |
 | Platform and release precision | PASS: Apple Silicon and all third-party rights require qualification. | PASS: unverified compatibility, licensing, redistribution and publication remain blocking gates. |
 
-No constitution exception is requested. These are design checks, not evidence
-that a prototype or isolation enforcement already exists.
+The table records the original design review, not a current qualification.
+The admission-only interactive trial does not satisfy the designed in-flight
+pressure, calibrated reserve or inference sandbox gates. It was separately
+authorized by the operator and remains an explicit unqualified deviation; no
+constitution or production-release exception is implied.
 
 ## Project Structure
 
@@ -95,6 +122,9 @@ add prototype code to this repository, even on a nominally private branch.
 
 ## Implementation Sequence
 
+The following is the original target sequence, retained as a qualification
+backlog rather than a claim that every gate was met in the interactive trial:
+
 1. Establish and test the isolation/release boundary in
    [isolation-and-release.md](contracts/isolation-and-release.md) **before**
    creating prototype files. Identify an owner, an approved local workspace and
@@ -106,10 +136,9 @@ add prototype code to this repository, even on a nominally private branch.
    with one global capacity permit, deadlines, cancellation, private cleanup
    and the pressure state machine in [local-prototype.md](contracts/local-prototype.md).
    Verify with fake telemetry and fake workers before running any model.
-4. With a separate operator approval, pin and inspect VoxCPM2 sources, weights,
-   rights and runtime; run only locally in the isolated environment. Verify
-   supported controls and fail explicitly where the existing contract cannot
-   be honored. Obtain separate approval before Qwen3-TTS comparison.
+4. Record the completed initial VoxCPM2 investigation and approved Qwen trial;
+   verify supported controls, provenance and rights, and fail explicitly where
+   the existing contract cannot be honored.
 5. Before measurement, approve the evaluation set, scoring and decision rules,
    measured memory reserve and a safe native baseline. Perform private native
    runs; record missing cells and failures, not inferred passes.

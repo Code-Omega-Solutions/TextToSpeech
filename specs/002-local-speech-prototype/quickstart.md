@@ -1,24 +1,42 @@
 # Validation Guide: Local Speech Prototype
 
-This is a future validation guide, not an instruction to install, download,
-run models, deploy or publish during planning. Commands involving the private
-implementation do not exist yet; their concrete invocations must be added to
-the private workspace during implementation, not to this publishable guide.
+This guide separates the current private interactive trial from the remaining
+qualification work. Concrete private paths, commands, recordings and results
+remain in the operator-controlled workspace and must not be copied here.
+Nothing in this guide authorizes publication or a production rollout.
+
+## Current trial and rollback
+
+The operator authorized a reversible test switch and admission-only pressure
+checks. The private Qwen adapter was activated for interactive evaluation; the
+original backend is active again at the latest observation, and both launch
+configurations are retained. The private operator
+runbook describes restoring the original service; verify its readiness after
+restoration. Do not remove the original backend or credentials.
+
+The trial accepts German or US English, WAV or MP3, fixed synthetic reference
+voices, speed 1.0, and at most 512 UTF-16 units. Other voice, speed and locale
+requests fail explicitly. Native fallback can occur when initial pressure or
+headroom is unsuitable and must be identified as non-cloned. The trial checks
+no pressure during generation; its free-page threshold is provisional, not
+calibrated. Candidate audio is marked as unverified for completeness. Do not
+use a structurally valid WAV or MP3 as proof of speech quality or completeness.
 
 ## Prerequisites and authorization
 
-- Verify the [isolation and release boundary](contracts/isolation-and-release.md)
-  before creating private prototype code. Document and approve the private
-  paths, containment, retention, canary checks and cleanup results privately.
-- Obtain separate explicit local-evaluation approval, a consenting reference,
-  a target Apple Silicon Mac with 32 GiB unified memory, native `say`, ffmpeg,
-  required voices and isolated candidate dependencies. Do not change the
-  existing service or its ports; use a separate loopback-only process.
+- For further qualification, verify the [isolation and release boundary](contracts/isolation-and-release.md)
+  and document containment, retention, canary checks and cleanup privately.
+  The operator waived network/filesystem isolation for the current trial only.
+- Confirm operator authorization, rights to the reference, required native
+  tools and candidate dependencies before further runs. A separate loopback
+  instance remains the original qualification design; the current live test
+  switch is a separately authorized deviation.
 - Pre-register the [evaluation protocol](data-model.md#evaluation-protocol-and-record)
   and resource policy. Approve inputs, voice conditions, repetitions, subjective
   rating, comparison thresholds and safety stop rules before collecting data.
   Candidate package/weight provenance, model rights and runtime compatibility
-  must be reviewed first. Qwen3-TTS requires separate approval.
+  must be reviewed first. Qwen3-TTS local testing has been approved; release
+  and redistribution have not.
 
 ## Existing baseline checks
 
@@ -37,7 +55,7 @@ the checker demonstrate native synthesis, cloning or model qualification.
 
 ## Private implementation verification
 
-Run the private test runner once implemented, without network access, with
+Run the private test runner with
 fake workers, clocks, memory observations and synthetic inputs. Save the exact
 commands, versions and results in the private report. Verify:
 
@@ -72,14 +90,15 @@ and native reserve before admitting normal candidate runs. If memory telemetry
 or process termination cannot be verified, stop: do not infer safety from a
 cache limit.
 
-Evaluate VoxCPM2 first and native baseline using the frozen matrix: German and
+Record the initial VoxCPM2 investigation and evaluate Qwen and the native
+baseline using the frozen matrix: German and
 English; cloned and non-cloned where supported; short and near-limit text;
 MP3/WAV, cancellation, dependency failures, pressure and recovery. Confirm
 candidate and baseline audio is playable and complete, with at least one
 authorized cloned sample in each language. Record per-cell latency, peak memory
 method, disk, quality, similarity, pronunciation, actual engine, failures and
-fallback reason. Record blocked and unsupported cells honestly. Perform a
-Qwen3-TTS comparison only if separately approved and feasible. Keep all inputs,
+fallback reason. Record blocked and unsupported cells honestly. Perform an
+additional candidate comparison only if separately approved. Keep all inputs,
 samples and detailed measurements private.
 
 Afterward delete transient files and any explicitly selected persisted data;

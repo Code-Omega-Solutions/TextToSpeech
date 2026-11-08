@@ -31,4 +31,10 @@
 - Candidate names and existing contract constraints are intentional scope
   requirements, not prescribed implementation architecture.
 - Thresholds and evaluation inputs must be agreed before measurement during
-  planning; an outcome is not claimed by this specification.
+  qualification. The interactive trial's provisional admission threshold is not
+  a measured safe reservation.
+- The original in-flight pressure, isolation, completeness and capability
+  contracts are qualification targets; the operator-authorized interactive
+  trial has explicit deviations and must not be treated as satisfying them.
+- German and English smoke tests establish structurally valid outputs only;
+  listening, comparative quality, complete speech and release rights remain open.

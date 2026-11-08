@@ -4,6 +4,18 @@ All structures below are proposed private implementation contracts, not
 persisted schema or proof of behavior. Fields containing text, recordings,
 derived voices, audio, operator paths or private measurements are never logged.
 
+## Current trial mapping and gaps
+
+The interactive trial uses fixed synthetic German and English references rather
+than an opaque enrollment and consent registry. Candidate outcomes identify
+the engine, clone condition, fallback reason and unverified completeness;
+structurally valid audio does not prove complete speech. Admission is based on
+an initial pressure/headroom sample and a provisional threshold, not measured
+reservations or the target state machine below. The per-request worker exits
+after synthesis; no in-flight pressure check or cross-process capacity control
+has been qualified. Reference enrollment, revocation, per-cell evaluation and
+restart recovery remain proposed rather than implemented.
+
 ## Candidate
 
 `id` (`voxcpm2` or `qwen3-tts`), immutable source revision, weight identifier

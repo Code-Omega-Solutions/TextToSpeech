@@ -36,6 +36,11 @@ specifications may be reviewed for publication; the prototype implementation,
 models, reference recordings and private evaluation results must remain outside
 publishable repository contents until a separate decision authorizes them. The
 interface must preserve ordinary speech generation without the prototype.
+The [local prototype plan](002-local-speech-prototype/plan.md) records the
+operator-authorized private Qwen interactive trial and its deviations from the
+qualification contract. Structural audio checks do not establish quality,
+complete speech, safe peak memory or production readiness; the original
+backend remains recoverable.
 
 The backend enforces bearer authentication by default. The Vite and Nginx
 proxies now read a server-side credential and replace the upstream authorization

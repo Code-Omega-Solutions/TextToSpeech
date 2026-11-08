@@ -1,15 +1,39 @@
 # Research: Local Speech Prototype
 
-Research date: 2026-11-08. This is planning evidence only; no model, weights or
-prototype was installed or run. Upstream claims are not native qualification or
-legal clearance. Revalidate upstream revisions and model cards before any
-separately approved acquisition.
+Research date: 2026-11-08. The sections below preserve the original planning
+decisions; the update immediately below records subsequent private testing.
+Upstream claims and smoke tests are not native qualification or legal clearance.
+
+## Evaluation update
+
+VoxCPM2 guarded loads failed to complete within the test limits and the
+operator rejected that candidate; its dedicated model and source were removed.
+The approved Qwen3-TTS 12Hz 0.6B Base snapshot is pinned to revision
+`5d83992436eae1d760afd27aff78a71d676296fc`; its main and tokenizer weight
+checksums were verified. English and German reference-conditioned inference
+and interactive authenticated WAV/MP3 smoke tests produced structurally valid
+outputs. Quality, natural stopping, full spoken content, comparison with the
+native baseline, and peak memory are not established.
+
+The current operator-authorized trial checks pressure only before generation,
+uses a provisional free-page admission threshold, and releases its
+worker after each request. This differs from the original in-flight pressure
+policy below; it does not demonstrate a safe bound or recovery under load.
+Polling in an earlier guarded attempt overshot its stop floor, so sampling is
+not a hard memory cap. The operator allowed this test without enforced network
+or filesystem isolation; offline settings are not an egress guarantee.
+
+Qwen's model card declares Apache-2.0, but that is not legal clearance for the
+complete stack. Reference voice terms, model and training provenance, project
+ownership, and dependency licenses remain open. A prepared FFmpeg binary and
+other dependencies require separate license review before redistribution.
+Synthetic system-voice references are private trial data, not approved
+commercial assets.
 
 ## Candidate order and compatibility
 
-**Decision**: Investigate VoxCPM2 first; compare Qwen3-TTS only after separate
-approval and a feasibility check. Keep each candidate in its own private
-environment and record exact versions and weight checksums.
+**Original decision**: Investigate VoxCPM2 first; compare Qwen3-TTS only after
+separate approval and a feasibility check. Record versions and checksums.
 
 **Rationale**: The [VoxCPM README at the inspected revision](https://github.com/OpenBMB/VoxCPM/blob/4b8dd4440d33396b3f429201f8af0529b4d2c601/README.md)
 describes reference-audio cloning and says its demo can use MPS on Apple
@@ -23,7 +47,7 @@ that README. Qwen accepts reference audio and, normally, a transcript; its
 speaker-embedding-only mode can omit the transcript with a quality tradeoff.
 Accept only local reference files in this prototype, even where an upstream
 API permits URLs. Both upstream projects may auto-download weights: private
-local paths and blocked inference egress are mandatory.
+local paths are used; enforced inference egress remains a qualification gate.
 
 **Alternatives considered**: Qwen first would ignore FR-002. Selecting an
 unofficial Metal port solely on its reported benchmark would replace one
@@ -49,7 +73,7 @@ blanket clearance would omit weight, dependency, speaker and project rights.
 
 ## Runtime and service compatibility
 
-**Decision**: Keep the live service unchanged; use a private separate instance
+**Original decision**: Keep the live service unchanged; use a private separate instance
 and process-isolated candidate adapters, retaining the existing backend's
 validated request semantics and native engine. Unsupported behavior fails
 explicitly. Run each candidate in its own pinned environment.
@@ -72,7 +96,7 @@ uncooperative runtime or prove that native fallback has regained resources.
 
 ## Memory and failure policy
 
-**Decision**: Admit one candidate worker only with fresh, reliable macOS
+**Target decision**: Admit one candidate worker only with fresh, reliable macOS
 pressure/headroom evidence and measured reservations; terminate it on unsafe
 conditions and unload after each request. Require hysteresis before recovery.
 Specify an explicit safe calibration protocol before normal evaluation.
@@ -90,7 +114,7 @@ workloads or produce a misleading success.
 
 ## Containment and evaluation
 
-**Decision**: Keep all implementation and sensitive artifacts outside every
+**Target decision**: Keep all implementation and sensitive artifacts outside every
 repository and publishing/build/upload/sync boundary; verify actual controls
 with synthetic canaries before implementation and inspect all proposed history
 and release artifacts. Pre-register evaluation inputs and decision thresholds.

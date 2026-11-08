@@ -1,6 +1,6 @@
 # Feature Specification: Local High-Quality Speech Prototype
 
-**Feature Branch**: Not assigned
+**Feature Branch**: `agents/local-speech-prototype-plan`
 
 **Created**: 2026-11-08
 
@@ -8,6 +8,25 @@
 
 **Input**: Evaluate a local high-quality speech alternative, including voice
 cloning and memory-pressure fallback, without publishing prototype backend code.
+
+## Evaluation update: 2026-11-08
+
+VoxCPM2 was investigated first, but its guarded loads did not finish within the
+experimental limits and the operator rejected it as a candidate. The current
+private trial uses Qwen3-TTS 12Hz 0.6B Base with synthetic German and English
+reference voices. A reversible interactive service switch was explicitly
+authorized; the original service and its configuration are retained, and the
+original service was active again at the latest observation.
+
+The private trial checks pressure and provisional headroom at admission only,
+then exits its model worker after each request. It does **not** implement
+in-flight pressure interruption, calibrated reservations or recovery
+hysteresis; the operator accepted that limitation for this trial only. Those
+capabilities remain requirements for qualification, not completed features.
+The trial also lacks full existing-service compatibility and cannot prove that
+generated speech is complete. It is not a production or release approval.
+Details and evaluation data remain private; this document describes no private
+operational paths, credentials, addresses or samples.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -103,9 +122,9 @@ questions and release decisions.
 - **FR-001**: The prototype MUST run only in an explicitly authorized local
   evaluation environment; it MUST NOT change or deploy an existing service
   without separate operator approval.
-- **FR-002**: The prototype MUST evaluate VoxCPM2 first and support a
-  documented, separately approved comparison with Qwen3-TTS when feasible;
-  comparison availability MUST NOT be represented as a result.
+- **FR-002**: The evaluation MUST document the initial VoxCPM2 investigation
+  and the operator-approved Qwen3-TTS trial; a successful model load or audio
+  response MUST NOT be represented as comparative quality or release approval.
 - **FR-003**: The prototype MUST support German and English using the existing
   explicit and automatic language-selection rules, including the short-input
   default and unsupported-language errors.

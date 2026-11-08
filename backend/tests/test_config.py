@@ -49,3 +49,82 @@ def test_defaults_and_environment_values(settings):
     assert settings.voice_en_us == "Samantha"
     assert settings.voice_en_gb == "Daniel"
     assert settings.max_output_bytes == 26_214_400
+
+
+def test_protected_credential_file_is_used(monkeypatch, tmp_path):
+    credential = tmp_path / "credential"
+    credential.write_text("test-file-key\n", encoding="utf-8")
+    credential.chmod(0o600)
+    monkeypatch.delenv("TTS_API_KEY", raising=False)
+    monkeypatch.setenv("TTS_API_KEY_FILE", str(credential))
+    assert Settings.from_env().api_key == "test-file-key"
+
+
+def test_credential_sources_must_not_conflict(monkeypatch, tmp_path):
+    credential = tmp_path / "credential"
+    credential.write_text("file-key", encoding="utf-8")
+    credential.chmod(0o600)
+    monkeypatch.setenv("TTS_API_KEY", "environment-key")
+    monkeypatch.setenv("TTS_API_KEY_FILE", str(credential))
+    with pytest.raises(ValueError):
+        Settings.from_env()
+
+
+@pytest.mark.parametrize("mode", [0o640, 0o644, 0o666])
+def test_credential_file_requires_private_permissions(monkeypatch, tmp_path, mode):
+    credential = tmp_path / "credential"
+    credential.write_text("file-key", encoding="utf-8")
+    credential.chmod(mode)
+    monkeypatch.delenv("TTS_API_KEY", raising=False)
+    monkeypatch.setenv("TTS_API_KEY_FILE", str(credential))
+    with pytest.raises(ValueError):
+        Settings.from_env()
+
+
+@pytest.mark.parametrize("contents", ["", "  \n"])
+def test_empty_credential_file_is_rejected(monkeypatch, tmp_path, contents):
+    credential = tmp_path / "credential"
+    credential.write_text(contents, encoding="utf-8")
+    credential.chmod(0o600)
+    monkeypatch.delenv("TTS_API_KEY", raising=False)
+    monkeypatch.setenv("TTS_API_KEY_FILE", str(credential))
+    with pytest.raises(ValueError):
+        Settings.from_env()
+
+
+def test_missing_credential_file_is_rejected(monkeypatch, tmp_path):
+    monkeypatch.delenv("TTS_API_KEY", raising=False)
+    monkeypatch.setenv("TTS_API_KEY_FILE", str(tmp_path / "missing"))
+    with pytest.raises(ValueError):
+        Settings.from_env()
+
+
+def test_credential_symlink_is_rejected(monkeypatch, tmp_path):
+    credential = tmp_path / "credential"
+    credential.write_text("file-key", encoding="utf-8")
+    credential.chmod(0o600)
+    link = tmp_path / "link"
+    link.symlink_to(credential)
+    monkeypatch.delenv("TTS_API_KEY", raising=False)
+    monkeypatch.setenv("TTS_API_KEY_FILE", str(link))
+    with pytest.raises(ValueError):
+        Settings.from_env()
+
+
+def test_invalid_settings_do_not_include_credential_in_error(monkeypatch):
+    monkeypatch.setenv("TTS_API_KEY", "synthetic-secret-marker")
+    monkeypatch.setenv("TTS_PORT", "invalid")
+    with pytest.raises(ValueError) as exc:
+        Settings.from_env()
+    assert "synthetic-secret-marker" not in str(exc.value)
+
+
+@pytest.mark.parametrize("value", ["0", "-1", "invalid"])
+def test_temporary_disk_budget_must_be_positive(monkeypatch, value):
+    monkeypatch.setenv("TTS_MAX_TEMP_BYTES", value)
+    with pytest.raises(ValueError):
+        Settings.from_env()
+
+
+def test_default_temporary_disk_budget(settings):
+    assert settings.max_temp_bytes == 256 * 1024 * 1024

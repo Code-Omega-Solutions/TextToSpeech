@@ -23,27 +23,35 @@ tests in the companion [coverage map](../capabilities/backend-synthesis/backend-
 Its draft/adopted markers remain until the requirements are reviewed against the
 code and evidence. The [backend feature specification](001-macos-backend/spec.md)
 and [requirements checklist](001-macos-backend/checklists/requirements.md)
-describe remaining proposed work and release gates; they do not imply that the
-installer, deployment process, or native platform qualification exists.
+describe remaining proposed work and release gates; they do not imply that
+native platform qualification or a deployment process exists. A read-only
+prerequisite checker, an explicitly approved locked-environment setup helper,
+and an unregistered per-user service example are available; they do not install
+system prerequisites, register services, or change running systems.
 
-The backend enforces bearer authentication by default, but the frontend proxy
-does not inject a backend credential. The proxy also retains its existing 16 KiB
-request-body limit; the proposed coordinated 32 KiB limits and authenticated
-proxy-to-backend integration are not implemented. Keep backend authentication
-distinct from proxy authentication when changing or describing either surface.
+The backend enforces bearer authentication by default. The Vite and Nginx
+proxies now read a server-side credential and replace the upstream authorization
+header; neither exposes the credential to browser assets. The backend and both
+proxies enforce a streamed 32 KiB encoded-request limit. Keep proxy-to-backend
+authentication distinct from browser-user authentication: loopback binding is
+not client access control, and TLS/access controls remain a separately reviewed
+network-boundary responsibility.
 
 The root [LICENSE](../LICENSE) is a proposed custom attribution license, not an
 OSI-approved standard license or legal advice. Its use is subject to legal
-approval and confirmation of rights to recovered materials. The [third-party notice](../THIRD_PARTY_NOTICES.md) records the lockfile audit
-and container distribution boundaries. The rebuilt frontend image retains
-Debian package copyright/license files, embeds a runtime package inventory and
-the [written source offer](../SOURCE_OFFER.md), and exposes OCI source/revision
-and notice-location labels. The offer requires actual source fulfillment by
-the publisher; image metadata or an inventory alone is not source delivery.
-The next successful publish is configured to remove older Alpine-based
-versions from GHCR, but cannot recall copies already downloaded. Neither
-document relicenses third-party packages, Apple speech components, or external
-runtime tools.
+approval and confirmation of rights to recovered materials. It applies only to
+project-owned material; third-party dependencies and runtime components retain
+their own licenses. The [third-party notice](../THIRD_PARTY_NOTICES.md) uses
+lockfiles and the built image's package/version/source inventory to describe
+distribution scope. The rebuilt frontend image retains Debian package
+copyright/license files, includes the [written source offer](../SOURCE_OFFER.md),
+and exposes OCI source/revision and notice-location labels. The offer requires
+actual source fulfillment by the publisher; image metadata or an inventory
+alone is not source delivery. The publishing workflow removes older GHCR
+versions after a successful publish, but deletion cannot recall copies already
+downloaded or redistributed. Neither the notice nor the workflow grants legal
+approval or relicenses third-party packages, Apple speech components, or
+external runtime tools.
 
 ## Local tooling
 
@@ -76,9 +84,9 @@ python3 -m unittest discover -s checks/tests -v
 git diff --check
 ```
 
-These release-integrity tests protect required license/attribution wording and
-the explicit third-party-audit boundary; they are not legal or ownership
-verification.
+These release-integrity tests protect required license/attribution wording,
+distribution boundaries, and explicit release-gate wording; they are not legal
+or ownership verification.
 
 ## Keeping specifications alive
 
@@ -104,8 +112,11 @@ tests or review of the registry and coverage maps.
 
 Backend planning should update the backend and affected frontend capabilities
 together when integration behavior changes. Keep legal approval of the custom
-license, recovered-source rights, third-party review, native qualification, and
-deployment authorization as explicit gates.
+license, recovered-source rights, third-party review, exact-artifact
+source-offer fulfillment, native qualification, and deployment/release
+authorization as explicit gates. Mocked Linux checks do not satisfy native
+qualification. Review changed publication content and the reachable history
+before a public release; cleanup of registry versions is not a substitute.
 
 ## Public-information boundary
 

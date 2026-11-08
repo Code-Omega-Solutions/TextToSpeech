@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
+import { chmod, unlink, writeFile } from "node:fs/promises";
 import { test } from "node:test";
-import { apiProxy, validateUpstream } from "../config/upstream.js";
+import { apiProxy, readProxyCredential, validateUpstream } from "../config/upstream.js";
 
 test("requires an explicitly configured HTTP(S) origin", () => {
   for (const value of [undefined, ""]) {
@@ -19,7 +20,7 @@ test("requires an explicitly configured HTTP(S) origin", () => {
 });
 
 test("proxies only the three recovered API endpoints, preserving query strings", () => {
-  const proxy = apiProxy("http://localhost:8000");
+  const proxy = apiProxy("http://localhost:8000", "synthetic-proxy-secret");
   const entries = Object.entries(proxy);
   assert.equal(entries.length, 3);
   for (const [path, timeout] of [
@@ -28,9 +29,31 @@ test("proxies only the three recovered API endpoints, preserving query strings",
     const [pattern, options] = entries.find(([pattern]) => new RegExp(pattern).test(`/api${path}`));
     assert.equal(options.target, "http://localhost:8000");
     assert.equal(options.proxyTimeout, timeout);
+    assert.equal(options.headers.Authorization, "Bearer synthetic-proxy-secret");
+    assert.deepEqual(options.headers.Connection, "");
     assert.equal(options.rewrite(`/api${path}?test=1`), `${path}?test=1`);
     assert.match(`/api${path}?test=1`, new RegExp(pattern));
     assert.doesNotMatch(`/api${path}/extra`, new RegExp(pattern));
     assert.doesNotMatch(`/api${path}extra`, new RegExp(pattern));
+  }
+});
+
+test("proxy credentials stay server-side and require one protected source", async () => {
+  const path = new URL("./proxy-secret.fixture", import.meta.url);
+  const secret = "synthetic-file-secret";
+  try {
+    await writeFile(path, `${secret}\n`, { mode: 0o600 });
+    await chmod(path, 0o600);
+    assert.equal(readProxyCredential({ TTS_API_KEY_FILE: path.pathname }), secret);
+    assert.equal(readProxyCredential({ TTS_API_KEY: "synthetic-env-secret" }), "synthetic-env-secret");
+    assert.throws(() => readProxyCredential({}), /TTS_API_KEY/);
+    assert.throws(
+      () => readProxyCredential({ TTS_API_KEY: secret, TTS_API_KEY_FILE: path.pathname }),
+      /only one/,
+    );
+    await chmod(path, 0o644);
+    assert.throws(() => readProxyCredential({ TTS_API_KEY_FILE: path.pathname }), /protected/);
+  } finally {
+    await unlink(path).catch(() => {});
   }
 });

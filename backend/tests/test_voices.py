@@ -36,6 +36,14 @@ def test_voice_is_unavailable_if_identifier_is_missing(settings):
         resolve_voice("en-GB", settings, {"Anna", "Samantha"})
 
 
+def test_required_voices_remain_available_when_optional_uk_voice_is_missing(settings):
+    available = {"Anna", "Samantha"}
+    configured = configured_voices(settings)
+    assert voice_available(configured["de-DE"], available)
+    assert voice_available(configured["en-US"], available)
+    assert not voice_available(configured["en-GB"], available)
+
+
 def test_voice_list_uses_argument_array_and_parses_names(monkeypatch):
     def fake_run(args, **kwargs):
         assert args == ["/usr/bin/say", "-v", "?"]

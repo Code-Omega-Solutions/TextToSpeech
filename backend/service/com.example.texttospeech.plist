@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>com.example.texttospeech</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/PATH/TO/texttospeech/backend/.venv/bin/python</string>
+		<string>-m</string>
+		<string>app.main</string>
+	</array>
+	<key>WorkingDirectory</key>
+	<string>/PATH/TO/texttospeech/backend</string>
+	<key>EnvironmentVariables</key>
+	<dict>
+		<key>PATH</key>
+		<string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+		<key>TTS_API_KEY_FILE</key>
+		<string>&lt;USER_HOME&gt;/.config/texttospeech/api-key</string>
+		<key>TTS_AUTH_ENABLED</key>
+		<string>true</string>
+		<key>TTS_HOST</key>
+		<string>127.0.0.1</string>
+	</dict>
+	<key>RunAtLoad</key>
+	<false/>
+	<key>KeepAlive</key>
+	<false/>
+</dict>
+</plist>

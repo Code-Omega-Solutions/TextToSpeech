@@ -1,0 +1,23 @@
+{
+  "workflow": "speckit",
+  "specName": "Voice Cloning Interface",
+  "branch": "main",
+  "currentStep": "specify",
+  "status": "specified",
+  "history": [
+    {
+      "step": "specify",
+      "substep": null,
+      "kind": "start",
+      "by": "extension",
+      "at": "2026-11-08T08:46:29.000Z"
+    },
+    {
+      "step": "specify",
+      "substep": null,
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-08T08:47:13.610Z"
+    }
+  ]
+}

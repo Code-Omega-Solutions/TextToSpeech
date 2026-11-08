@@ -29,6 +29,14 @@ prerequisite checker, an explicitly approved locked-environment setup helper,
 and an unregistered per-user service example are available; they do not install
 system prerequisites, register services, or change running systems.
 
+Two additional draft feature specifications separate the proposed
+[local speech prototype](002-local-speech-prototype/spec.md) from the
+[publishable voice-cloning interface](003-voice-cloning-ui/spec.md). Their
+specifications may be reviewed for publication; the prototype implementation,
+models, reference recordings and private evaluation results must remain outside
+publishable repository contents until a separate decision authorizes them. The
+interface must preserve ordinary speech generation without the prototype.
+
 The backend enforces bearer authentication by default. The Vite and Nginx
 proxies now read a server-side credential and replace the upstream authorization
 header; neither exposes the credential to browser assets. The backend and both

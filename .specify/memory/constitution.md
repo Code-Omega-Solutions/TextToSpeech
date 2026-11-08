@@ -40,6 +40,18 @@ reviews explicit as release gates.
 - Keep secrets, private addresses, production configuration, logs, audio, and
   private operational details out of specifications and examples.
 
+## Development workflow
+
+- Feature branches MUST fetch and merge the latest `origin/main` before their
+  changes are merged into the main code line. If `origin/main` advances before
+  integration, repeat the fetch and merge. A fast-forward satisfies this rule
+  when the feature branch has no divergent commits.
+- Resolve merge conflicts while preserving intended behavior and existing
+  privacy and release boundaries; run checks relevant to the merged changes.
+  Syncing a branch does not authorize publishing private work or bypassing
+  required approvals. Merging regularly reduces conflict risk but cannot
+  guarantee conflict-free integration.
+
 ## Governance
 
 This constitution guides new and changed specifications. If an existing
@@ -47,5 +59,10 @@ specification or implementation conflicts with it, make the conflict explicit
 and resolve it in the affected spec and code rather than silently weakening a
 release or safety gate. Amendments must record their rationale and be checked
 against the affected capabilities, documentation, and tests.
+Review changes for compliance with this constitution before integration.
+Amendments require a documented rationale and review; increase the major version
+for incompatible principle changes or removals, the minor version for new or
+materially expanded guidance, and the patch version for non-semantic
+clarifications.
 
-**Version**: 1.0.0 | **Ratified**: 2026-11-07 | **Last Amended**: 2026-11-07
+**Version**: 1.1.0 | **Ratified**: 2026-11-07 | **Last Amended**: 2026-11-08

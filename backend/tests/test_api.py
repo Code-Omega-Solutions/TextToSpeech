@@ -146,6 +146,28 @@ def test_success_returns_binary_audio_and_expected_headers(settings, monkeypatch
     assert response.headers["x-request-id"]
 
 
+def test_unsupported_detected_language_synthesizes_with_en_us(settings_factory, monkeypatch):
+    settings = settings_factory(default_language="de-DE")
+    app = create_app(settings)
+    calls = []
+    monkeypatch.setattr("app.language.langid.classify", lambda _text: ("fr", 0.9))
+
+    def synthesize(text, language, speed, response_format, cancel_event):
+        calls.append(language)
+        return SynthesisResult(b"fixture-audio", "audio/mpeg", "speech.mp3")
+
+    monkeypatch.setattr(app.state.speech_service, "synthesize_reserved", synthesize)
+    response = TestClient(app).post(
+        "/v1/audio/speech",
+        json={"input": "A synthetic example of speech synthesis for testing."},
+        headers={"Authorization": f"Bearer {settings.api_key}"},
+    )
+    assert response.status_code == 200
+    assert response.content == b"fixture-audio"
+    assert response.headers["content-type"] == "audio/mpeg"
+    assert calls == ["en-US"]
+
+
 def test_speech_body_limit_accepts_exact_32_kib(settings, monkeypatch):
     app = create_app(settings)
     monkeypatch.setattr(

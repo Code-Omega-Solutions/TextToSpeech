@@ -1,5 +1,8 @@
 # Speech API contract
 
+> Historical contract: automatic detection fallback is updated by
+> [language detection fallback](../../004-language-detection-fallback/contracts/speech.md).
+
 This document defines the browser-to-proxy and proxy-to-backend HTTP contract
 for the macOS speech backend. The backend paths and payload names preserve the
 identifiers in the feature specification. Frontend routes are the existing

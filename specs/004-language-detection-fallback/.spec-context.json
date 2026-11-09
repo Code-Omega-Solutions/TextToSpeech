@@ -1,0 +1,24 @@
+{
+  "workflow": "speckit",
+  "specName": "Language detection fallback",
+  "branch": "pgfeller-language-detection-fallback",
+  "intent": "Use en-US when automatic detection returns an unsupported language",
+  "verified": [
+    {
+      "what": "Backend suite",
+      "command": "cd backend && uv run --locked pytest -q --disable-warnings",
+      "source": "derived",
+      "exitCode": 0,
+      "durationSeconds": 1.4,
+      "result": "........................................................................ [ 52%] · ..................................................................       [100%]"
+    }
+  ],
+  "concerns": [
+    {
+      "note": "Historical step timing was not recorded because Companion scripts were unavailable during implementation."
+    }
+  ],
+  "context": [
+    "Backend synthesis living specification and speech API"
+  ]
+}

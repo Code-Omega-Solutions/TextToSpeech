@@ -1,7 +1,6 @@
 import pytest
-from fastapi import HTTPException
 
-from app.language import resolve_language
+from app.language import detect_language, resolve_language
 from app.models import SpeechRequest
 
 
@@ -38,18 +37,27 @@ def test_explicit_locale_aliases_and_uk_locale_bypass_detection(alias, expected,
     assert resolve_language(request, settings, lambda _text: pytest.fail("classifier called")) == expected
 
 
-@pytest.mark.parametrize(("detected", "expected"), [("de", "de-DE"), ("en", "en-US")])
+@pytest.mark.parametrize(
+    ("detected", "expected"),
+    [("de", "de-DE"), ("de-DE", "de-DE"), ("en", "en-US"), ("en-US", "en-US")],
+)
 def test_supported_detected_languages(detected, expected, settings):
     request = SpeechRequest(input="a" * 20)
     assert resolve_language(request, settings, lambda _text: detected) == expected
 
 
-def test_unsupported_detected_language_returns_actionable_422(settings):
+@pytest.mark.parametrize("detected", ["fr", "it", "", "en-GB"])
+def test_unsupported_detected_language_falls_back_to_en_us(settings_factory, detected):
     request = SpeechRequest(input="a" * 20)
-    with pytest.raises(HTTPException) as error:
-        resolve_language(request, settings, lambda _text: "fr")
-    assert error.value.status_code == 422
-    assert "German and English" in error.value.detail
+    settings = settings_factory(default_language="de-DE")
+    assert resolve_language(request, settings, lambda _text: detected) == "en-US"
+
+
+def test_short_input_retains_configured_default(settings_factory):
+    settings = settings_factory(default_language="de-DE")
+    assert resolve_language(
+        SpeechRequest(input="short"), settings, lambda _text: pytest.fail("classifier called")
+    ) == "de-DE"
 
 
 def test_detection_boundary_ignores_digits_and_punctuation(settings):
@@ -73,8 +81,13 @@ def test_voice_hint_does_not_affect_detection(settings):
 
 def test_detector_uses_langid_full_language_classifier(monkeypatch):
     monkeypatch.setattr("app.language.langid.classify", lambda _text: ("fr", 0.9))
-    with pytest.raises(HTTPException) as error:
-        from app.language import detect_language
+    assert detect_language("un texte suffisamment long") == "en-US"
 
-        detect_language("un texte suffisamment long")
-    assert error.value.status_code == 422
+
+def test_detector_errors_are_not_silently_converted_to_fallback(monkeypatch, settings):
+    def fail(_text):
+        raise RuntimeError("detector unavailable")
+
+    monkeypatch.setattr("app.language.langid.classify", fail)
+    with pytest.raises(RuntimeError, match="detector unavailable"):
+        resolve_language(SpeechRequest(input="a" * 20), settings)

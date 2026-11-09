@@ -1,6 +1,5 @@
 from collections.abc import Callable
 
-from fastapi import HTTPException
 import langid
 
 from app.config import Settings
@@ -9,14 +8,13 @@ from app.models import SpeechRequest
 
 def detect_language(text: str) -> str:
     detected, _score = langid.classify(text)
-    if detected == "de":
+    return _resolve_detected_language(detected)
+
+
+def _resolve_detected_language(detected: str) -> str:
+    if detected in {"de", "de-DE"}:
         return "de-DE"
-    if detected == "en":
-        return "en-US"
-    raise HTTPException(
-        status_code=422,
-        detail="Only German and English are supported; supply a supported language override.",
-    )
+    return "en-US"
 
 
 def resolve_language(
@@ -31,12 +29,5 @@ def resolve_language(
         return settings.default_language
     if classifier is not None:
         detected = classifier(request.input)
-        if detected in {"de-DE", "en-US"}:
-            return detected
-        if detected not in {"de", "en"}:
-            raise HTTPException(
-                status_code=422,
-                detail="Only German and English are supported; supply a supported language override.",
-            )
-        return "de-DE" if detected == "de" else "en-US"
+        return _resolve_detected_language(detected)
     return detect_language(request.input)

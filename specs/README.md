@@ -45,6 +45,10 @@ authentication distinct from browser-user authentication: loopback binding is
 not client access control, and TLS/access controls remain a separately reviewed
 network-boundary responsibility.
 
+The [language detection fallback feature](004-language-detection-fallback/spec.md)
+describes the change from rejecting unsupported automatic detections to using
+en-US. The backend living specification records the current behavior.
+
 The root [LICENSE](../LICENSE) is a proposed custom attribution license, not an
 OSI-approved standard license or legal advice. Its use is subject to legal
 approval and confirmation of rights to recovered materials. It applies only to
@@ -82,10 +86,22 @@ files into a nonempty checkout and may overwrite conflicts; inspect existing
 tooling. Keep the constitution tracked when updating the generated scaffold.
 Spec Kit initialization does not install or restart application services.
 
-The Companion project currently provides a separate VS Code extension; it is
-not the source of the legacy Python validators previously referenced here.
-Those validator scripts are not present in this checkout, so registry shape and
-coverage must be reviewed directly alongside the repository's tests.
+The optional Companion VS Code extension and the Spec Kit extension are separate.
+For the installed Companion VS Code extension 0.37.0 and Spec Kit CLI 1.2.2.dev0,
+install the matching Spec Kit extension from its pinned official release:
+
+```sh
+specify extension add companion --from https://github.com/alfredoperez/speckit-companion/releases/download/speckit-ext-v0.25.0/companion-0.25.0.zip
+specify extension list
+python3 .specify/extensions/companion/scripts/write-context.py --help
+```
+
+Review the source confirmation before accepting it. The generated extension
+and its scripts are ignored local tooling, so install them separately in each
+checkout. Do not use `--force` over an existing installation without reviewing
+its configuration and changes. Companion records future workflow steps; it
+cannot reconstruct missing historical timestamps. These scripts do not replace
+reviewing registry shape and coverage alongside the repository's tests.
 
 ```powershell
 python3 -m unittest discover -s checks/tests -v

@@ -104,6 +104,11 @@ required voices. The speech endpoint is `POST /v1/audio/speech`. The existing
 request limit is 5,000 UTF-16 code units; the service applies bounded request,
 concurrency, timeout, output, and per-request temporary-storage limits.
 
+When no language is specified, short inputs use `TTS_DEFAULT_LANGUAGE`; longer
+inputs use language detection. An unsupported detection falls back to `en-US`.
+Explicit supported languages bypass detection; unsupported explicit languages
+remain invalid.
+
 German (`de-DE`) and US English (`en-US`) voices are required. Defaults are
 `Anna (Deutsch (Deutschland))` and `Samantha`; British English (`en-GB`,
 default voice `Daniel`) is optional. Verify the host inventory with

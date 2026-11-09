@@ -66,8 +66,8 @@ a 32 KiB encoded request-body limit while streaming, independent of
 Explicit supported locales SHALL bypass detection. Otherwise, inputs with fewer
 than the configured minimum alphabetic characters SHALL use
 `TTS_DEFAULT_LANGUAGE`; longer inputs SHALL use `langid` and resolve German to
-`de-DE` and English to `en-US`. Unsupported detected languages return 422 and
-require an explicit supported override.
+`de-DE` and English to `en-US`. Other detected languages fall back to `en-US`.
+Unexpected detector failures remain errors.
 
 #### Scenario: text is too short for detection
 - **WHEN** input has fewer alphabetic characters than `TTS_MIN_DETECTION_CHARS`
@@ -75,7 +75,7 @@ require an explicit supported override.
 
 #### Scenario: detection selects an unsupported language
 - **WHEN** automatic detection does not identify German or English
-- **THEN** the service returns 422 and asks for a supported language override.
+- **THEN** the service selects `en-US` for synthesis.
 
 ### Synthesis uses configured system voices and bounded subprocesses
 <!-- touches: backend/app/services.py, backend/app/voices.py, backend/app/config.py, backend/tests/test_services.py, backend/tests/test_voices.py -->

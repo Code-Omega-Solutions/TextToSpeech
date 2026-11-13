@@ -2,6 +2,7 @@
 
 **Purpose**: Validate specification completeness and quality before planning
 **Created**: 2026-11-08
+**Updated**: 2026-11-13
 **Feature**: [Specification](../spec.md)
 
 ## Content Quality
@@ -32,3 +33,11 @@
   requirements, not prescribed implementation architecture.
 - Thresholds and evaluation inputs must be agreed before measurement during
   planning; an outcome is not claimed by this specification.
+- The revision excludes VoxCPM2 and Qwen3-TTS, makes NeuTTS Air conditional on
+  measured safe unified-memory capacity, and covers bounded Ollama release
+  before pressure assessment, native fallback, unknown telemetry and recovery.
+- Supplied hardware and model-comparison claims are explicitly unverified;
+  language, cloning, runtime, resource and licensing qualification remain gates.
+- The checklist validates the revised specification only. Existing planning
+  artifacts are superseded where noted in the spec and must be updated before
+  implementation; this is not a model qualification or an implementation pass.

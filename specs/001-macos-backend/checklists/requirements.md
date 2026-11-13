@@ -2,6 +2,7 @@
 
 **Purpose**: Review requirements completeness before technical planning.
 **Created**: 2026-10-26
+**Updated**: 2026-11-13
 **Feature**: [Backend specification](../spec.md)
 **Method**: Stock GitHub Spec Kit specification and requirements-quality review.
 
@@ -56,3 +57,13 @@ is a proposal; legal review, recovered-source rights confirmation, and complete
 third-party license review remain release gates. Neither a passing checklist
 nor a future installer grants authorization to modify the existing Mac or
 running frontend.
+
+## Approved revision review
+
+- [x] Machine-level tools are operator-prepared; setup is confined to the dedicated environment and locked application dependencies.
+- [x] Bootstrap interpreter preflight is distinct from structured Python diagnostics and configured backend interpreter qualification.
+- [x] The plan and T028 define the constitution's synchronization and post-merge verification gate.
+- [x] T029 and T030 remain pending; historical task completion is not evidence that the revised behavior was implemented or tested.
+
+These checks review specification consistency only. Native qualification,
+legal review and execution of the newly added tasks remain unverified gates.

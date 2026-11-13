@@ -50,7 +50,7 @@ incompatible, timeout and unsupported-platform conditions; assert no mutations.
 
 - [x] **T006** [US1] Implement standalone bounded, noninteractive human/JSON inspection of OS, architecture, say, Python, environment tooling, ffmpeg codecs, voices, configuration, credential access, destination, disk and port without writes or synthesis (FR-001-003, FR-007-008; SC-001-002) · `backend/prerequisites.py`
 
-**Checkpoint:** Check-only reports named blockers and never installs.
+**Checkpoint**: Check-only reports named blockers and never installs.
 
 ## Phase 4: User Story 2 - Install missing prerequisites safely (P1)
 
@@ -73,9 +73,9 @@ verify consent, idempotency, interruption safety and manual voice instructions.
 
 **Wave 2:**
 
-- [x] **T008** [US2] Implement explicit install planning, destination locking, approved package-manager/locked environment setup, verification and accurate partial/manual results without escalation or modifying existing installations (FR-004-009, FR-019; SC-003, SC-007) · `backend/setup.py`
+- [x] **T008** [US2] Implement explicit install planning, destination locking, locked dedicated-environment setup, verification and accurate partial/manual results without escalation or modifying existing installations (FR-004-009, FR-019; SC-003, SC-007) · `backend/setup.py`
 
-**Checkpoint:** An approved isolated setup is repeatable and failed work
+**Checkpoint**: An approved isolated setup is repeatable and failed work
 preserves prior environments, credentials and services.
 
 ## Phase 5: User Story 3 - Generate speech through frontend (P1)
@@ -124,7 +124,7 @@ audio and synthetic credentials; do not rely on a production Mac.
 
 - [x] **T019** [US3] Integrate fail-closed authentication, binary speech responses and distinct liveness/readiness with verified codecs and required voices (FR-010, FR-015, FR-017-018, FR-022) · `backend/app/routers.py`
 
-**Checkpoint:** Mocked browser-to-proxy-to-backend requests preserve the API,
+**Checkpoint**: Mocked browser-to-proxy-to-backend requests preserve the API,
 protect credentials and enforce both exact limits.
 
 ## Phase 6: User Story 4 - Operate and diagnose (P2)
@@ -152,7 +152,7 @@ do not register or start a service.
 
 - [x] **T021** [US4] Provide a per-user service example with operator-selected paths, safe PATH and protected credentials, without automatic registration (FR-023) · `backend/service/com.example.texttospeech.plist`
 
-**Checkpoint:** An operator can review and deliberately configure the example
+**Checkpoint**: An operator can review and deliberately configure the example
 without changing a live service.
 
 ## Phase 7: User Story 5 - Publish and reproduce (P2)
@@ -182,7 +182,7 @@ content/license checks without production credentials.
 - [x] **T024** [P] [US5] Document proxy secret-file/environment setup, loopback and separate TLS/access-control boundaries without real credentials (FR-020-022, FR-024) · `frontend/README.md`
 - [x] **T025** [P] [US5] Update dependency notices and feature index accurately while retaining legal, source-rights and history-review release gates (FR-025-026; SC-009) · `THIRD_PARTY_NOTICES.md`, `specs/README.md`
 
-**Checkpoint:** A contributor can reproduce the mocked checks and see the
+**Checkpoint**: A contributor can reproduce the mocked checks and see the
 unresolved native, legal and publication gates.
 
 ## Phase 8: Polish and validation
@@ -203,9 +203,23 @@ Files: `capabilities/backend-synthesis/backend-synthesis.spec.md`,
 
 - [x] **T027** Run the repository's backend mocked suite, frontend tests/build, applicable release checks and exact SC-001-009 boundary checks; record unavailable Docker/native checks and never claim macOS qualification from Linux · `specs/001-macos-backend/spec.md`
 
+## Phase 9: Approved specification remediation (2026-11-13)
+
+Earlier completed tasks retain their completion history. Their checked state
+does not verify the revised machine-tool boundary or bootstrap preflight;
+T029 and T030 provide that follow-up. No installation, integration or
+deployment is authorized by this documentation update.
+
+- [ ] **T028** Verify the constitution's integration gate before merge: fetch and merge current `origin/main`, preserve safety boundaries, run relevant post-merge checks, and record upstream/tested revisions and outcomes. Repeat if upstream advances; perform after T029 and T030 verification. · `specs/001-macos-backend/plan.md`
+- [ ] **T029** [US2] Align setup implementation, documentation and tests with FR-005/FR-006: missing machine-level Python, `uv` or ffmpeg produces actionable blockers without invoking a package manager, downloading an interpreter or modifying tools outside the managed environment. Test before implementation, rerun focused checks, and reconcile affected prerequisite living requirements and coverage. (FR-004-009; SC-002, SC-007) · `backend/setup.py`, `backend/tests/test_setup.py`, `backend/README.md`, `capabilities/backend-prerequisite-management/backend-prerequisite-management.spec.md`, `capabilities/backend-prerequisite-management/backend-prerequisite-management.coverage.md`
+- [ ] **T030** [US1] Document and test bounded, read-only bootstrap preflight and diagnostic handoff, including absent/incompatible bootstrap interpreters, a separate configured backend interpreter, official installation instructions, no structured checker report without bootstrap Python, and zero installation/configuration changes. Test before any implementation, rerun focused checks, and reconcile affected prerequisite living requirements and coverage. (FR-001-003, FR-024; SC-001-002) · `backend/prerequisites.py`, `backend/tests/test_prerequisites.py`, `backend/README.md`, `capabilities/backend-prerequisite-management/backend-prerequisite-management.spec.md`, `capabilities/backend-prerequisite-management/backend-prerequisite-management.coverage.md`
+
 ## Dependencies & Execution Order
 
 Setup precedes foundational tests and implementation. Story phases follow the
 foundation and are ordered US1, US2, US3, US4 and US5; US2 consumes US1's
 checker. Each story's test wave precedes its implementation waves. Polish
 follows all stories, and validation follows living-spec reconciliation.
+For the approved remediation, complete T029 and T030 with focused validation
+before T028's integration gate. Preserve existing completion records; do not
+mark the new tasks complete based solely on specification edits.

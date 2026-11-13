@@ -8,15 +8,24 @@ the starting point.
 
 **Decision:** Implement a standard-library Python command separate from the
 application import. Inspection is read-only and bounded. Setup proposes a
-specific change plan and requires explicit acceptance. Use an already installed,
-operator-approved Homebrew for missing Python or ffmpeg and an already installed
-`uv` for the isolated environment and locked Python dependencies. If either
-tool's bootstrap is needed, stop with official installation instructions.
+specific change plan and requires explicit acceptance. Setup requires an
+existing compatible Python interpreter, `uv`, and ffmpeg. Missing or incompatible
+tools produce blockers and documented official installation instructions.
+Setup does not invoke Homebrew or install machine-level tools. After the
+operator prepares them separately, setup creates or reuses the dedicated
+user-owned environment and installs locked application dependencies.
+
+The diagnostic command itself needs Python 3.11 or newer. Documented bounded,
+read-only preflight steps check bootstrap interpreter availability before
+invocation. Without it, preflight reports the blocker and instructions; the
+Python checker and structured diagnostics do not run. Once it is available,
+the checker can assess a separate configured backend interpreter.
 
 **Rationale:** Existing project dependencies are already locked with `uv`.
-Reusing a user-approved package manager avoids executing downloaded shell text
-and avoids changing unrelated tools. A missing required OS-managed voice remains
-a manual blocking step.
+Keeping machine-level tool preparation outside setup preserves its dedicated
+environment boundary and avoids changing unrelated tools. A missing required
+OS-managed voice remains a manual blocking step. Separating interpreter
+preflight from the Python checker avoids claiming that it can run without Python.
 
 **Alternatives considered:** Installing into system Python risks unrelated
 applications. Automatically bootstrapping a package manager would exceed

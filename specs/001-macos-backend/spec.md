@@ -2,6 +2,7 @@
 
 **Feature ID**: `001-macos-backend`
 **Created**: 2026-10-26
+**Updated**: 2026-11-13
 **Status**: Draft; recovered baseline exists, proposed requirements remain
 **Input**: Re-create an improved, publishable backend from the recovered project,
 without exposing secrets, with prerequisite checks and installation of missing software.
@@ -28,6 +29,8 @@ Default decisions, chosen because interactive clarification was unavailable:
 - Prerequisite inspection is check-only. Installation is a separate opt-in action.
 - Authentication is enabled by default. Backend credentials never enter browser code.
 - Installation targets a dedicated user-owned environment, not system Python.
+- Machine-level Python, `uv`, and ffmpeg preparation is a separate operator
+  action; setup does not invoke a package manager or install those tools.
 - macOS 13 or newer on Apple Silicon or Intel is the initial support target.
   Both architectures must pass qualification before being advertised as supported.
 - No Docker backend is promised: Linux containers do not supply macOS `say`.
@@ -57,6 +60,14 @@ or unsafe changes to an existing speech service.
 **Independent Test**: Inspect prepared machines with missing, incompatible, and
 working prerequisites, while recording filesystem, package, and service changes.
 
+**Bootstrap boundary**: The diagnostic command requires a runnable Python
+3.11-or-newer interpreter. Documented preflight steps MUST check its availability
+using bounded, read-only commands before invoking the checker. If no suitable
+interpreter exists, preflight reports a blocker and official installation
+instructions without installing anything. Structured prerequisite diagnostics
+are available only after this bootstrap requirement is met. The bootstrap
+interpreter and the configured backend interpreter may be different.
+
 **Acceptance Scenarios**:
 
 1. **Given** a supported Mac, **when** the operator runs the check-only command,
@@ -64,10 +75,15 @@ working prerequisites, while recording filesystem, package, and service changes.
 2. **Given** Windows, Linux, an unsupported macOS release, or an unqualified
    architecture, **when** checks run, **then** the report explains the unsupported
    synthesis runtime and installation is refused without changes.
-3. **Given** absent Python, environment manager, ffmpeg, voices, credentials,
+3. **Given** a usable bootstrap interpreter but an absent or incompatible
+  configured backend interpreter, environment manager, ffmpeg, voices, credentials,
    a writable destination, or a free configured port, **when** checks run,
    **then** blockers are distinguished from optional capabilities and no install,
    download, key generation, application import, or speech synthesis occurs.
+4. **Given** no runnable Python 3.11-or-newer bootstrap interpreter, **when**
+  documented preflight steps run, **then** they identify that blocker and
+  official installation instructions without invoking the Python checker,
+  installing software, or changing configuration.
 
 ### User Story 2 - Install only missing prerequisites safely (Priority: P1)
 
@@ -200,17 +216,22 @@ then reproduce environment setup and mocked tests without private network access
   planned changes before execution. Unattended mode requires explicit acceptance
   of that plan; it MUST refuse unapproved privileged actions rather than invoke
   `sudo`, weaken permissions, or bypass transport verification.
-- **FR-005**: Install compatible Python and locked application dependencies into
-  a dedicated user-owned location. Do not replace system Python, install global
-  application packages, or upgrade unrelated working tools. Existing compatible
-  dependencies are reused; incompatible managed environments require a deliberate
-  replacement action rather than in-place destructive repair.
-- **FR-006**: Obtain missing tools only through documented official distribution
-  channels or an explicitly approved package manager. Do not execute remote
-  shell text directly. Verify available publisher signatures/checksums and lockfile
-  hashes; reject failed verification. Document downloads and licenses.
-  If the chosen package manager itself is absent, stop with approved bootstrap
-  instructions rather than silently installing it.
+- **FR-005**: Require an existing compatible Python interpreter, `uv`, and
+  ffmpeg before setup can complete. Create or reuse a dedicated user-owned
+  environment using the existing interpreter and install locked application
+  dependencies there. Do not install machine-level tools, replace system Python,
+  install global application packages, or upgrade unrelated working tools.
+  Existing compatible dependencies are reused; incompatible managed environments
+  require a deliberate replacement action rather than destructive in-place repair.
+- **FR-006**: Missing or incompatible machine-level tools MUST produce named
+  blockers and documented official installation instructions. Their preparation
+  is a separate operator action, not an action performed by setup. Setup MUST
+  NOT invoke Homebrew or another package manager to install those tools,
+  bootstrap package managers, or execute remote shell text. Application dependency
+  downloads MUST use documented distributions, verify lockfile hashes and
+  available publisher signatures/checksums, and reject failed verification.
+  Document downloads and licenses without claiming that suggested operator
+  actions were performed or verified by setup.
 - **FR-007**: Provide a reproducible ffmpeg strategy with MP3 encoding and WAV
   support. Every Python package used to locate or supply ffmpeg MUST be declared
   and locked. The original deployment's undeclared ffmpeg-provider dependency
@@ -406,22 +427,27 @@ Health and readiness routes do not require authentication. Responses and logs
 SHALL not disclose credential values or credential-file paths.
 
 #### Scenario: a speech request uses a protected credential file
+
 - **WHEN** authentication is enabled, only the protected credential file is configured, and a request presents its matching bearer token
 - **THEN** the service authenticates the request without disclosing the file contents or path.
 
 #### Scenario: credential sources conflict
+
 - **WHEN** both credential sources are configured
 - **THEN** startup fails before serving requests and diagnostics disclose neither value.
 
 #### Scenario: a speech request has no valid bearer token
+
 - **WHEN** authentication is enabled and a speech request omits or supplies an invalid token
 - **THEN** the service returns 401 before synthesis.
 
 #### Scenario: health and readiness are checked without authentication
+
 - **WHEN** a caller requests health or readiness without a bearer token
 - **THEN** the route reports its service state without an authentication challenge.
 
 #### Scenario: authentication is explicitly disabled
+
 - **WHEN** `TTS_AUTH_ENABLED` is false and no credential is configured
 - **THEN** a valid speech request can proceed without an Authorization header.
 
@@ -437,10 +463,12 @@ a 32 KiB encoded request-body limit while streaming, independent of
 `Content-Length`.
 
 #### Scenario: a request contains an invalid field or value
+
 - **WHEN** a request contains an unsupported language, format, model, speed, an unknown field, or invalid input
 - **THEN** the service returns 422 without exposing submitted text or starting synthesis.
 
 #### Scenario: a streamed request exceeds the encoded body limit
+
 - **WHEN** a request body exceeds 32 KiB, including chunked input or a misleading `Content-Length`
 - **THEN** the service rejects it before parsing or synthesis.
 
@@ -455,14 +483,17 @@ temporary-disk budget. Cancellation or failure SHALL stop work for that request,
 make partial audio unavailable, and release its synthesis capacity.
 
 #### Scenario: synthesis prerequisites or capacity are unavailable
+
 - **WHEN** all synthesis permits are occupied or a required executable or voice is unavailable
 - **THEN** the service rejects the request with 503 without queuing it.
 
 #### Scenario: synthesis is cancelled or exceeds a resource bound
+
 - **WHEN** a request is cancelled or exceeds its deadline, segment, output-size, or temporary-disk limit
 - **THEN** the service returns a bounded error, makes partial audio unavailable, and frees capacity for later requests.
 
 #### Scenario: a valid synthesis request completes
+
 - **WHEN** a valid request is synthesized with an available configured voice
 - **THEN** the service returns the requested audio format with the configured rate and preserved sentence and paragraph pauses.
 
@@ -474,6 +505,7 @@ WAV encoders, and the configured German and US English voices are available.
 UK English is optional for readiness.
 
 #### Scenario: a readiness prerequisite is unavailable
+
 - **WHEN** `say`, a required ffmpeg encoder, or a configured German or US English voice is unavailable
 - **THEN** `/readyz` returns 503 while `/healthz` remains an independent liveness check.
 
@@ -485,6 +517,7 @@ submitted speech text, bearer credentials, raw request bodies, raw subprocess
 output, query strings, and private machine paths.
 
 #### Scenario: validation or synthesis fails
+
 - **WHEN** validation or synthesis fails for a request containing speech text, credentials, or a query string
 - **THEN** the response and correlated logs contain a request ID and safe diagnostics without those values, raw subprocess output, or private paths.
 
@@ -501,14 +534,17 @@ The upstream URL, credential, and generated credential configuration SHALL not
 be injected into browser assets.
 
 #### Scenario: proxy credentials are missing or conflicting
+
 - **WHEN** a configured server lacks a required backend credential or has conflicting sources
 - **THEN** startup fails with a safe configuration error before accepting proxied requests.
 
 #### Scenario: production serving uses a credential file
+
 - **WHEN** production serving is configured with a protected backend credential file
 - **THEN** it reads the credential server-side without modifying the file.
 
 #### Scenario: browser assets are built or served
+
 - **WHEN** the frontend is built or serves browser assets with an upstream URL and credential configured
 - **THEN** those assets contain neither the URL nor the credential or generated credential configuration.
 
@@ -522,14 +558,17 @@ replaces any client-provided upstream Authorization header with its configured
 credential and enforces a 32 KiB speech-body limit while streaming.
 
 #### Scenario: an unknown route or wrong speech method is received
+
 - **WHEN** a client requests an unknown route or uses GET for speech generation
 - **THEN** the proxy returns 404 or 403 without forwarding the request to an arbitrary upstream route.
 
 #### Scenario: a speech request exceeds the body limit
+
 - **WHEN** a client streams more than 32 KiB to the speech route
 - **THEN** the proxy rejects the request without forwarding its body upstream.
 
 #### Scenario: a client supplies an Authorization header
+
 - **WHEN** a proxied request contains a client-provided Authorization header
 - **THEN** the upstream receives only the server-configured backend credential.
 
@@ -545,6 +584,7 @@ and referrer safeguards, enforces a 32 KiB request-body limit, and disables
 speech proxy buffering.
 
 #### Scenario: deploying the standalone frontend container
+
 - **WHEN** the standalone Compose frontend starts
 - **THEN** it uses its own service identity on loopback port 8081 without replacing the existing port-8080 service.
 
@@ -560,6 +600,7 @@ Each result SHALL include a stable identifier, status, reason, and remediation
 in human-readable or JSON output.
 
 #### Scenario: a supported and ready machine is inspected
+
 - **WHEN** the operator runs check-only inspection
 - **THEN** it reports a result for each listed prerequisite with its identifier, status, reason, and remediation.
 
@@ -569,6 +610,7 @@ Inspection SHALL not install or download software, write files, import the
 application, register services, or synthesize speech.
 
 #### Scenario: check-only inspection completes
+
 - **WHEN** the operator runs inspection on a machine with missing or available prerequisites
 - **THEN** the command leaves files, packages, credentials, and services unchanged.
 
@@ -580,6 +622,7 @@ SHALL exit nonzero without exposing raw command output, secrets, or private
 paths.
 
 #### Scenario: a prerequisite check is blocked or times out
+
 - **WHEN** a required prerequisite is missing or a check exceeds its bound
 - **THEN** inspection reports the named result, exits nonzero, and omits raw output, secrets, and private paths.
 
@@ -589,6 +632,7 @@ Setup SHALL display its planned changes and require explicit acceptance of that
 exact plan before making changes.
 
 #### Scenario: a setup plan is not accepted
+
 - **WHEN** the operator requests setup without accepting the displayed plan identifier
 - **THEN** setup reports the plan and performs no installation or environment mutation.
 
@@ -600,6 +644,7 @@ unmanaged environment or existing credentials, escalate privileges, or register
 or start services.
 
 #### Scenario: setup encounters an unmanaged destination or credential
+
 - **WHEN** the selected destination is unmanaged or contains existing credentials
 - **THEN** setup leaves it unchanged and reports that operator action is required.
 
@@ -608,6 +653,7 @@ or start services.
 Setup SHALL serialize changes targeting the same environment.
 
 #### Scenario: setup attempts overlap for one destination
+
 - **WHEN** two setup attempts target the same environment at once
 - **THEN** their changes do not run concurrently.
 
@@ -617,6 +663,7 @@ Setup SHALL install dependencies from the backend lockfile, verify the installed
 dependencies, and recheck readiness before reporting success.
 
 #### Scenario: an accepted setup completes
+
 - **WHEN** the operator accepts the displayed plan and setup finishes installing dependencies
 - **THEN** setup reports success only after the locked dependencies and readiness checks pass.
 
@@ -627,6 +674,7 @@ Prerequisites requiring manual installation SHALL remain explicit incomplete
 results.
 
 #### Scenario: setup fails with manual prerequisites still missing
+
 - **WHEN** an accepted setup fails after creating environment artifacts and a manual prerequisite is unavailable
 - **THEN** setup removes its created artifacts, preserves existing files, and reports the manual prerequisite as incomplete.
 
@@ -637,5 +685,6 @@ safe `PATH`, and a protected credential-file reference. It SHALL contain no
 real username, host path, or secret and SHALL not start automatically.
 
 #### Scenario: an operator reviews the launchd example
+
 - **WHEN** the example is inspected before deliberate configuration
 - **THEN** it has operator-selected path placeholders, references only a protected credential file, and requires explicit service registration.

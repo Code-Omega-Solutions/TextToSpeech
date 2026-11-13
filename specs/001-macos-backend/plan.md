@@ -43,11 +43,16 @@ Setup transitions from read-only inspection to a proposed plan, explicit
 acceptance, serialized changes, and a fresh readiness report. Incomplete manual
 steps or failures remain nonzero results. It must not register, start, or replace
 services, overwrite existing environments or credentials, or silently escalate.
+Machine-level Python, `uv`, and ffmpeg must already be operator-prepared; setup
+does not invoke a package manager or install them. A bounded, read-only
+documented preflight checks for a Python 3.11-or-newer bootstrap interpreter
+before the Python checker runs. Without it, only the preflight blocker and
+official installation instructions are available, not structured diagnostics.
 
 ## Constitution Check
 
 | Principle | Assessment |
-|---|---|
+| --- | --- |
 | Evidence-based specifications | PASS: retain draft markers and distinguish recovered behavior from verified changes. |
 | Safe, bounded behavior | PASS: inspection is read-only; setup requires consent and resource limits apply. |
 | Operational boundaries | PASS: secrets remain server-side, logs are redacted, and deployment is separate. |
@@ -57,8 +62,10 @@ services, overwrite existing environments or credentials, or silently escalate.
 ## Implementation approach
 
 1. Define stable diagnostics and a check-only entry point that does not import
-   the application. Add a serialized, opt-in installer with staged changes,
-   lockfile-based dependencies, failure reporting and idempotent reruns.
+   the application, preceded by bootstrap interpreter preflight. Add a
+   serialized, opt-in installer confined to the dedicated environment, using
+   existing machine tools, locked dependencies, failure reporting and
+   idempotent reruns. Report missing machine tools as manual blockers.
 2. Extend configuration to validate exactly one credential source, including
    owner-only protected files. Preserve fail-closed authentication and ensure
    readiness checks credentials, executables, codecs and required voices.
@@ -78,9 +85,9 @@ services, overwrite existing environments or credentials, or silently escalate.
 ## Requirement coverage
 
 | Requirements | Implementation and verification focus |
-|---|---|
+| --- | --- |
 | FR-001-003 | Read-only bounded inspection, complete prerequisite inventory, stable report identifiers and exit codes. |
-| FR-004-006 | Explicit plan acceptance, isolated locked installation, approved distribution and verification, no automatic privileged bootstrap. |
+| FR-004-006 | Explicit plan acceptance, isolated locked application dependencies, existing operator-prepared tools, verification, no machine-level tool installation. |
 | FR-007-009 | Real ffmpeg codec checks, required and optional voices, manual OS-managed voice steps, serialized and idempotent installation. |
 | FR-010-014 | Existing routes, request fields, byte and UTF-16 limits, language detection, pauses, format and segmentation. |
 | FR-015-017 | Concurrent capacity, shared deadline, size and temporary-disk budgets, child cleanup and separate liveness/readiness. |
@@ -103,3 +110,14 @@ require separately authorized machines for each supported architecture. A
 release also requires legal approval, rights review, third-party notices and
 clean content and reachable-history checks. Neither Linux mocks nor this plan
 qualifies a platform or approves publication.
+
+## Integration Gate
+
+Before merging a feature branch, fetch `origin/main` and merge its latest
+revision into that branch. Resolve conflicts while preserving privacy and
+operational boundaries, then rerun checks relevant to the resulting changes.
+Record the tested revision, upstream revision, commands and check outcomes,
+including unavailable checks. If `origin/main` advances before integration,
+repeat the gate. A fast-forward satisfies synchronization when there are no
+divergent commits. This gate does not authorize deployment or publication;
+adding it to this plan does not establish that it has been performed.

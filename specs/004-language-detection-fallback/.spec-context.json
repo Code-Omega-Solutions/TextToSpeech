@@ -20,5 +20,9 @@
   ],
   "context": [
     "Backend synthesis living specification and speech API"
-  ]
+  ],
+  "currentStep": "specify",
+  "status": "draft",
+  "history": [],
+  "telemetryInstanceId": "986b21c0-7998-4a05-8cfb-933e7abac39b"
 }

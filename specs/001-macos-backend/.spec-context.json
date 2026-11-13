@@ -1,0 +1,255 @@
+{
+  "workflow": "companion",
+  "specName": "001-macos-backend",
+  "branch": "001-macos-backend",
+  "selectedAt": "2026-11-13T17:56:25.937Z",
+  "currentStep": "implement",
+  "status": "implementing",
+  "history": [
+    {
+      "step": "analyze",
+      "substep": null,
+      "kind": "start",
+      "by": "extension",
+      "at": "2026-11-13T18:10:31.869Z"
+    },
+    {
+      "step": "analyze",
+      "substep": null,
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-13T18:40:52.317Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T001",
+      "kind": "complete",
+      "by": "recovery",
+      "at": "2026-11-13T18:40:52.425Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T002",
+      "kind": "complete",
+      "by": "recovery",
+      "at": "2026-11-13T18:40:52.425Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T003",
+      "kind": "complete",
+      "by": "recovery",
+      "at": "2026-11-13T18:40:52.425Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T004",
+      "kind": "complete",
+      "by": "recovery",
+      "at": "2026-11-13T18:40:52.425Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T005",
+      "kind": "complete",
+      "by": "recovery",
+      "at": "2026-11-13T18:40:52.425Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T006",
+      "kind": "complete",
+      "by": "recovery",
+      "at": "2026-11-13T18:40:52.425Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T007",
+      "kind": "complete",
+      "by": "recovery",
+      "at": "2026-11-13T18:40:52.425Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T008",
+      "kind": "complete",
+      "by": "recovery",
+      "at": "2026-11-13T18:40:52.425Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T009",
+      "kind": "complete",
+      "by": "recovery",
+      "at": "2026-11-13T18:40:52.425Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T010",
+      "kind": "complete",
+      "by": "recovery",
+      "at": "2026-11-13T18:40:52.425Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T011",
+      "kind": "complete",
+      "by": "recovery",
+      "at": "2026-11-13T18:40:52.425Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T012",
+      "kind": "complete",
+      "by": "recovery",
+      "at": "2026-11-13T18:40:52.425Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T013",
+      "kind": "complete",
+      "by": "recovery",
+      "at": "2026-11-13T18:40:52.425Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T014",
+      "kind": "complete",
+      "by": "recovery",
+      "at": "2026-11-13T18:40:52.425Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T015",
+      "kind": "complete",
+      "by": "recovery",
+      "at": "2026-11-13T18:40:52.425Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T016",
+      "kind": "complete",
+      "by": "recovery",
+      "at": "2026-11-13T18:40:52.425Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T017",
+      "kind": "complete",
+      "by": "recovery",
+      "at": "2026-11-13T18:40:52.425Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T018",
+      "kind": "complete",
+      "by": "recovery",
+      "at": "2026-11-13T18:40:52.425Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T019",
+      "kind": "complete",
+      "by": "recovery",
+      "at": "2026-11-13T18:40:52.425Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T020",
+      "kind": "complete",
+      "by": "recovery",
+      "at": "2026-11-13T18:40:52.425Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T021",
+      "kind": "complete",
+      "by": "recovery",
+      "at": "2026-11-13T18:40:52.425Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T022",
+      "kind": "complete",
+      "by": "recovery",
+      "at": "2026-11-13T18:40:52.425Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T023",
+      "kind": "complete",
+      "by": "recovery",
+      "at": "2026-11-13T18:40:52.425Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T024",
+      "kind": "complete",
+      "by": "recovery",
+      "at": "2026-11-13T18:40:52.425Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T025",
+      "kind": "complete",
+      "by": "recovery",
+      "at": "2026-11-13T18:40:52.425Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T026",
+      "kind": "complete",
+      "by": "recovery",
+      "at": "2026-11-13T18:40:52.425Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T027",
+      "kind": "complete",
+      "by": "recovery",
+      "at": "2026-11-13T18:40:52.425Z"
+    }
+  ],
+  "telemetryInstanceId": "5238fc50-4add-4285-a35d-46e03d3b7095",
+  "assistant": "ide-chat",
+  "concerns": [
+    {
+      "note": "The prior analysis report was completed before this repair; its missing lifecycle finish is recorded now, not as its historical finish time.",
+      "step": "analyze",
+      "kind": "record-recovery"
+    },
+    {
+      "note": "T001-T027 were already checked in the recovered tasks.md before this repair. Their recovery-authored journal entries import that state only; timestamps are import times, not historical completion times. Original per-task durations, execution evidence and native qualification remain unavailable. T028-T030 remain pending.",
+      "step": "implement",
+      "kind": "record-recovery"
+    }
+  ],
+  "currentTask": "T028"
+}

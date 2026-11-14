@@ -1,0 +1,8 @@
+{
+	"mcpServers": {
+		"orchestrator": {
+			"url": "http://192.168.0.118:4500/mcp",
+			"type": "http"
+		}
+	}
+}

@@ -3,6 +3,21 @@
 		"orchestrator": {
 			"url": "http://192.168.0.118:4500/mcp",
 			"type": "http"
+		},
+		"basic-memory-general": {
+			"type": "stdio",
+			"command": "/home/pgfeller/.local/bin/basic-memory",
+			"args": ["mcp", "--project", "general"]
+		},
+		"basic-memory-project-texttospeech": {
+			"type": "stdio",
+			"command": "/home/pgfeller/.local/bin/basic-memory",
+			"args": ["mcp", "--project", "project-texttospeech"]
+		},
+		"basic-memory-machine-texttospeech-thinkpad-t14": {
+			"type": "stdio",
+			"command": "/home/pgfeller/.local/bin/basic-memory",
+			"args": ["mcp", "--project", "machine-texttospeech-thinkpad-t14"]
 		}
 	}
 }

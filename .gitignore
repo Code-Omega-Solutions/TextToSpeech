@@ -45,6 +45,9 @@ data/memory-store/*.db-wal
 data/memory-store/*.db-shm
 logs/mcp-diagnostics.log
 
+# Basic Memory project notes stay local
+/.memory/basic-memory/
+
 # memory-sync: keep the committed memory store out of broader ignore rules
 !data/
 !data/memory-store/

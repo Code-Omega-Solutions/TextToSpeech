@@ -2,8 +2,8 @@
   "workflow": "companion",
   "specName": "VibeVoice Backend Integration",
   "branch": "main",
-  "currentStep": "tasks",
-  "status": "ready-to-implement",
+  "currentStep": "implement",
+  "status": "implementing",
   "history": [
     {
       "step": "specify",
@@ -67,6 +67,21 @@
       "kind": "complete",
       "by": "ai",
       "at": "2026-11-15T16:10:46.358Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "kind": "start",
+      "by": "extension",
+      "at": "2026-11-15T17:59:38.632Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T002",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-15T19:58:42.210Z"
     }
   ],
   "telemetryInstanceId": "e5a95d64-76b2-4305-8ead-1c0d825b1143",
@@ -271,8 +286,23 @@
       "command": "python3 .specify/extensions/companion/scripts/check_plan.py --feature-dir specs/002-vibevoice-backend-integration --strict",
       "source": "derived",
       "exitCode": 0,
-      "durationSeconds": 0.0,
+      "durationSeconds": 0,
       "result": "[plan-check] plan.md: 2 call paths, 8 lines, 1 state block (6 states). Every cited file and line checks out."
+    },
+    {
+      "what": "License integrity test",
+      "command": "pytest -q checks/tests/test_license_integrity.py",
+      "result": "4 passed"
+    },
+    {
+      "what": "Worker lock reproducibility",
+      "command": "cd backend/vibevoice_worker && uv lock --check",
+      "result": "69 packages resolved; lock is current"
+    },
+    {
+      "what": "Whitespace check",
+      "command": "git diff --check",
+      "result": "No whitespace errors"
     }
   ],
   "decisions": [
@@ -324,6 +354,13 @@
       "rejected": "Delete evaluation materials before the replacement is proven or retain every generated artifact indefinitely.",
       "by": "agent",
       "at": "2026-11-15T16:02:02.938Z"
+    },
+    {
+      "decision": "Keep T003 incomplete and VibeVoice disabled until the exact worker artifacts, voice provenance, and intended-use terms are reviewed and approved.",
+      "why": "The metadata inventory surfaced LGPL/MPL declarations, conditional NVIDIA proprietary packages, and freeform-only licenses; metadata is not exact-artifact clearance.",
+      "rejected": "Treating a reproducible lock or unqualified host as approval to install or enable VibeVoice.",
+      "by": "agent",
+      "at": "2026-11-15T20:01:16.896Z"
     }
   ],
   "step_summaries": {
@@ -339,7 +376,22 @@
   "concerns": [
     {
       "note": "Available-memory reserve is a capacity-based proxy, not process-aware workload coordination. Qualify eviction latency and protection on the target host before enabling VibeVoice; otherwise keep it disabled."
+    },
+    {
+      "note": "T003 remains blocked pending exact runtime artifact review and approval. Voice prompt provenance and intended-use approval remain unresolved. Target-host memory qualification and full smoke benchmark are still open; glados currently lacks the worker runtime, source, model/voice assets, and configured memory budgets.",
+      "step": "implement"
     }
   ],
-  "workingBranch": "feature/vibevoice-backend-integration"
+  "assistant": "ide-chat",
+  "currentTask": "T002",
+  "task_summaries": {
+    "T002": {
+      "status": "DONE",
+      "did": "Reviewed upstream source/model terms and exact-version runtime metadata; inventoried conditional proprietary, LGPL/MPL, and freeform records while preserving unresolved voice provenance and release gates.",
+      "files": [
+        "THIRD_PARTY_NOTICES.md"
+      ]
+    }
+  },
+  "last_action": "T002 closed with inventory findings. Next task T003 remains pending; no VibeVoice installation or enablement."
 }

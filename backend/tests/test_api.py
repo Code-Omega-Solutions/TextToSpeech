@@ -341,10 +341,6 @@ def test_readiness_requires_only_german_and_us_english(settings, monkeypatch):
         lambda *_args, **_kwargs: {"libmp3lame", "pcm_s16le"},
     )
     monkeypatch.setattr("app.routers.available_voices", lambda *_args, **_kwargs: {"Anna", "Samantha"})
-    monkeypatch.setattr(
-        "app.services.available_voices",
-        lambda *_args, **_kwargs: {"Anna", "Samantha"},
-    )
     client = client_for(settings)
     assert client.get("/readyz").status_code == 200
 
@@ -361,6 +357,10 @@ def test_missing_optional_uk_voice_does_not_block_readiness_or_request_behavior(
         lambda *_args, **_kwargs: {"libmp3lame", "pcm_s16le"},
     )
     monkeypatch.setattr("app.routers.available_voices", lambda *_args, **_kwargs: {"Anna", "Samantha"})
+    monkeypatch.setattr(
+        "app.services.available_voices",
+        lambda *_args, **_kwargs: {"Anna", "Samantha"},
+    )
     client = client_for(settings)
     assert client.get("/readyz").status_code == 200
     response = client.post(

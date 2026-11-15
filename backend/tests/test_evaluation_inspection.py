@@ -1,4 +1,7 @@
 from datetime import datetime, timezone
+from types import SimpleNamespace
+
+import pytest
 
 
 def _manifest():
@@ -131,3 +134,37 @@ def test_inspection_reports_terms_approval_and_missing_measurement_reasons(tmp_p
     assert inspection["inspected_at"] == "2025-01-01T00:00:00+00:00"
     assert inspection["available_memory_bytes"] is None
     assert inspection["limitations"]["available_memory_bytes"]
+
+
+def test_available_memory_uses_reclaimable_macos_pages(monkeypatch):
+    from evaluation.vibevoice import inspection
+
+    output = """Mach Virtual Memory Statistics: (page size of 16,384 bytes)
+Pages free:                                   10.
+Pages inactive:                              20.
+Pages speculative:                            3.
+"""
+    monkeypatch.setattr(inspection.platform, "system", lambda: "Darwin")
+    monkeypatch.setattr(
+        inspection.subprocess,
+        "run",
+        lambda *_args, **_kwargs: SimpleNamespace(stdout=output),
+    )
+
+    assert inspection._available_memory() == 33 * 16_384
+
+
+def test_available_memory_requires_macos_page_counters(monkeypatch):
+    from evaluation.vibevoice import inspection
+
+    monkeypatch.setattr(inspection.platform, "system", lambda: "Darwin")
+    monkeypatch.setattr(
+        inspection.subprocess,
+        "run",
+        lambda *_args, **_kwargs: SimpleNamespace(
+            stdout="Mach Virtual Memory Statistics: (page size of 16,384 bytes)\n"
+        ),
+    )
+
+    with pytest.raises(ValueError, match="Pages free"):
+        inspection._available_memory()

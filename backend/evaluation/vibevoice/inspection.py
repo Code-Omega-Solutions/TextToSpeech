@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import os
 import platform
+import re
 import shutil
+import subprocess
 from collections.abc import Callable, Mapping, Sequence
 from datetime import datetime
 from pathlib import Path
@@ -231,10 +233,49 @@ def _available_storage(volume: Path) -> int:
 
 
 def _available_memory() -> int:
+    if platform.system() == "Darwin":
+        return _darwin_available_memory()
     available_pages = os.sysconf("SC_AVPHYS_PAGES")
     page_size = os.sysconf("SC_PAGE_SIZE")
     if available_pages < 0 or page_size < 0:
         raise OSError("available memory is unavailable")
+    return available_pages * page_size
+
+
+def _darwin_available_memory() -> int:
+    try:
+        output = subprocess.run(
+            ["/usr/bin/vm_stat"],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=5,
+            env={**os.environ, "LC_ALL": "C"},
+        ).stdout
+    except subprocess.TimeoutExpired as exc:
+        raise OSError("vm_stat timed out") from exc
+    except subprocess.CalledProcessError as exc:
+        raise OSError("vm_stat failed") from exc
+
+    page_size_match = re.search(r"page size of ([\d,]+) bytes", output)
+    if page_size_match is None:
+        raise ValueError("vm_stat did not report a page size")
+    page_size = int(page_size_match.group(1).replace(",", ""))
+    if page_size <= 0:
+        raise ValueError("vm_stat reported an invalid page size")
+
+    available_pages = 0
+    for label in ("free", "inactive", "speculative"):
+        page_match = re.search(
+            rf"^Pages {label}:\s*([\d,]+)\.?\s*$",
+            output,
+            flags=re.MULTILINE,
+        )
+        if page_match is None:
+            raise ValueError(f"vm_stat did not report Pages {label}")
+        available_pages += int(page_match.group(1).replace(",", ""))
+
+    # macOS can reclaim inactive and speculative pages under memory pressure.
     return available_pages * page_size
 
 

@@ -105,6 +105,38 @@ def test_decision_api_accepts_all_four_owner_outcomes(tmp_path):
             assert response.json()["outcome"] == outcome
 
 
+def test_api_accepts_originless_same_origin_get_but_rejects_mutation(tmp_path):
+    from evaluation.vibevoice.server import create_app
+
+    with TestClient(
+        create_app(_report_path(tmp_path), session_token=SESSION_TOKEN),
+        base_url="http://127.0.0.1",
+    ) as client:
+        missing_fetch_metadata = client.get(
+            "/api/run",
+            headers={"X-Session-Token": SESSION_TOKEN},
+        )
+        same_origin_get = client.get(
+            "/api/run",
+            headers={
+                "X-Session-Token": SESSION_TOKEN,
+                "Sec-Fetch-Site": "same-origin",
+            },
+        )
+        originless_mutation = client.put(
+            "/api/decision",
+            json={"outcome": "retain", "rationale": "Private review."},
+            headers={
+                "X-Session-Token": SESSION_TOKEN,
+                "Sec-Fetch-Site": "same-origin",
+            },
+        )
+
+    assert missing_fetch_metadata.status_code == 403
+    assert same_origin_get.status_code == 200
+    assert originless_mutation.status_code == 403
+
+
 def test_inspect_cli_uses_selected_read_only_target(monkeypatch, capsys, tmp_path):
     from evaluation.vibevoice import cli
 

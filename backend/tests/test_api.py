@@ -223,7 +223,7 @@ def test_runtime_errors_map_to_safe_http_statuses(settings, monkeypatch):
         "app.services.available_voices",
         lambda *_args, **_kwargs: {"Samantha"},
     )
-    monkeypatch.setattr("app.services.shutil.which", lambda _path: "/fake/ffmpeg")
+    monkeypatch.setattr("app.services.shutil.which", lambda _path: None)
     response = client.post(
         "/v1/audio/speech",
         json={"input": "Hello there", "language": "en-US"},
@@ -341,6 +341,10 @@ def test_readiness_requires_only_german_and_us_english(settings, monkeypatch):
         lambda *_args, **_kwargs: {"libmp3lame", "pcm_s16le"},
     )
     monkeypatch.setattr("app.routers.available_voices", lambda *_args, **_kwargs: {"Anna", "Samantha"})
+    monkeypatch.setattr(
+        "app.services.available_voices",
+        lambda *_args, **_kwargs: {"Anna", "Samantha"},
+    )
     client = client_for(settings)
     assert client.get("/readyz").status_code == 200
 

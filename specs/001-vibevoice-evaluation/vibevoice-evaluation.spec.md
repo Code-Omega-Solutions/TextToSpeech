@@ -1,7 +1,7 @@
 # Feature Specification: Private VibeVoice Evaluation
 
-**Status**: Draft  
-**Created**: 2026-11-15  
+**Status**: Draft
+**Created**: 2026-11-15
 **Source**: Idea assessment `tts-ms-vibe-code-backend`
 
 ## User Scenarios & Testing

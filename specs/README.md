@@ -11,6 +11,7 @@ for these implemented areas:
 | Local development and container serving | [Frontend serving](../capabilities/frontend-serving/frontend-serving.spec.md) | Draft adoption of implemented behavior |
 | Frontend image publication | [Image publishing](../capabilities/frontend-image-publishing/frontend-image-publishing.spec.md) | Draft adoption of implemented behavior |
 | macOS backend synthesis | [Backend synthesis](../capabilities/backend-synthesis/backend-synthesis.spec.md) | Draft adoption of recovered source behavior; native runtime not qualified |
+| Private VibeVoice evaluation | [VibeVoice evaluation](../capabilities/vibevoice-evaluation/vibevoice-evaluation.spec.md) | Draft; local evaluator and mocked evidence, not native model qualification |
 | Project reuse and third-party notices | [Project licensing](../capabilities/project-licensing/project-licensing.spec.md) | Draft adoption of proposed custom attribution terms; legal and rights review pending |
 
 The [project constitution](../.specify/memory/constitution.md) is the durable
@@ -28,6 +29,10 @@ native platform qualification or a deployment process exists. A read-only
 prerequisite checker, an explicitly approved locked-environment setup helper,
 and an unregistered per-user service example are available; they do not install
 system prerequisites, register services, or change running systems.
+
+The [private VibeVoice evaluation](../capabilities/vibevoice-evaluation/vibevoice-evaluation.spec.md)
+is a separate, optional tool. Its report and audio remain local and owner-only;
+its tests use fakes and do not qualify models or target hardware.
 
 Two additional draft feature specifications separate the proposed
 [local speech prototype](002-local-speech-prototype/spec.md) from the

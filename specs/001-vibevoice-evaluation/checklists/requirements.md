@@ -1,7 +1,7 @@
 # Specification Quality Checklist: Private VibeVoice Evaluation
 
-**Purpose**: Validate Companion specification completeness before planning  
-**Created**: 2026-11-15  
+**Purpose**: Validate Companion specification completeness before planning
+**Created**: 2026-11-15
 **Feature**: [Private VibeVoice Evaluation](../vibevoice-evaluation.spec.md)
 
 ## Content Quality

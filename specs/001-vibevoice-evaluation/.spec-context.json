@@ -2,8 +2,8 @@
   "workflow": "companion",
   "specName": "Private VibeVoice Evaluation",
   "branch": "main",
-  "currentStep": "specify",
-  "status": "specified",
+  "currentStep": "implement",
+  "status": "completed",
   "history": [
     {
       "step": "specify",
@@ -18,54 +18,353 @@
       "kind": "complete",
       "by": "extension",
       "at": "2026-11-15T07:20:39.477Z"
+    },
+    {
+      "step": "plan",
+      "substep": null,
+      "kind": "start",
+      "by": "extension",
+      "at": "2026-11-15T07:24:15.907Z"
+    },
+    {
+      "step": "plan",
+      "substep": "research",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-15T07:28:24.332Z"
+    },
+    {
+      "step": "plan",
+      "substep": null,
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-15T07:29:38.953Z"
+    },
+    {
+      "step": "plan",
+      "substep": "design",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-15T07:33:31.719Z"
+    },
+    {
+      "step": "tasks",
+      "substep": null,
+      "kind": "start",
+      "by": "extension",
+      "at": "2026-11-15T07:38:09.970Z"
+    },
+    {
+      "step": "tasks",
+      "substep": null,
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-15T07:45:38.780Z"
+    },
+    {
+      "step": "tasks",
+      "substep": "generate",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-15T07:45:39.839Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "kind": "start",
+      "by": "extension",
+      "at": "2026-11-15T07:47:12.704Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T001",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-15T08:16:01.360Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T002",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-15T09:30:35.975Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T003",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-15T09:30:43.202Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T004",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-15T09:30:49.719Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T005",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-15T09:43:20.272Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T006",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-15T09:47:01.797Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T007",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-15T09:47:06.487Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T008",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-15T09:50:01.596Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T009",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-15T09:50:08.898Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T010",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-15T09:54:15.112Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T011",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-15T09:54:19.730Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T012",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-15T09:54:24.528Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T013",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-15T09:57:17.224Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T014",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-15T09:59:13.072Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T015",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-15T09:59:17.897Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T016",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-15T09:59:21.748Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T017",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-15T09:59:26.115Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T018",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-15T10:05:00.862Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-15T10:05:00.885Z"
     }
   ],
   "telemetryInstanceId": "421a5f25-c8d8-44aa-b4d0-e6d7fabb0abc",
   "coverage": {
     "FR-001": {
-      "title": "Offer an isolated optional VibeVoice comparison prototype."
+      "title": "The evaluation MUST offer an isolated, optional prototype for comparing VibeVoice speech with the existing macOS speech method.",
+      "tasks": [
+        "T001",
+        "T006",
+        "T011"
+      ]
     },
     "FR-002": {
-      "title": "Allow removal or disabling without changing the existing method."
+      "title": "The prototype MUST be removable or disableable without changing the existing method's behavior or contract.",
+      "tasks": [
+        "T001",
+        "T013",
+        "T018"
+      ]
     },
     "FR-003": {
-      "title": "Use the same five permitted texts per language across feasible configurations and baseline."
+      "title": "The evaluation MUST use the same five permitted texts per language for each feasible configuration and the baseline.",
+      "tasks": [
+        "T005",
+        "T006"
+      ]
     },
     "FR-004": {
-      "title": "Support private listening and individual ratings for feasible English and German samples."
+      "title": "The evaluation MUST support private listening and individual 1–10 product-owner ratings for English and German samples where feasible.",
+      "tasks": [
+        "T005",
+        "T007"
+      ]
     },
     "FR-005": {
-      "title": "Report individual ratings, averages, and qualitative observations."
+      "title": "The report MUST show individual ratings, averages by language and configuration, and qualitative observations.",
+      "tasks": [
+        "T002",
+        "T010",
+        "T012"
+      ]
     },
     "FR-006": {
-      "title": "Identify each result’s model, voice, language, machine, and configuration."
+      "title": "The evaluation MUST identify the exact model variant, voice, language, machine, and configuration for every result.",
+      "tasks": [
+        "T002",
+        "T006",
+        "T009",
+        "T012"
+      ],
+      "tests": [
+        "backend/tests/test_evaluation_comparison.py::test_manifest_requires_exactly_five_unique_permitted_texts_per_language",
+        "backend/tests/test_evaluation_web.py::test_summary_page_shows_evidence_and_all_owner_decisions"
+      ]
     },
     "FR-007": {
-      "title": "Investigate both model variants and report unavailable or unauthorized implementations."
+      "title": "The evaluation MUST investigate both identified VibeVoice TTS variants and report any unavailable or unauthorized implementation without claiming a comparison was performed.",
+      "tasks": [
+        "T005",
+        "T008",
+        "T009",
+        "T014",
+        "T015"
+      ]
     },
     "FR-008": {
-      "title": "Report candidate-machine capacity, platform, requirements, and inspection time."
+      "title": "The evaluation MUST report storage, memory, platform details, and applicable requirements for each candidate machine, including the inspection time and the intended storage volume when known.",
+      "tasks": [
+        "T008",
+        "T009",
+        "T012"
+      ]
     },
     "FR-009": {
-      "title": "Record footprint, peak memory, and generation time or reasons for missing measurements."
+      "title": "The evaluation MUST record installed footprint, peak memory where measurable, and generation time for each evaluated configuration, identifying unavailable measurements and their reasons.",
+      "tasks": [
+        "T008",
+        "T009",
+        "T012"
+      ],
+      "tests": [
+        "backend/tests/test_evaluation_comparison.py::test_unverified_preflight_capacity_blocks_all_generation",
+        "backend/tests/test_evaluation_web.py::test_summary_page_shows_evidence_and_all_owner_decisions"
+      ]
     },
     "FR-010": {
-      "title": "Obtain approval before target-machine downloads, installation, or service changes."
+      "title": "Before a target-machine download, installation, or service change, the operator MUST obtain explicit approval for that action and destination.",
+      "tasks": [
+        "T002",
+        "T008",
+        "T009",
+        "T011",
+        "T013"
+      ]
     },
     "FR-011": {
-      "title": "Document and assess applicable terms before using models, dependencies, voices, or texts."
+      "title": "Before using a model, dependency, voice, or sample text, the evaluation MUST document the applicable terms and determine whether the intended private research use is permitted; unresolved permission MUST block the affected use.",
+      "tasks": [
+        "T005",
+        "T008",
+        "T009",
+        "T013",
+        "T014"
+      ]
     },
     "FR-012": {
-      "title": "Report missing, failed, unsafe, and unavailable comparisons and reasons."
+      "title": "The evaluation MUST record missing, failed, unsafe, or unavailable comparisons and the reason for each.",
+      "tasks": [
+        "T002",
+        "T005",
+        "T008",
+        "T010",
+        "T012"
+      ]
     },
     "FR-013": {
-      "title": "Keep texts, audio, and results private absent separate publication approval."
+      "title": "The evaluation MUST keep sample texts, generated audio, and results private unless a separate publication decision authorizes disclosure.",
+      "tasks": [
+        "T002",
+        "T004",
+        "T007",
+        "T012",
+        "T013"
+      ]
     },
     "FR-014": {
-      "title": "Provide a recordable product-owner decision."
+      "title": "The evaluation MUST provide the product owner with a recordable decision to retain, partially retain, remove, or seek an alternative.",
+      "tasks": [
+        "T010",
+        "T012"
+      ]
     },
     "FR-015": {
-      "title": "Stop affected runs on failure, cancellation, or agreed resource limits."
+      "title": "The evaluation MUST stop an affected run on failure, cancellation, or an agreed resource limit and report the incomplete result.",
+      "tasks": [
+        "T002",
+        "T005",
+        "T006",
+        "T009"
+      ]
     }
   },
   "size": "normal",
@@ -86,5 +385,282 @@
     "constraint: model, voice, dependency, and sample-text terms must be assessed before use",
     "constraint: preserve existing service and require approval for target-machine changes"
   ],
-  "intent": "Evaluate VibeVoice speech quality and feasibility privately against the existing macOS method using an isolated removable prototype."
+  "intent": "Evaluate VibeVoice speech quality and feasibility privately against the existing macOS method using an isolated removable prototype.",
+  "assistant": "ide-chat",
+  "verified": [
+    {
+      "what": "plan blocks check out",
+      "command": "python3 .specify/extensions/companion/scripts/check_plan.py --feature-dir specs/001-vibevoice-evaluation --strict",
+      "source": "derived",
+      "exitCode": 0,
+      "durationSeconds": 0.0,
+      "result": "[plan-check] plan.md: 1 call path, 8 lines, 2 screens, 13 parts, 1 state block (7 states). Every cited file and line checks out."
+    },
+    {
+      "what": "Backend full test suite",
+      "command": "cd backend && uv run pytest",
+      "source": "derived",
+      "exitCode": 0,
+      "durationSeconds": 3.6,
+      "result": "    from starlette.testclient import TestClient as TestClient  # noqa · -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html · 167 passed, 1 warning in 2.38s",
+      "commit": "9698a6f",
+      "tree": "e946a941ea6938f2f330c4a05deabb37fc4fff6f"
+    },
+    {
+      "what": "Repository integrity checks",
+      "command": "python3 -m unittest discover -s checks/tests -v",
+      "source": "derived",
+      "exitCode": 0,
+      "durationSeconds": 0.1,
+      "result": "---------------------------------------------------------------------- · Ran 4 tests in 0.002s · OK",
+      "commit": "9698a6f",
+      "tree": "f09d7dae7bc3ed70e87be18f23f857f2e6400998"
+    },
+    {
+      "what": "Whitespace and patch validation",
+      "command": "git diff --check",
+      "source": "derived",
+      "exitCode": 0,
+      "durationSeconds": 0.0,
+      "result": "no output",
+      "commit": "9698a6f",
+      "tree": "3f464e4a44628ea988ab755877b5a9e9970e8681"
+    },
+    {
+      "what": "Backend full test suite (final)",
+      "command": "cd backend && uv run pytest",
+      "source": "derived",
+      "exitCode": 0,
+      "durationSeconds": 4.6,
+      "result": "    from starlette.testclient import TestClient as TestClient  # noqa · -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html · 167 passed, 1 warning in 2.98s",
+      "commit": "9698a6f",
+      "tree": "f4425a0369ee793969eb01941452e150209704c4"
+    },
+    {
+      "what": "Final diff and whitespace checks",
+      "command": "git diff --check && ! rg -n '[[:blank:]]+$' backend/evaluation/vibevoice backend/tests/test_evaluation.py backend/tests/test_evaluation_comparison.py backend/tests/test_evaluation_inspection.py backend/tests/test_evaluation_web.py capabilities/vibevoice-evaluation specs/001-vibevoice-evaluation living-specs.yml specs/README.md",
+      "source": "derived",
+      "exitCode": 0,
+      "durationSeconds": 0.0,
+      "result": "no output",
+      "commit": "9698a6f",
+      "tree": "bf8995087a9de5eb4ee825dcd51ec6f11ff1f96b"
+    }
+  ],
+  "planBlocks": [
+    "calls",
+    "states",
+    "screens"
+  ],
+  "decisions": [
+    {
+      "decision": "Treat VibeVoice-TTS-1.5B and VibeVoice-Realtime-0.5B as the two candidates, but make no claim that either language or implementation is usable without verification.",
+      "why": "Official sources report the 1.5B code removed and German support unqualified; Realtime German is experimental.",
+      "rejected": "Assume both candidates can be run for both English and German.",
+      "by": "agent",
+      "at": "2026-11-15T07:33:39.700Z"
+    },
+    {
+      "decision": "Keep model execution behind approved local adapters and out of the production backend environment; do not download or install automatically.",
+      "why": "Exact implementation, dependency, model, voice, terms, and target capacity require review and approval first.",
+      "rejected": "Add model runtimes to the backend lockfile or let the evaluator fetch assets.",
+      "by": "agent",
+      "at": "2026-11-15T07:33:39.700Z"
+    },
+    {
+      "decision": "Use the existing authenticated local speech endpoint as the baseline.",
+      "why": "It preserves the existing speech contract and avoids duplicating its macOS voice and audio behavior.",
+      "rejected": "Call macOS say directly or add a production VibeVoice route.",
+      "by": "agent",
+      "at": "2026-11-15T07:33:39.700Z"
+    },
+    {
+      "decision": "Use a loopback-only rating UI and local JSON report with operator-supplied sample texts and output path.",
+      "why": "It supports private listening and durable evidence without a hosted service or checked-in private artifacts.",
+      "rejected": "Upload results or commit a sample corpus.",
+      "by": "agent",
+      "at": "2026-11-15T07:33:39.700Z"
+    },
+    {
+      "decision": "Measure each candidate machine rather than infer suitability from model size or upstream examples.",
+      "why": "Upstream reports are not qualification of the actual machines, especially for platform/runtime requirements.",
+      "rejected": "Treat upstream benchmarks or parameter count as proof of feasibility.",
+      "by": "agent",
+      "at": "2026-11-15T07:33:39.700Z"
+    },
+    {
+      "decision": "Require exact language-tag matches and a baseline on the same machine for every candidate configuration.",
+      "why": "This prevents pairing samples or machines that do not provide a valid comparison.",
+      "rejected": "Accept language-group-only matches or a baseline from another machine.",
+      "by": "agent",
+      "at": "2026-11-15T10:06:44.081Z"
+    }
+  ],
+  "concerns": [
+    {
+      "note": "plan-blocks.py could not supply call/state/screen grammar because its shipped part templates and project node overrides are missing. The plan blocks were authored manually and validated with check_plan.py --strict.",
+      "step": "plan",
+      "kind": "tooling"
+    },
+    {
+      "note": "Companion registry and path-resolution helper scripts were absent, so capability registration and index updates were made manually.",
+      "step": "implement",
+      "kind": "tooling"
+    },
+    {
+      "note": "memory-store is not initialized for this workspace, so import/export was unavailable and no memory data changed.",
+      "step": "implement",
+      "kind": "tooling"
+    }
+  ],
+  "step_summaries": {
+    "plan": {
+      "summary": "Planned a standalone, private VibeVoice comparison harness with explicit permission gates and local reporting.",
+      "key_finding": "The official 1.5B implementation is disabled and German support is not qualified for either candidate, so unavailable comparisons must remain explicit rather than be substituted."
+    },
+    "tasks": {
+      "summary": "Generated 18 tasks across Setup, Foundational, three user-story phases, and Polish; added story-specific files and tests, explicit dependency waves, and unique phase ownership."
+    },
+    "specify": {
+      "summary": "Completed the private VibeVoice evaluator and project-wide validation without running candidate models or inspecting target hardware."
+    }
+  },
+  "approach": "Implement an optional standalone evaluator under backend/evaluation/vibevoice. Validate private inputs and terms, inspect the target, run only approved local adapters against the existing local speech API, and preserve paired audio and results in an owner-only local report. Review the report through a loopback-only UI; leave production service behavior and dependencies unchanged, and record unavailable or unsupported comparisons explicitly.",
+  "currentTask": null,
+  "task_summaries": {
+    "T001": {
+      "status": "DONE",
+      "did": "Created the isolated evaluator package marker.",
+      "files": [
+        "backend/evaluation/vibevoice/__init__.py"
+      ]
+    },
+    "T002": {
+      "status": "DONE",
+      "did": "Added contract-aligned tests for report validation and persistence, owner-only paths, loopback-only hosting, origin/session checks, run-scoped access, and result-ID audio lookup.",
+      "files": [
+        "backend/tests/test_evaluation.py"
+      ]
+    },
+    "T003": {
+      "status": "DONE",
+      "did": "Implemented typed evaluation record shapes, contract validation, permission references, explicit missing-result reasons, and atomic owner-only JSON persistence.",
+      "files": [
+        "backend/evaluation/vibevoice/report.py"
+      ]
+    },
+    "T004": {
+      "status": "DONE",
+      "did": "Implemented a loopback-only local API with private run/report responses, same-origin session-token checks, completed result-ID audio access, listened-before-rating validation, and local decision persistence.",
+      "files": [
+        "backend/evaluation/vibevoice/server.py"
+      ]
+    },
+    "T005": {
+      "status": "DONE",
+      "did": "Added manifest, permission-blocker, authenticated baseline, approved-adapter, candidate-identity, and stopped-run comparison tests.",
+      "files": [
+        "backend/tests/test_evaluation_comparison.py"
+      ]
+    },
+    "T006": {
+      "status": "DONE",
+      "did": "Implemented strict manifest and terms validation, paired authenticated baseline and approved-adapter execution, and timeout- and output-bounded subprocesses with explicit blockers.",
+      "files": [
+        "backend/evaluation/vibevoice/runner.py"
+      ]
+    },
+    "T007": {
+      "status": "DONE",
+      "did": "Added the local paired-listening page, private session-token injection, and sanitized run data for playback and individual ratings.",
+      "files": [
+        "backend/evaluation/vibevoice/listening.html",
+        "backend/evaluation/vibevoice/server.py",
+        "backend/tests/test_evaluation.py"
+      ]
+    },
+    "T008": {
+      "status": "DONE",
+      "did": "Added deterministic inspection tests for read-only machine and chosen-volume probes, unresolved terms, explicit approval blockers, and missing measurements.",
+      "files": [
+        "backend/tests/test_evaluation_inspection.py"
+      ]
+    },
+    "T009": {
+      "status": "DONE",
+      "did": "Implemented injected read-only machine, volume, memory, and adapter probes with terms/run-approval blockers and explicit missing resource measurements; generation timing is captured per result by the runner.",
+      "files": [
+        "backend/evaluation/vibevoice/inspection.py",
+        "backend/evaluation/vibevoice/runner.py"
+      ]
+    },
+    "T010": {
+      "status": "DONE",
+      "did": "Added tests for inspect/run/serve CLI boundaries, private summary evidence, missing measurements, explicit run approval, and all four owner decisions.",
+      "files": [
+        "backend/tests/test_evaluation_web.py"
+      ]
+    },
+    "T011": {
+      "status": "DONE",
+      "did": "Implemented inspect, explicitly approved run, and loopback serve CLI commands with private manifest validation, protected baseline credential loading, and explicit adapter registration.",
+      "files": [
+        "backend/evaluation/vibevoice/cli.py"
+      ]
+    },
+    "T012": {
+      "status": "DONE",
+      "did": "Added the private evidence summary with individual results, averages, missing-data reasons, measurements, and recordable owner decisions without a score threshold.",
+      "files": [
+        "backend/evaluation/vibevoice/summary.html",
+        "backend/evaluation/vibevoice/server.py",
+        "backend/tests/test_evaluation_web.py"
+      ]
+    },
+    "T013": {
+      "status": "DONE",
+      "did": "Documented private manifest and terms requirements, read-only inspection, approved adapters, local review, and removal without production changes.",
+      "files": [
+        "backend/evaluation/vibevoice/README.md"
+      ]
+    },
+    "T014": {
+      "status": "DONE",
+      "did": "Added the draft living capability specification for the isolated private evaluator, permission gates, local reporting, inspection boundaries, and owner decisions.",
+      "files": [
+        "capabilities/vibevoice-evaluation/vibevoice-evaluation.spec.md"
+      ]
+    },
+    "T015": {
+      "status": "DONE",
+      "did": "Mapped evaluator requirements to deterministic tests and recorded that real model, rights, target-machine, and native performance qualification were not performed.",
+      "files": [
+        "capabilities/vibevoice-evaluation/vibevoice-evaluation.coverage.md"
+      ]
+    },
+    "T016": {
+      "status": "DONE",
+      "did": "Registered the private VibeVoice evaluator source and tests as a separate living capability.",
+      "files": [
+        "living-specs.yml"
+      ]
+    },
+    "T017": {
+      "status": "DONE",
+      "did": "Added the private evaluator capability and its qualification boundary to the specification index.",
+      "files": [
+        "specs/README.md"
+      ]
+    },
+    "T018": {
+      "status": "DONE",
+      "did": "Ran the complete backend suite, repository integrity checks, and final whitespace validation; no model or target-machine action was performed.",
+      "files": [
+        "backend/tests/test_api.py",
+        "backend/tests/test_evaluation_comparison.py",
+        "backend/tests/test_evaluation_web.py"
+      ]
+    }
+  },
+  "last_action": "Final backend suite, repository integrity tests, and whitespace checks passed; all 18 implementation tasks are closed."
 }

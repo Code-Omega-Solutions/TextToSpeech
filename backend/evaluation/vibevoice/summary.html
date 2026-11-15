@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="session-token" content="__SESSION_TOKEN__">
+  <title>Private evaluation evidence</title>
+  <style nonce="__CSP_NONCE__">
+    :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
+    body { margin: 0 auto; max-width: 76rem; padding: 1.5rem; }
+    section { border: 1px solid #8886; border-radius: .5rem; margin: 1rem 0; padding: 1rem; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border-bottom: 1px solid #8886; padding: .5rem; text-align: left; vertical-align: top; }
+    label { display: block; margin: .7rem 0; }
+    textarea { box-sizing: border-box; min-height: 5rem; width: 100%; }
+    button, select, textarea { font: inherit; max-width: 100%; }
+    .status { min-height: 1.5em; }
+  </style>
+</head>
+<body>
+  <main id="results-summary">
+    <h1>Private evaluation evidence</h1>
+    <p><a href="/listening-review">Open paired listening review</a></p>
+    <p id="page-status" role="status" aria-live="polite">Loading this run's private evidence…</p>
+    <section>
+      <h2>Average ratings by language and configuration</h2>
+      <table>
+        <thead><tr><th>Language</th><th>Configuration</th><th>Average</th><th>Ratings</th></tr></thead>
+        <tbody id="averages"></tbody>
+      </table>
+    </section>
+    <section>
+      <h2>Individual results and missing data</h2>
+      <table>
+        <thead><tr><th>Sample</th><th>Configuration</th><th>Status</th><th>Generation time (ms)</th><th>Rating</th><th>Observation or reason</th></tr></thead>
+        <tbody id="results"></tbody>
+      </table>
+    </section>
+    <section>
+      <h2>Machine inspection</h2>
+      <div id="inspections"></div>
+    </section>
+    <section>
+      <h2>Configuration measurements</h2>
+      <div id="measurements"></div>
+    </section>
+    <section>
+      <h2>Comparison issues</h2>
+      <ul id="issues"></ul>
+    </section>
+    <section>
+      <h2>Product-owner decision</h2>
+      <p id="decision"></p>
+      <form id="decision-form">
+        <label>Outcome
+          <select name="outcome" required>
+            <option value="" selected disabled>Choose an outcome</option>
+            <option value="retain">Retain</option>
+            <option value="partially_retain">Partially retain</option>
+            <option value="remove">Remove</option>
+            <option value="seek_alternative">Seek an alternative</option>
+          </select>
+        </label>
+        <label>Rationale
+          <textarea name="rationale" maxlength="4000" required></textarea>
+        </label>
+        <button type="submit">Save decision</button>
+        <p id="decision-status" class="status" role="status" aria-live="polite"></p>
+      </form>
+    </section>
+  </main>
+  <script nonce="__CSP_NONCE__">
+    (() => {
+      const token = document.querySelector('meta[name="session-token"]').content;
+      const status = document.getElementById("page-status");
+      const text = value => value == null || value === "" ? "Not recorded" : String(value);
+
+      async function api(path, options = {}) {
+        const headers = new Headers(options.headers || {});
+        headers.set("X-Session-Token", token);
+        const response = await fetch(path, { ...options, headers });
+        if (!response.ok) {
+          const detail = await response.text();
+          throw new Error(detail || `Request failed (${response.status})`);
+        }
+        return response;
+      }
+
+      function cell(row, value) {
+        const item = document.createElement("td");
+        item.textContent = text(value);
+        row.append(item);
+      }
+
+      function emptyRow(tableBody, columnCount, message) {
+        const row = document.createElement("tr");
+        const cell = document.createElement("td");
+        cell.colSpan = columnCount;
+        cell.textContent = message;
+        row.append(cell);
+        tableBody.append(row);
+      }
+
+      function render(report) {
+        const configurations = new Map(report.configurations.map(item =>
+          [item.configuration_id, item]
+        ));
+        const samples = new Map(report.samples.map(item => [item.sample_id, item]));
+        const groups = new Map();
+        for (const result of report.results) {
+          const configuration = configurations.get(result.configuration_id);
+          const sample = samples.get(result.sample_id);
+          if (result.rating == null || !configuration || !sample) continue;
+          const key = `${sample.language}\u0000${configuration.configuration_id}`;
+          const group = groups.get(key) || {
+            language: sample.language,
+            configuration: configuration.configuration_id,
+            total: 0,
+            count: 0
+          };
+          group.total += result.rating;
+          group.count += 1;
+          groups.set(key, group);
+        }
+        for (const group of groups.values()) {
+          const row = document.createElement("tr");
+          cell(row, group.language);
+          cell(row, group.configuration);
+          cell(row, (group.total / group.count).toFixed(2));
+          cell(row, group.count);
+          document.getElementById("averages").append(row);
+        }
+        if (groups.size === 0) {
+          emptyRow(document.getElementById("averages"), 4, "No ratings have been recorded.");
+        }
+
+        for (const result of report.results) {
+          const row = document.createElement("tr");
+          const sample = samples.get(result.sample_id);
+          const configuration = configurations.get(result.configuration_id);
+          cell(row, sample ? `${sample.sample_id} · ${sample.language}` : result.sample_id);
+          cell(row, configuration
+            ? `${configuration.model_variant || configuration.method} · ${configuration.voice} · ${configuration.language} · ${configuration.machine_id}`
+            : result.configuration_id);
+          cell(row, result.status);
+          cell(row, result.generation_time_ms);
+          cell(row, result.rating);
+          cell(row, result.observation || result.reason);
+          document.getElementById("results").append(row);
+        }
+        if (report.results.length === 0) {
+          emptyRow(document.getElementById("results"), 6, "No results have been recorded.");
+        }
+
+        for (const inspection of report.inspections) {
+          const item = document.createElement("p");
+          item.textContent = [
+            inspection.machine_id,
+            inspection.platform,
+            inspection.architecture,
+            `Storage bytes: ${text(inspection.available_storage_bytes)}`,
+            `Memory bytes: ${text(inspection.available_memory_bytes)}`,
+            `Inspected: ${text(inspection.inspected_at)}`,
+            ...Object.values(inspection.limitations || {})
+          ].join(" · ");
+          document.getElementById("inspections").append(item);
+        }
+        if (report.inspections.length === 0) {
+          document.getElementById("inspections").textContent =
+            "No machine inspections have been recorded.";
+        }
+
+        for (const measurement of report.measurements) {
+          const item = document.createElement("p");
+          item.textContent = [
+            measurement.configuration_id,
+            `Installed footprint bytes: ${text(measurement.installed_footprint_bytes)}`,
+            `Peak memory bytes: ${text(measurement.peak_memory_bytes)}`,
+            ...Object.entries(measurement.missing_measurement_reasons || {})
+              .map(([name, reason]) => `${name}: ${reason}`)
+          ].join(" · ");
+          document.getElementById("measurements").append(item);
+        }
+        if (report.measurements.length === 0) {
+          document.getElementById("measurements").textContent =
+            "No configuration measurements have been recorded.";
+        }
+
+        for (const issue of report.issues) {
+          const item = document.createElement("li");
+          item.textContent = `${issue.category}: ${issue.reason}`;
+          document.getElementById("issues").append(item);
+        }
+        if (report.issues.length === 0) {
+          const item = document.createElement("li");
+          item.textContent = "No comparison issues have been recorded.";
+          document.getElementById("issues").append(item);
+        }
+        const decision = report.decision;
+        document.getElementById("decision").textContent = decision
+          ? `${decision.outcome}: ${decision.rationale}`
+          : "No product-owner decision has been recorded.";
+        status.textContent = `Loaded run ${report.run_id} (${report.state}).`;
+      }
+
+      document.getElementById("decision-form").addEventListener("submit", async event => {
+        event.preventDefault();
+        const form = event.currentTarget;
+        const button = form.querySelector("button");
+        const message = document.getElementById("decision-status");
+        button.disabled = true;
+        try {
+          const response = await api("/api/decision", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              outcome: form.elements.outcome.value,
+              rationale: form.elements.rationale.value
+            })
+          });
+          const decision = await response.json();
+          document.getElementById("decision").textContent =
+            `${decision.outcome}: ${decision.rationale}`;
+          message.textContent = "Decision saved.";
+        } catch (error) {
+          message.textContent = error.message;
+        } finally {
+          button.disabled = false;
+        }
+      });
+
+      api("/api/report")
+        .then(response => response.json())
+        .then(render)
+        .catch(error => { status.textContent = `Could not load this run: ${error.message}`; });
+    })();
+  </script>
+</body>
+</html>

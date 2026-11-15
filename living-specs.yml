@@ -18,3 +18,7 @@ capabilities:
     spec: capabilities/project-licensing/project-licensing.spec.md
   - name: backend-prerequisite-management
     match: ["backend/prerequisites.py", "backend/setup.py", "backend/service/**", "backend/tests/test_prerequisites.py", "backend/tests/test_setup.py", "backend/tests/test_service_example.py"]
+    spec: capabilities/backend-prerequisite-management/backend-prerequisite-management.spec.md
+  - name: vibevoice-evaluation
+    match: ["backend/evaluation/vibevoice/**", "backend/tests/test_evaluation.py", "backend/tests/test_evaluation_comparison.py", "backend/tests/test_evaluation_inspection.py", "backend/tests/test_evaluation_web.py"]
+    spec: capabilities/vibevoice-evaluation/vibevoice-evaluation.spec.md

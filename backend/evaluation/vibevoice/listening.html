@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="session-token" content="__SESSION_TOKEN__">
+  <title>Private paired listening review</title>
+  <style nonce="__CSP_NONCE__">
+    :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
+    body { margin: 0 auto; max-width: 70rem; padding: 1.5rem; }
+    article { border: 1px solid #8886; border-radius: .5rem; margin: 1rem 0; padding: 1rem; }
+    .pair { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr)); }
+    .configuration { border: 1px solid #8886; border-radius: .35rem; padding: .8rem; }
+    label { display: block; margin: .6rem 0; }
+    input, textarea, button { font: inherit; max-width: 100%; }
+    textarea { box-sizing: border-box; min-height: 4rem; width: 100%; }
+    .status { min-height: 1.5em; }
+  </style>
+</head>
+<body>
+  <main id="listening-review">
+    <h1>Private paired listening review</h1>
+    <p>Listen to each available configuration for the same permitted sample, then record an individual rating and observation.</p>
+    <p id="page-status" role="status" aria-live="polite">Loading this run's private results…</p>
+    <div id="samples"></div>
+  </main>
+  <script nonce="__CSP_NONCE__">
+    (() => {
+      const token = document.querySelector('meta[name="session-token"]').content;
+      const status = document.getElementById("page-status");
+      const sampleList = document.getElementById("samples");
+
+      async function api(path, options = {}) {
+        const headers = new Headers(options.headers || {});
+        headers.set("X-Session-Token", token);
+        const response = await fetch(path, { ...options, headers });
+        if (!response.ok) {
+          const detail = await response.text();
+          throw new Error(detail || `Request failed (${response.status})`);
+        }
+        return response;
+      }
+
+      function textElement(tag, value) {
+        const element = document.createElement(tag);
+        element.textContent = value;
+        return element;
+      }
+
+      function addResult(container, configuration, result) {
+        const panel = document.createElement("section");
+        panel.className = "configuration";
+        const identity = [
+          configuration.model_variant || configuration.method,
+          configuration.voice,
+          configuration.language,
+          configuration.machine_id
+        ].join(" · ");
+        panel.append(textElement("h3", identity));
+
+        if (!result || result.status !== "completed") {
+          panel.append(textElement("p", result
+            ? `${result.status}: ${result.reason || "No reason recorded."}`
+            : "No comparison result was recorded."));
+          container.append(panel);
+          return;
+        }
+
+        const audio = document.createElement("audio");
+        audio.controls = true;
+        audio.preload = "none";
+        const message = textElement("p", "");
+        message.className = "status";
+        const playButton = document.createElement("button");
+        playButton.type = "button";
+        playButton.textContent = "Load and play audio";
+        playButton.addEventListener("click", async () => {
+          playButton.disabled = true;
+          try {
+            const response = await api(`/api/audio/${encodeURIComponent(result.sample_result_id)}`);
+            audio.src = URL.createObjectURL(await response.blob());
+            await audio.play();
+          } catch (error) {
+            message.textContent = error.message;
+          } finally {
+            playButton.disabled = false;
+          }
+        });
+
+        const form = document.createElement("form");
+        const ratingLabel = textElement("label", "Rating (1–10)");
+        const rating = document.createElement("input");
+        rating.type = "number";
+        rating.name = "rating";
+        rating.min = "1";
+        rating.max = "10";
+        rating.step = "1";
+        rating.required = true;
+        ratingLabel.append(rating);
+        const observationLabel = textElement("label", "Listening observation");
+        const observation = document.createElement("textarea");
+        observation.name = "observation";
+        observation.maxLength = 4000;
+        observationLabel.append(observation);
+        const save = document.createElement("button");
+        save.type = "submit";
+        save.textContent = "Save rating";
+        form.append(ratingLabel, observationLabel, save, message);
+        form.addEventListener("submit", async event => {
+          event.preventDefault();
+          save.disabled = true;
+          try {
+            await api(`/api/ratings/${encodeURIComponent(result.sample_result_id)}`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                rating: Number(rating.value),
+                observation: observation.value
+              })
+            });
+            message.textContent = "Rating saved.";
+          } catch (error) {
+            message.textContent = error.message;
+          } finally {
+            save.disabled = false;
+          }
+        });
+
+        panel.append(playButton, audio, form);
+        container.append(panel);
+      }
+
+      async function loadRun() {
+        try {
+          const response = await api("/api/run");
+          const run = await response.json();
+          for (const sample of run.samples) {
+            const article = document.createElement("article");
+            article.append(textElement("h2", `${sample.sample_id} · ${sample.language}`));
+            article.append(textElement("p", sample.text));
+            article.append(textElement("p", `Source: ${sample.attribution}`));
+            const pair = document.createElement("div");
+            pair.className = "pair";
+            for (const configuration of run.configurations) {
+              const result = run.results.find(item =>
+                item.sample_id === sample.sample_id &&
+                item.configuration_id === configuration.configuration_id
+              );
+              addResult(pair, configuration, result);
+            }
+            article.append(pair);
+            sampleList.append(article);
+          }
+          status.textContent = run.samples.length
+            ? `Loaded private run ${run.run_id}.`
+            : "This run has no samples to review.";
+        } catch (error) {
+          status.textContent = `Could not load this run: ${error.message}`;
+        }
+      }
+
+      loadRun();
+    })();
+  </script>
+</body>
+</html>

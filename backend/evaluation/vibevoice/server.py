@@ -91,7 +91,14 @@ def create_app(report_path: str | Path, *, session_token: str) -> FastAPI:
 
     def authorize(request: Request, supplied_token: str | None) -> None:
         origin = request.headers.get("origin")
-        if origin is None or not _is_same_origin(origin, str(request.base_url)):
+        if origin is None:
+            same_origin_safe_fetch = (
+                request.method == "GET"
+                and request.headers.get("sec-fetch-site") == "same-origin"
+            )
+            if not same_origin_safe_fetch:
+                raise HTTPException(status_code=403, detail="A same-origin request is required.")
+        elif not _is_same_origin(origin, str(request.base_url)):
             raise HTTPException(status_code=403, detail="A same-origin request is required.")
         if supplied_token is None or not hmac.compare_digest(
             supplied_token, app.state.session_token

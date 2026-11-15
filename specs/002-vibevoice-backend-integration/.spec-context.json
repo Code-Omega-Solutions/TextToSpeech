@@ -1,0 +1,345 @@
+{
+  "workflow": "companion",
+  "specName": "VibeVoice Backend Integration",
+  "branch": "main",
+  "currentStep": "tasks",
+  "status": "ready-to-implement",
+  "history": [
+    {
+      "step": "specify",
+      "substep": null,
+      "kind": "start",
+      "by": "extension",
+      "at": "2026-11-15T15:44:56.580Z"
+    },
+    {
+      "step": "specify",
+      "substep": null,
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-15T15:48:41.202Z"
+    },
+    {
+      "step": "plan",
+      "substep": null,
+      "kind": "start",
+      "by": "extension",
+      "at": "2026-11-15T15:51:19.178Z"
+    },
+    {
+      "step": "plan",
+      "substep": null,
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-15T15:58:29.732Z"
+    },
+    {
+      "step": "plan",
+      "substep": "research",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-15T15:58:45.658Z"
+    },
+    {
+      "step": "plan",
+      "substep": "design",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-15T16:02:02.801Z"
+    },
+    {
+      "step": "tasks",
+      "substep": null,
+      "kind": "start",
+      "by": "extension",
+      "at": "2026-11-15T16:02:14.836Z"
+    },
+    {
+      "step": "tasks",
+      "substep": "generate",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-15T16:10:46.144Z"
+    },
+    {
+      "step": "tasks",
+      "substep": null,
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-15T16:10:46.358Z"
+    }
+  ],
+  "telemetryInstanceId": "e5a95d64-76b2-4305-8ead-1c0d825b1143",
+  "coverage": {
+    "FR-001": {
+      "title": "The service MUST allow an operator to select the configured default backend from VibeVoice and the existing macOS speech backend.",
+      "tasks": [
+        "T004",
+        "T010",
+        "T013",
+        "T016",
+        "T017"
+      ]
+    },
+    "FR-002": {
+      "title": "A speech request MUST be able to override the configured default backend when that backend is enabled.",
+      "tasks": [
+        "T014",
+        "T015",
+        "T016",
+        "T017"
+      ]
+    },
+    "FR-003": {
+      "title": "The service MUST use VibeVoice Realtime 0.5B for the reviewed English and German presets.",
+      "tasks": [
+        "T011",
+        "T012",
+        "T020",
+        "T033"
+      ]
+    },
+    "FR-004": {
+      "title": "With VibeVoice selected, the default English voice MUST be the reviewed male Carter preset and the default German voice MUST be the reviewed female Spk1 preset.",
+      "tasks": [
+        "T014",
+        "T016",
+        "T017"
+      ]
+    },
+    "FR-005": {
+      "title": "The service MUST allow the reviewed German male Spk0 preset as an optional voice and MUST reject unknown or language-incompatible voice selections before synthesis.",
+      "tasks": [
+        "T014",
+        "T016",
+        "T017"
+      ]
+    },
+    "FR-006": {
+      "title": "Both backends MUST preserve the existing MP3 and WAV response formats, media types, speed behavior, and bounded request and output limits.",
+      "tasks": [
+        "T006",
+        "T008",
+        "T013",
+        "T021",
+        "T032",
+        "T033"
+      ]
+    },
+    "FR-007": {
+      "title": "Both backends MUST use the existing authentication and safe error behavior; VibeVoice MUST NOT bypass request validation, cancellation, or output-size limits.",
+      "tasks": [
+        "T006",
+        "T008",
+        "T015",
+        "T017",
+        "T021",
+        "T032"
+      ]
+    },
+    "FR-008": {
+      "title": "The service MUST load VibeVoice only after a request has been admitted and MUST NOT download model assets during service startup or request handling.",
+      "tasks": [
+        "T005",
+        "T009",
+        "T011",
+        "T012",
+        "T013"
+      ]
+    },
+    "FR-009": {
+      "title": "English and German VibeVoice requests MUST share one resident set of model weights rather than loading separate language copies.",
+      "tasks": [
+        "T005",
+        "T011",
+        "T012",
+        "T020"
+      ]
+    },
+    "FR-010": {
+      "title": "The serving model MUST load only components required to generate speech and MUST release its voice-prompt caches whenever it yields memory.",
+      "tasks": [
+        "T005",
+        "T007",
+        "T011",
+        "T012",
+        "T020"
+      ]
+    },
+    "FR-011": {
+      "title": "VibeVoice MUST have lower resource priority than image-generation and Ollama workloads and MUST yield memory when a trustworthy system signal indicates that those workloads need it.",
+      "tasks": [
+        "T007",
+        "T012",
+        "T019",
+        "T020",
+        "T033"
+      ]
+    },
+    "FR-012": {
+      "title": "When VibeVoice cannot safely start or continue, the service MUST release its model and prompt-cache allocations and use macOS speech for the request at most once when that backend is available.",
+      "tasks": [
+        "T006",
+        "T013",
+        "T019",
+        "T020",
+        "T021"
+      ]
+    },
+    "FR-013": {
+      "title": "A fallback MUST discard partial VibeVoice audio and MUST make the backend that actually generated the response observable to the caller and operator.",
+      "tasks": [
+        "T006",
+        "T008",
+        "T013",
+        "T015",
+        "T021",
+        "T022"
+      ]
+    },
+    "FR-014": {
+      "title": "VibeVoice requests MUST be bounded so concurrent work cannot create duplicate model instances or an unbounded waiting queue.",
+      "tasks": [
+        "T005",
+        "T007",
+        "T011",
+        "T012",
+        "T019"
+      ]
+    },
+    "FR-015": {
+      "title": "Failure, disabling, eviction, or missing assets for VibeVoice MUST NOT prevent service startup or macOS speech readiness when the macOS prerequisites are available.",
+      "tasks": [
+        "T009",
+        "T023",
+        "T024",
+        "T025"
+      ]
+    },
+    "FR-016": {
+      "title": "Operational diagnostics MUST identify backend, locale, response format, and safe failure reason without logging speech text, credentials, or private model paths.",
+      "tasks": [
+        "T006",
+        "T008",
+        "T013",
+        "T022"
+      ]
+    },
+    "FR-017": {
+      "title": "Deployment MUST verify the model, runtime, voice, and dependency terms, artifact provenance, and supported host requirements before installing or distributing them.",
+      "tasks": [
+        "T002",
+        "T003",
+        "T030",
+        "T031",
+        "T033"
+      ]
+    }
+  },
+  "size": "oversized",
+  "classification": {
+    "projectedFiles": 14,
+    "projectedTasks": 22,
+    "scopeSignal": "larger",
+    "verdict": "oversized"
+  },
+  "expectations": [
+    "VibeVoice 1.5B and additional languages are outside scope",
+    "Implementation, model installation, deployment, and changes to other inference services are not authorized by this specification"
+  ],
+  "context": [
+    "area: backend speech synthesis, request handling, and runtime resource admission",
+    "living spec: backend-synthesis reviewed manually; Companion living-spec recorder script is unavailable in this checkout",
+    "living spec: project-licensing reviewed manually for model and dependency release gates",
+    "constraint: preserve authenticated speech generation and existing MP3/WAV behavior",
+    "constraint: TTS yields memory to higher-priority inference and does not change image-generation or Ollama services",
+    "evidence: private review favored Carter for English and Spk1 for German; Spk0 remains an optional German preset",
+    "evidence: one shared warm model used about 7.28 GiB peak process RSS before unused-component optimization"
+  ],
+  "intent": "Integrate VibeVoice Realtime 0.5B as a selectable low-priority backend with reviewed voice defaults, memory yielding, and macOS say fallback.",
+  "planBlocks": [
+    "calls",
+    "states"
+  ],
+  "planBlocksPicked": [
+    "calls",
+    "states"
+  ],
+  "verified": [
+    {
+      "what": "plan blocks check out",
+      "command": "python3 .specify/extensions/companion/scripts/check_plan.py --feature-dir specs/002-vibevoice-backend-integration --strict",
+      "source": "derived",
+      "exitCode": 0,
+      "durationSeconds": 0.0,
+      "result": "[plan-check] plan.md: 2 call paths, 8 lines, 1 state block (6 states). Every cited file and line checks out."
+    }
+  ],
+  "decisions": [
+    {
+      "decision": "Run VibeVoice in one optional, lazy, persistent child process and terminate that process to release its allocations.",
+      "why": "The warm benchmark benefits from retaining one shared model, while process exit is the reliable way to release PyTorch and MPS allocations without loading dependencies into the API process.",
+      "rejected": "Reload a one-shot subprocess per request or load model libraries inside the API process.",
+      "by": "agent",
+      "at": "2026-11-15T16:02:02.938Z"
+    },
+    {
+      "decision": "Require configured worker peak-memory and higher-priority reserve budgets; deny or evict VibeVoice when the available-memory probe cannot honor them.",
+      "why": "The measured full-model peak is not a safe universal threshold and memory_pressure -Q is not a priority request signal. A configured reserve is the conservative gate; target-host qualification must confirm it protects other inference.",
+      "rejected": "Use a fixed threshold or keep VibeVoice resident without a verifiable capacity gate.",
+      "by": "agent",
+      "at": "2026-11-15T16:02:02.938Z"
+    },
+    {
+      "decision": "Construct and validate only the acoustic decoder needed for speech generation.",
+      "why": "Inspected upstream generation calls the tokenizer decode path, while the tokenizer constructor also allocates an unused encoder whose checkpoint tensors were newly initialized.",
+      "rejected": "Load the full acoustic tokenizer and remove the encoder after allocation.",
+      "by": "agent",
+      "at": "2026-11-15T16:02:02.938Z"
+    },
+    {
+      "decision": "Return bounded WAV artifacts from the worker and keep format conversion in the backend.",
+      "why": "The existing backend already validates and converts WAV/MP3, so worker-side encoding would duplicate behavior and dependencies.",
+      "rejected": "Add MP3 encoding and format-specific logic to the model worker.",
+      "by": "agent",
+      "at": "2026-11-15T16:02:02.938Z"
+    },
+    {
+      "decision": "Use a persistent JSON-lines protocol with request-scoped temporary WAV files.",
+      "why": "Framed JSON keeps protocol output distinct from audio while allowing a warm worker to handle multiple sequential requests.",
+      "rejected": "Restart for every request or stream unframed audio over worker stdout.",
+      "by": "agent",
+      "at": "2026-11-15T16:02:02.938Z"
+    },
+    {
+      "decision": "Keep model runtime dependencies in a pinned optional worker environment and gate installation on license and provenance review.",
+      "why": "Deployments using only macOS speech should not inherit the heavyweight model runtime or its release obligations.",
+      "rejected": "Add PyTorch, Transformers, and VibeVoice dependencies to the core backend environment.",
+      "by": "agent",
+      "at": "2026-11-15T16:02:02.938Z"
+    },
+    {
+      "decision": "Remove prototype-only host artifacts only after integration passes target-host qualification, preserving aggregate evaluation evidence and any model cache still in use.",
+      "why": "The prototype remains an implementation reference and its evidence supports comparison until the integrated worker is verified.",
+      "rejected": "Delete evaluation materials before the replacement is proven or retain every generated artifact indefinitely.",
+      "by": "agent",
+      "at": "2026-11-15T16:02:02.938Z"
+    }
+  ],
+  "step_summaries": {
+    "plan": {
+      "summary": "Completed the oversized plan and design artifacts for the API, isolated worker, memory gate, audio contract, and gated prototype cleanup.",
+      "key_finding": "The decoder path avoids the unused acoustic encoder, but the memory policy still needs measured target-host reserve and eviction qualification."
+    },
+    "tasks": {
+      "summary": "Created 34 tasks across Setup, Foundational, four story phases, and gated Polish cleanup, with one phase owner per file."
+    }
+  },
+  "approach": "Run one optional persistent VibeVoice worker behind the existing authenticated speech API. Admit it only when a configured memory reserve can be honored, use a decoder-only loader, convert validated WAV through the existing audio path, and fall back to say when unavailable or yielded.",
+  "concerns": [
+    {
+      "note": "Available-memory reserve is a capacity-based proxy, not process-aware workload coordination. Qualify eviction latency and protection on the target host before enabling VibeVoice; otherwise keep it disabled."
+    }
+  ],
+  "workingBranch": "feature/vibevoice-backend-integration"
+}

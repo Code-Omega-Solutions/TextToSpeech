@@ -1,6 +1,6 @@
 # Feature Specification: Private VibeVoice Evaluation
 
-**Status**: Draft
+**Status**: Completed
 **Created**: 2026-11-15
 **Source**: Idea assessment `tts-ms-vibe-code-backend`
 
@@ -101,3 +101,44 @@ As the product owner, I want an isolated and removable prototype and an evidence
 - The product owner decides whether the result is worthwhile; no numeric rating threshold determines that decision.
 - Two-person conversation, production integration, automatic fallback, and comparisons with additional models are outside this evaluation.
 - Wikipedia is a proposed sample source. Individual text rights and attribution obligations remain to be checked before use.
+
+## Evaluation Outcome and Integration Decision
+
+The product owner completed the English and German listening reviews and selected
+VibeVoice Realtime 0.5B for backend integration.
+
+| Language and voice | Existing voice average | VibeVoice voice average |
+| --- | ---: | ---: |
+| English, male | Samantha: 5.60 | Carter: 7.40 |
+| German, female | Anna: 5.60 | Spk1: 7.60 |
+| German, male | Eddy: 1.00 | Spk0: 5.40 |
+
+Use Carter as the English default and Spk1 as the German default. Keep Spk0
+available as an optional German voice. These are the reviewed presets with the
+highest ratings for their language and gender grouping.
+
+A separate warm-process benchmark loaded one shared model and cached the English
+and both German voice prompts. It measured five samples per voice after one
+warm-up per voice. Mean generation times were 3.286 seconds for English, 3.832
+seconds for German female, and 3.095 seconds for German male. The corresponding
+real-time factors were 0.884, 0.913, and 0.942. Compared with the earlier
+per-sample cold-start runs, this was approximately 2.3–2.6 times faster, but
+still slower than macOS `say`.
+
+The one-process benchmark measured 7.28 GiB peak process RSS, 6.29 GiB peak
+MPS driver allocation, and 5.09 GiB current MPS allocation after generation.
+Available system memory fell from approximately 19.53 GiB to 12.71 GiB during
+the run. English and German use the same model weights, so a single shared
+instance is sufficient. The benchmark process exited after measurement.
+
+The model loader reported 276 newly initialized acoustic-tokenizer encoder
+tensors. The inspected streaming inference path decodes generated speech and
+does not use that encoder. The measured footprint includes it, so production
+integration should omit unused model components and verify the resulting
+memory use. German support remains experimental, and these short listening and
+performance samples do not qualify other hardware or workloads.
+
+The integration should allow an operator to select the speech backend, keep
+VibeVoice lower priority than other inference workloads, release its resident
+memory when needed, and fall back to `say` when VibeVoice cannot safely run.
+This decision does not change the evaluation tool into a production component.

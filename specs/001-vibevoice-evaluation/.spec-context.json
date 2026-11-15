@@ -494,6 +494,20 @@
       "rejected": "Accept language-group-only matches or a baseline from another machine.",
       "by": "agent",
       "at": "2026-11-15T10:06:44.081Z"
+    },
+    {
+      "decision": "Select VibeVoice Realtime 0.5B for backend integration with `say` as its resource-pressure fallback; use Carter for English and Spk1 for German by default, with Spk0 as an optional German preset.",
+      "why": "The VibeVoice voice averages were higher in all three reviewed comparisons, and the same model weights serve both languages.",
+      "rejected": "Keep the evaluator as the only VibeVoice use or load separate English and German model instances.",
+      "by": "agent",
+      "at": "2026-11-15T15:44:35.364Z"
+    },
+    {
+      "decision": "Exclude unused acoustic-tokenizer encoder components from the serving footprint and yield VibeVoice memory to higher-priority inference workloads.",
+      "why": "The inference path uses the tokenizer decoder, and the warm benchmark measured about 7.28 GiB peak process RSS for one full model process.",
+      "rejected": "Keep the full model resident regardless of other machine workloads.",
+      "by": "agent",
+      "at": "2026-11-15T15:44:35.364Z"
     }
   ],
   "concerns": [
@@ -511,6 +525,11 @@
       "note": "memory-store is not initialized for this workspace, so import/export was unavailable and no memory data changed.",
       "step": "implement",
       "kind": "tooling"
+    },
+    {
+      "note": "Model loading reported 276 newly initialized acoustic-tokenizer encoder tensors. The inspected inference path uses the decoder only, but the measured footprint included the unused encoder; remove it and validate output and memory before deployment.",
+      "step": "implement",
+      "kind": "model-loading"
     }
   ],
   "step_summaries": {
@@ -522,7 +541,7 @@
       "summary": "Generated 18 tasks across Setup, Foundational, three user-story phases, and Polish; added story-specific files and tests, explicit dependency waves, and unique phase ownership."
     },
     "specify": {
-      "summary": "Completed the private VibeVoice evaluator and project-wide validation without running candidate models or inspecting target hardware."
+      "summary": "Completed the private evaluation. Review ratings selected VibeVoice Realtime 0.5B for a lower-priority backend integration with memory yielding and `say` fallback."
     }
   },
   "approach": "Implement an optional standalone evaluator under backend/evaluation/vibevoice. Validate private inputs and terms, inspect the target, run only approved local adapters against the existing local speech API, and preserve paired audio and results in an owner-only local report. Review the report through a loopback-only UI; leave production service behavior and dependencies unchanged, and record unavailable or unsupported comparisons explicitly.",
@@ -662,5 +681,5 @@
       ]
     }
   },
-  "last_action": "Final backend suite, repository integrity tests, and whitespace checks passed; all 18 implementation tasks are closed."
+  "last_action": "Recorded English and German review ratings, warm latency and memory measurements, and the decision to integrate VibeVoice separately from the private evaluator."
 }

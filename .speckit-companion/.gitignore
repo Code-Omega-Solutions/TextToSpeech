@@ -1,0 +1,6 @@
+# Keep companion workflow files visible to the VS Code extension.
+*
+!process-create/
+!process-create/**/
+!process-create/**/*.md
+!.gitignore

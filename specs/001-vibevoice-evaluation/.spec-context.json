@@ -1,0 +1,90 @@
+{
+  "workflow": "companion",
+  "specName": "Private VibeVoice Evaluation",
+  "branch": "main",
+  "currentStep": "specify",
+  "status": "specified",
+  "history": [
+    {
+      "step": "specify",
+      "substep": null,
+      "kind": "start",
+      "by": "extension",
+      "at": "2026-11-15T07:19:36.282Z"
+    },
+    {
+      "step": "specify",
+      "substep": null,
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-15T07:20:39.477Z"
+    }
+  ],
+  "telemetryInstanceId": "421a5f25-c8d8-44aa-b4d0-e6d7fabb0abc",
+  "coverage": {
+    "FR-001": {
+      "title": "Offer an isolated optional VibeVoice comparison prototype."
+    },
+    "FR-002": {
+      "title": "Allow removal or disabling without changing the existing method."
+    },
+    "FR-003": {
+      "title": "Use the same five permitted texts per language across feasible configurations and baseline."
+    },
+    "FR-004": {
+      "title": "Support private listening and individual ratings for feasible English and German samples."
+    },
+    "FR-005": {
+      "title": "Report individual ratings, averages, and qualitative observations."
+    },
+    "FR-006": {
+      "title": "Identify each result’s model, voice, language, machine, and configuration."
+    },
+    "FR-007": {
+      "title": "Investigate both model variants and report unavailable or unauthorized implementations."
+    },
+    "FR-008": {
+      "title": "Report candidate-machine capacity, platform, requirements, and inspection time."
+    },
+    "FR-009": {
+      "title": "Record footprint, peak memory, and generation time or reasons for missing measurements."
+    },
+    "FR-010": {
+      "title": "Obtain approval before target-machine downloads, installation, or service changes."
+    },
+    "FR-011": {
+      "title": "Document and assess applicable terms before using models, dependencies, voices, or texts."
+    },
+    "FR-012": {
+      "title": "Report missing, failed, unsafe, and unavailable comparisons and reasons."
+    },
+    "FR-013": {
+      "title": "Keep texts, audio, and results private absent separate publication approval."
+    },
+    "FR-014": {
+      "title": "Provide a recordable product-owner decision."
+    },
+    "FR-015": {
+      "title": "Stop affected runs on failure, cancellation, or agreed resource limits."
+    }
+  },
+  "size": "normal",
+  "classification": {
+    "projectedFiles": 8,
+    "projectedTasks": 9,
+    "scopeSignal": "none",
+    "verdict": "normal"
+  },
+  "expectations": [
+    "No production deployment, service changes, or automatic fallback",
+    "No two-person conversation or broader model search"
+  ],
+  "context": [
+    "area: backend speech synthesis",
+    "reference: capabilities/backend-synthesis/backend-synthesis.spec.md (draft)",
+    "source: tts-ms-vibe-code-backend idea assessment",
+    "constraint: model, voice, dependency, and sample-text terms must be assessed before use",
+    "constraint: preserve existing service and require approval for target-machine changes"
+  ],
+  "intent": "Evaluate VibeVoice speech quality and feasibility privately against the existing macOS method using an isolated removable prototype."
+}

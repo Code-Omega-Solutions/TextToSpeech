@@ -1,0 +1,1 @@
+Evaluate if we could use [VibeCode](https://microsoft.github.io/VibeVoice/) as a second tts method in addition to the native MacOS say commend. We would need to evaluate the model variants to evaluate voice quality as well as which of our machines has enough space left to host what models.

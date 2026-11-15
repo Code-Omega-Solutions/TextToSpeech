@@ -50,7 +50,9 @@ def test_invalid_language_is_rejected():
 
 
 def test_model_and_format_values_are_restricted():
-    assert SpeechRequest(input="hello").model == "macos-say"
+    assert SpeechRequest(input="hello").model is None
+    assert SpeechRequest(input="hello", model="macos-say").model == "macos-say"
+    assert SpeechRequest(input="hello", model="vibevoice").model == "vibevoice"
     assert SpeechRequest(input="hello").response_format == "mp3"
     assert SpeechRequest(input="hello", response_format="wav").response_format == "wav"
     with pytest.raises(ValidationError):
@@ -64,6 +66,38 @@ def test_voice_hint_is_accepted_but_bounded():
     assert SpeechRequest(input="hello", voice="v" * 128).voice == "v" * 128
     with pytest.raises(ValidationError):
         SpeechRequest(input="hello", voice="v" * 129)
+
+
+@pytest.mark.parametrize(
+    ("language", "voice"),
+    [
+        ("en-US", "en-Carter_man"),
+        ("en-GB", "en-Carter_man"),
+        ("de-DE", "de-Spk1_woman"),
+        ("de-DE", "de-Spk0_man"),
+        (None, "de-Spk0_man"),
+    ],
+)
+def test_vibevoice_voice_presets_are_accepted(language, voice):
+    request = SpeechRequest(
+        input="hello", model="vibevoice", language=language, voice=voice
+    )
+    assert request.voice == voice
+
+
+@pytest.mark.parametrize(
+    ("language", "voice"),
+    [
+        ("en-US", "de-Spk1_woman"),
+        ("de-DE", "en-Carter_man"),
+        ("de-DE", "unknown"),
+    ],
+)
+def test_invalid_vibevoice_voice_is_rejected(language, voice):
+    with pytest.raises(ValidationError):
+        SpeechRequest(
+            input="hello", model="vibevoice", language=language, voice=voice
+        )
 
 
 @pytest.mark.parametrize("speed", [0.5, 1, 2])

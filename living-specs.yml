@@ -2,23 +2,101 @@ enabled: true
 exempt: ["**/*.config.*", "**/*.test.*", "**/__tests__/**", "**/migrations/**"]
 capabilities:
   - name: speech-generation
-    match: ["frontend/app.js", "frontend/index.html", "frontend/styles.css", "frontend/public/**", "frontend/playwright.config.js", "frontend/tests/e2e/**"]
+    match:
+      [
+        "frontend/app.js",
+        "frontend/index.html",
+        "frontend/styles.css",
+        "frontend/public/**",
+        "frontend/playwright.config.js",
+        "frontend/tests/e2e/**",
+      ]
     spec: capabilities/speech-generation/speech-generation.spec.md
   - name: frontend-serving
-    match: ["frontend/Dockerfile", "frontend/Dockerfile.dockerignore", "frontend/compose.yaml", "frontend/.dockerignore", "frontend/.gitattributes", "frontend/.gitignore", "frontend/.env.example", "frontend/.npmrc", "frontend/.node-version", "frontend/package.json", "frontend/package-lock.json", "frontend/vite.config.js", "frontend/config/**", "frontend/docker/**", "frontend/tests/config.test.js", "frontend/tests/dev.test.js", "frontend/tests/docker.test.js"]
+    match:
+      [
+        "frontend/Dockerfile",
+        "frontend/Dockerfile.dockerignore",
+        "frontend/compose.yaml",
+        "frontend/.dockerignore",
+        "frontend/.gitattributes",
+        "frontend/.gitignore",
+        "frontend/.env.example",
+        "frontend/.npmrc",
+        "frontend/.node-version",
+        "frontend/package.json",
+        "frontend/package-lock.json",
+        "frontend/vite.config.js",
+        "frontend/config/**",
+        "frontend/docker/**",
+        "frontend/tests/config.test.js",
+        "frontend/tests/dev.test.js",
+        "frontend/tests/docker.test.js",
+      ]
     spec: capabilities/frontend-serving/frontend-serving.spec.md
   - name: frontend-image-publishing
     match: [".github/workflows/publish-frontend.yml"]
     spec: capabilities/frontend-image-publishing/frontend-image-publishing.spec.md
   - name: backend-synthesis
-    match: ["backend/app/config.py", "backend/app/language.py", "backend/app/main.py", "backend/app/models.py", "backend/app/routers.py", "backend/app/services.py", "backend/app/voices.py", "backend/tests/test_api.py", "backend/tests/test_config.py", "backend/tests/test_language.py", "backend/tests/test_models.py", "backend/tests/test_services.py", "backend/tests/test_voices.py"]
+    match:
+      [
+        "backend/app/config.py",
+        "backend/app/language.py",
+        "backend/app/main.py",
+        "backend/app/models.py",
+        "backend/app/routers.py",
+        "backend/app/services.py",
+        "backend/app/vibevoice.py",
+        "backend/app/voices.py",
+        "backend/vibevoice_worker/worker.py",
+        "backend/tests/test_api.py",
+        "backend/tests/test_config.py",
+        "backend/tests/test_language.py",
+        "backend/tests/test_models.py",
+        "backend/tests/test_services.py",
+        "backend/tests/test_speech_contract.py",
+        "backend/tests/test_vibevoice.py",
+        "backend/tests/test_vibevoice_memory.py",
+        "backend/tests/test_vibevoice_startup.py",
+        "backend/tests/test_voices.py",
+      ]
     spec: capabilities/backend-synthesis/backend-synthesis.spec.md
   - name: project-licensing
-    match: ["LICENSE", "NOTICE", "SOURCE_OFFER.md", "THIRD_PARTY_NOTICES.md", "backend/README.md", "backend/uv.lock", "frontend/README.md", "frontend/Dockerfile", "frontend/package-lock.json", "frontend/tests/docker.test.js", "checks/tests/test_license_integrity.py"]
+    match:
+      [
+        "LICENSE",
+        "NOTICE",
+        "SOURCE_OFFER.md",
+        "THIRD_PARTY_NOTICES.md",
+        "backend/README.md",
+        "backend/uv.lock",
+        "backend/vibevoice_worker/pyproject.toml",
+        "backend/vibevoice_worker/uv.lock",
+        "frontend/README.md",
+        "frontend/Dockerfile",
+        "frontend/package-lock.json",
+        "frontend/tests/docker.test.js",
+        "checks/tests/test_license_integrity.py",
+      ]
     spec: capabilities/project-licensing/project-licensing.spec.md
   - name: backend-prerequisite-management
-    match: ["backend/prerequisites.py", "backend/setup.py", "backend/service/**", "backend/tests/test_prerequisites.py", "backend/tests/test_setup.py", "backend/tests/test_service_example.py"]
+    match:
+      [
+        "backend/prerequisites.py",
+        "backend/setup.py",
+        "backend/service/**",
+        "backend/tests/test_prerequisites.py",
+        "backend/tests/test_setup.py",
+        "backend/tests/test_service_example.py",
+      ]
     spec: capabilities/backend-prerequisite-management/backend-prerequisite-management.spec.md
   - name: vibevoice-evaluation
-    match: ["backend/evaluation/vibevoice/**", "backend/tests/test_evaluation.py", "backend/tests/test_evaluation_comparison.py", "backend/tests/test_evaluation_inspection.py", "backend/tests/test_evaluation_web.py"]
+    match:
+      [
+        "backend/evaluation/vibevoice/**",
+        "backend/tests/test_evaluation.py",
+        "backend/tests/test_evaluation_comparison.py",
+        "backend/tests/test_evaluation_inspection.py",
+        "backend/tests/test_evaluation_web.py",
+      ]
     spec: capabilities/vibevoice-evaluation/vibevoice-evaluation.spec.md

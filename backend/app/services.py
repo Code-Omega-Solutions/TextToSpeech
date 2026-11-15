@@ -16,6 +16,7 @@ from app.voices import (
     available_voices,
     resolve_voice,
 )
+from app.vibevoice import VibeVoiceError, VibeVoiceWorker
 
 _SENTENCE_PAUSE_SECONDS = 0.4
 _PARAGRAPH_PAUSE_SECONDS = 1.2
@@ -71,6 +72,9 @@ class SynthesisResult:
     audio: bytes
     media_type: str
     filename: str
+    actual_backend: str = "macos-say"
+    fallback: bool = False
+    failure_reason: str | None = None
 
 
 def available_codecs(ffmpeg_path: str, timeout: float = 5.0) -> set[str]:
@@ -154,6 +158,10 @@ class SpeechService:
     def __init__(self, settings: Settings):
         self.settings = settings
         self._permits = threading.BoundedSemaphore(settings.max_concurrent_synthesis)
+        self.vibevoice_worker = VibeVoiceWorker(settings)
+
+    def close(self) -> None:
+        self.vibevoice_worker.stop()
 
     def try_acquire(self) -> bool:
         return self._permits.acquire(blocking=False)
@@ -168,12 +176,14 @@ class SpeechService:
         speed: float,
         response_format: str,
         cancel_event: threading.Event | None = None,
+        backend: str | None = None,
+        voice: str | None = None,
     ) -> SynthesisResult:
         if not self.try_acquire():
             raise SynthesisCapacityExceeded
         try:
             return self.synthesize_reserved(
-                text, language, speed, response_format, cancel_event
+                text, language, speed, response_format, cancel_event, backend, voice
             )
         finally:
             self.release_permit()
@@ -185,10 +195,136 @@ class SpeechService:
         speed: float,
         response_format: str,
         cancel_event: threading.Event | None = None,
+        backend: str | None = None,
+        voice: str | None = None,
     ) -> SynthesisResult:
-        return self._synthesize(text, language, speed, response_format, cancel_event)
+        selected_backend = backend or self.settings.default_backend
+        if selected_backend == "macos-say":
+            return self._synthesize_macos(
+                text, language, speed, response_format, cancel_event
+            )
+        if selected_backend != "vibevoice":
+            raise SynthesisUnavailable
+        try:
+            return self._synthesize_vibevoice(
+                text, language, speed, response_format, voice, cancel_event
+            )
+        except (
+            VibeVoiceError,
+            SynthesisUnavailable,
+            SynthesisTimeout,
+            SynthesisFailure,
+            AudioTooLarge,
+        ) as exc:
+            if cancel_event is not None and cancel_event.is_set():
+                raise SynthesisFailure from exc
+            fallback = self._synthesize_macos(
+                text, language, speed, response_format, cancel_event
+            )
+            return SynthesisResult(
+                fallback.audio,
+                fallback.media_type,
+                fallback.filename,
+                actual_backend="macos-say",
+                fallback=True,
+                failure_reason="vibevoice_unavailable",
+            )
 
-    def _synthesize(
+    def _synthesize_vibevoice(
+        self,
+        text: str,
+        language: str,
+        speed: float,
+        response_format: str,
+        voice: str | None,
+        cancel_event: threading.Event | None,
+    ) -> SynthesisResult:
+        if language.startswith("de-"):
+            selected_voice = voice or "de-Spk1_woman"
+            if selected_voice not in {"de-Spk1_woman", "de-Spk0_man"}:
+                raise SynthesisUnavailable
+        elif language.startswith("en-"):
+            selected_voice = voice or "en-Carter_man"
+            if selected_voice != "en-Carter_man":
+                raise SynthesisUnavailable
+        else:
+            raise SynthesisUnavailable
+
+        wav_audio = self.vibevoice_worker.synthesize(
+            text, language, selected_voice, cancel_event
+        )
+        if response_format == "wav" and speed == 1:
+            if len(wav_audio) > min(
+                self.settings.max_output_bytes, self.settings.max_temp_bytes
+            ):
+                raise AudioTooLarge
+            return SynthesisResult(
+                wav_audio, "audio/wav", "speech.wav", actual_backend="vibevoice"
+            )
+
+        if shutil.which(self.settings.ffmpeg_path) is None:
+            raise SynthesisUnavailable
+        deadline = time.monotonic() + self.settings.request_timeout_seconds
+        with tempfile.TemporaryDirectory(prefix="vibevoice-audio-") as temp_dir:
+            directory = Path(temp_dir)
+            input_path = directory / "input.wav"
+            output_path = directory / f"speech.{response_format}"
+            if len(wav_audio) > self.settings.max_temp_bytes:
+                raise SynthesisFailure
+            input_path.write_bytes(wav_audio)
+            self._check_temp_budget(directory)
+            arguments = [
+                self.settings.ffmpeg_path,
+                "-nostdin",
+                "-hide_banner",
+                "-loglevel",
+                "error",
+                "-y",
+                "-i",
+                str(input_path),
+            ]
+            if speed != 1:
+                arguments.extend(["-filter:a", f"atempo={speed:g}"])
+            if response_format == "mp3":
+                arguments.extend(
+                    [
+                        "-c:a",
+                        "libmp3lame",
+                        "-b:a",
+                        "128k",
+                        "-minrate",
+                        "128k",
+                        "-maxrate",
+                        "128k",
+                        "-bufsize",
+                        "256k",
+                    ]
+                )
+            else:
+                arguments.extend(["-c:a", "pcm_s16le", "-ac", "1", "-ar", "44100"])
+            arguments.extend(
+                ["-fs", str(self.settings.max_output_bytes + 1), str(output_path)]
+            )
+            self._run(arguments, deadline, directory, cancel_event)
+            self._check_temp_budget(directory)
+            try:
+                if output_path.stat().st_size > self.settings.max_output_bytes:
+                    raise AudioTooLarge
+                audio = output_path.read_bytes()
+            except FileNotFoundError as exc:
+                raise SynthesisFailure from exc
+            if len(audio) > self.settings.max_output_bytes:
+                raise AudioTooLarge
+
+        if response_format == "mp3":
+            return SynthesisResult(
+                audio, "audio/mpeg", "speech.mp3", actual_backend="vibevoice"
+            )
+        return SynthesisResult(
+            audio, "audio/wav", "speech.wav", actual_backend="vibevoice"
+        )
+
+    def _synthesize_macos(
         self,
         text: str,
         language: str,

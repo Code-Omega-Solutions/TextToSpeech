@@ -1,6 +1,8 @@
+import io
 import subprocess
 import threading
 import time
+import wave
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
@@ -12,10 +14,21 @@ from app.services import (
     SpeechSegmentLimitExceeded,
     SynthesisCapacityExceeded,
     SynthesisFailure,
+    SynthesisResult,
     SynthesisTimeout,
     _speech_segments,
     available_codecs,
 )
+from app.vibevoice import VibeVoiceError
+
+
+_wav_buffer = io.BytesIO()
+with wave.open(_wav_buffer, "wb") as _wav_file:
+    _wav_file.setnchannels(1)
+    _wav_file.setsampwidth(2)
+    _wav_file.setframerate(24_000)
+    _wav_file.writeframes(b"\x00\x00")
+_TEST_WAV = _wav_buffer.getvalue()
 
 
 class CompletedChild:
@@ -375,3 +388,99 @@ def test_synthesis_permit_is_nonblocking(monkeypatch, settings_factory):
             service.synthesize("other text", "en-US", 1, "mp3")
         release.set()
         assert future.result(timeout=2).audio == b"ok"
+
+
+def test_vibevoice_wav_is_returned_with_actual_backend(settings_factory):
+    settings = settings_factory(
+        vibevoice_enabled=True,
+        vibevoice_qualified=True,
+        vibevoice_worker_peak_memory_bytes=100,
+        higher_priority_memory_reserve_bytes=50,
+    )
+    service = SpeechService(settings)
+    service.vibevoice_worker = type("Worker", (), {"synthesize": lambda *_args: _TEST_WAV})()
+    result = service.synthesize_reserved(
+        "hello", "en-US", 1, "wav", backend="vibevoice", voice="en-Carter_man"
+    )
+    assert result.audio == _TEST_WAV
+    assert result.media_type == "audio/wav"
+    assert result.actual_backend == "vibevoice"
+
+
+def test_vibevoice_mp3_uses_existing_encoder_path(monkeypatch, settings_factory):
+    settings = settings_factory(
+        vibevoice_enabled=True,
+        vibevoice_qualified=True,
+        vibevoice_worker_peak_memory_bytes=100,
+        higher_priority_memory_reserve_bytes=50,
+    )
+    service = SpeechService(settings)
+    service.vibevoice_worker = type("Worker", (), {"synthesize": lambda *_args: _TEST_WAV})()
+    monkeypatch.setattr("app.services.shutil.which", lambda _path: "/fake/ffmpeg")
+
+    def encode(arguments, *_args, **_kwargs):
+        assert "-i" in arguments
+        assert Path(arguments[arguments.index("-i") + 1]).read_bytes() == _TEST_WAV
+        Path(arguments[-1]).write_bytes(b"encoded mp3")
+
+    monkeypatch.setattr(service, "_run", encode)
+    result = service.synthesize_reserved(
+        "hello", "en-US", 1, "mp3", backend="vibevoice", voice="en-Carter_man"
+    )
+    assert result.audio == b"encoded mp3"
+    assert result.media_type == "audio/mpeg"
+    assert result.actual_backend == "vibevoice"
+
+
+def test_vibevoice_speed_uses_existing_ffmpeg_tempo_control(monkeypatch, settings_factory):
+    settings = settings_factory(
+        vibevoice_enabled=True,
+        vibevoice_qualified=True,
+        vibevoice_worker_peak_memory_bytes=100,
+        higher_priority_memory_reserve_bytes=50,
+    )
+    service = SpeechService(settings)
+    service.vibevoice_worker = type("Worker", (), {"synthesize": lambda *_args: _TEST_WAV})()
+    monkeypatch.setattr("app.services.shutil.which", lambda _path: "/fake/ffmpeg")
+
+    def encode(arguments, *_args, **_kwargs):
+        assert arguments[arguments.index("-filter:a") + 1] == "atempo=1.5"
+        Path(arguments[-1]).write_bytes(b"encoded mp3")
+
+    monkeypatch.setattr(service, "_run", encode)
+    result = service.synthesize_reserved(
+        "hello", "en-US", 1.5, "mp3", backend="vibevoice", voice="en-Carter_man"
+    )
+    assert result.audio == b"encoded mp3"
+
+
+def test_vibevoice_failure_discards_partial_output_before_one_fallback(settings_factory):
+    settings = settings_factory(
+        vibevoice_enabled=True,
+        vibevoice_qualified=True,
+        vibevoice_worker_peak_memory_bytes=100,
+        higher_priority_memory_reserve_bytes=50,
+    )
+    service = SpeechService(settings)
+    calls = []
+
+    class FailedWorker:
+        def synthesize(self, *_args):
+            calls.append("vibevoice")
+            raise VibeVoiceError("safe worker failure")
+
+    service.vibevoice_worker = FailedWorker()
+    macos_result = SynthesisResult(b"complete macos audio", "audio/wav", "speech.wav")
+
+    def macos(*_args, **_kwargs):
+        calls.append("macos-say")
+        return macos_result
+
+    service._synthesize_macos = macos
+    result = service.synthesize_reserved(
+        "hello", "en-US", 1, "wav", backend="vibevoice", voice="en-Carter_man"
+    )
+    assert result.audio == b"complete macos audio"
+    assert result.actual_backend == "macos-say"
+    assert result.fallback is True
+    assert calls == ["vibevoice", "macos-say"]

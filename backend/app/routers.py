@@ -71,10 +71,25 @@ def build_router(settings: Settings, speech_service: SpeechService) -> APIRouter
     ) -> Response:
         started = time.monotonic()
         selected_language: str | None = None
+        selected_backend = payload.model or settings.default_backend
+        actual_backend = selected_backend
+        failure_reason = "none"
         status_code = 500
         try:
             _authenticate(authorization, settings)
             selected_language = resolve_language(payload, settings)
+            if selected_backend == "vibevoice":
+                if not settings.vibevoice_enabled:
+                    raise HTTPException(status_code=422, detail="Invalid request.")
+                if payload.voice is not None:
+                    voice_languages = {
+                        "en-Carter_man": "en",
+                        "de-Spk1_woman": "de",
+                        "de-Spk0_man": "de",
+                    }
+                    voice_language = voice_languages.get(payload.voice)
+                    if voice_language is None or not selected_language.startswith(voice_language):
+                        raise HTTPException(status_code=422, detail="Invalid request.")
             if not speech_service.try_acquire():
                 raise SynthesisCapacityExceeded
             cancel_event = threading.Event()
@@ -87,6 +102,8 @@ def build_router(settings: Settings, speech_service: SpeechService) -> APIRouter
                         payload.speed,
                         payload.response_format,
                         cancel_event,
+                        selected_backend,
+                        payload.voice,
                     )
                 )
                 try:
@@ -101,12 +118,16 @@ def build_router(settings: Settings, speech_service: SpeechService) -> APIRouter
             finally:
                 speech_service.release_permit()
             status_code = 200
+            actual_backend = result.actual_backend
+            failure_reason = result.failure_reason or "none"
             return Response(
                 content=result.audio,
                 media_type=result.media_type,
                 headers={
                     "Content-Disposition": f'inline; filename="{result.filename}"',
                     "X-Content-Type-Options": "nosniff",
+                    "X-Speech-Backend": result.actual_backend,
+                    "X-Speech-Fallback": str(result.fallback).lower(),
                 },
             )
         except HTTPException as exc:
@@ -134,6 +155,7 @@ def build_router(settings: Settings, speech_service: SpeechService) -> APIRouter
             raise HTTPException(status_code=504, detail="Speech generation exceeded its time limit.") from exc
         except SynthesisFailure as exc:
             status_code = 500
+            failure_reason = type(exc).__name__
             logger.error(
                 "speech synthesis failed request_id=%s error_type=%s",
                 request.state.request_id,
@@ -142,6 +164,7 @@ def build_router(settings: Settings, speech_service: SpeechService) -> APIRouter
             raise HTTPException(status_code=500, detail="Speech generation failed.") from exc
         except Exception as exc:
             status_code = 500
+            failure_reason = type(exc).__name__
             logger.error(
                 "speech synthesis failed request_id=%s error_type=%s",
                 request.state.request_id,
@@ -150,18 +173,20 @@ def build_router(settings: Settings, speech_service: SpeechService) -> APIRouter
             raise HTTPException(status_code=500, detail="An internal error occurred.") from exc
         finally:
             logger.info(
-                "speech request request_id=%s duration_ms=%d locale=%s format=%s status=%d",
+                "speech request request_id=%s duration_ms=%d backend=%s locale=%s format=%s reason=%s status=%d",
                 request.state.request_id,
                 round((time.monotonic() - started) * 1000),
+                actual_backend,
                 selected_language or "unresolved",
                 payload.response_format,
+                failure_reason,
                 status_code,
             )
 
     return api
 
 
-def build_health_router(settings: Settings) -> APIRouter:
+def build_health_router(settings: Settings, vibevoice_worker=None) -> APIRouter:
     health = APIRouter()
 
     @health.get("/healthz")
@@ -191,6 +216,14 @@ def build_health_router(settings: Settings) -> APIRouter:
             voice_available(needed_voices[locale], voices) for locale in ("de-DE", "en-US")
         ):
             return JSONResponse(status_code=503, content={"detail": "Required speech voices unavailable."})
-        return JSONResponse(status_code=200, content={"status": "ready"})
+        return JSONResponse(
+            status_code=200,
+            content={"status": "ready"},
+            headers={
+                "X-VibeVoice-Status": (
+                    vibevoice_worker.status if vibevoice_worker is not None else "disabled"
+                )
+            },
+        )
 
     return health

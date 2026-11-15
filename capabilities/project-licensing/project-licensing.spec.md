@@ -25,11 +25,13 @@ The custom terms SHALL be identified as a proposal pending legal review and
 shall not be represented as OSI-approved.
 
 #### Scenario: derivative software is created or used
+
 - **WHEN** a recipient creates or uses software based on covered project materials
 - **THEN** the derivative contains a visible statement that it is based on
   TextToSpeech by Code-Omega-Solutions.
 
 #### Scenario: a derivative is distributed
+
 - **WHEN** a recipient distributes software based on covered project materials
 - **THEN** the distribution retains applicable notices and the required attribution.
 
@@ -46,11 +48,13 @@ publisher SHALL fulfill source requests within the period and terms of that
 offer.
 
 #### Scenario: a release bundles third-party components
+
 - **WHEN** a release includes a dependency, runtime tool, or base image
 - **THEN** its license and required notices are reviewed and included separately
   from the project license.
 
 #### Scenario: a public image includes reciprocal-license packages
+
 - **WHEN** a release publishes an image containing packages with GPL, LGPL, or
   other source-availability conditions
 - **THEN** the image carries required notices and a valid written source offer,
@@ -58,9 +62,25 @@ offer.
   An inventory or SBOM alone is not source delivery.
 
 #### Scenario: a container is rebuilt from a pinned runtime base
+
 - **WHEN** the image is built and distributed
 - **THEN** it retains package-level copyright/license files and includes
   traceable runtime package versions and OCI source/revision/notice metadata.
+
+### Optional model and worker terms remain a release gate
+<!-- touches: THIRD_PARTY_NOTICES.md, backend/README.md, backend/vibevoice_worker/pyproject.toml, backend/vibevoice_worker/uv.lock, backend/tests/test_vibevoice.py -->
+
+The VibeVoice source, model artifacts, voice presets, and isolated runtime
+SHALL be reviewed separately. MIT license labels SHALL NOT be treated as
+overriding model-card intended-use guidance or responsible-use restrictions.
+Exact runtime artifact licenses, model and voice provenance, and intended-use
+approval SHALL be resolved before installation or distribution. Unresolved
+review SHALL keep the worker disabled and the release blocked.
+
+#### Scenario: a VibeVoice package or asset has unresolved terms
+
+- **WHEN** the exact dependency, model artifact, voice prompt, or intended use has not been reviewed
+- **THEN** the worker is not installed or distributed, and the notice records the unresolved gate without claiming legal approval.
 
 ## Uncovered
 

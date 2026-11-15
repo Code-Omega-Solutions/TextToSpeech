@@ -132,6 +132,52 @@ instance. Preserve shared environments, source files, credentials that are
 still in use, system packages, and unrelated services. Setup does not remove
 those resources.
 
+## Optional VibeVoice backend
+
+VibeVoice is disabled by default. Keep `TTS_DEFAULT_BACKEND=macos-say`,
+`TTS_VIBEVOICE_ENABLED=false`, and `TTS_VIBEVOICE_QUALIFIED=false` unless the
+model, voice assets, runtime package inventory, host behavior, and intended-use
+terms have been reviewed and the specific deployment has received approval.
+The upstream model card identifies research and development as its intended
+use, discourages commercial or real-world use without further work, and
+includes responsible-use restrictions. See the [third-party inventory](../THIRD_PARTY_NOTICES.md);
+the current review is not release approval.
+
+After all release gates are satisfied, the worker runtime is isolated from the
+API environment under `vibevoice_worker/`. It requires Python 3.11, a checkout
+of the reviewed VibeVoice source at the pinned revision, local Realtime 0.5B
+model files, and the reviewed Carter/Spk1/Spk0 prompt files. The worker uses
+offline-only model loading and does not download assets. Do not install this
+runtime until its exact locked package artifacts and notices have been
+reviewed. A separately managed worker environment can then be prepared from
+that directory with `uv sync --locked`.
+
+The operator settings are:
+
+- `TTS_VIBEVOICE_ENABLED=true` and `TTS_VIBEVOICE_QUALIFIED=true` to enable a
+previously qualified deployment.
+- `TTS_DEFAULT_BACKEND=vibevoice` to make it the configured default; requests
+may instead select `model` as `macos-say` or `vibevoice`.
+- `TTS_VIBEVOICE_WORKER_PYTHON`, `TTS_VIBEVOICE_SOURCE_PATH`, and
+`TTS_VIBEVOICE_MODEL_PATH` to identify the isolated interpreter and already
+installed local assets.
+- `TTS_VIBEVOICE_WORKER_PEAK_MEMORY_BYTES` and
+`TTS_HIGHER_PRIORITY_MEMORY_RESERVE_BYTES` to provide measured worker peak and
+operator-selected reserve budgets. Both are required; do not guess values.
+- `TTS_VIBEVOICE_WORKER_TIMEOUT_SECONDS` to bound worker startup and synthesis;
+the existing request timeout remains authoritative.
+
+The service admits one worker only when the available-memory probe covers both
+budgets. It terminates the worker when available memory drops below the reserve
+and does not reload it until capacity recovers. Missing assets, unsupported
+runtime, failed probes, or worker errors fall back to `say` at most once and
+discard partial VibeVoice output. Successful responses include
+`X-Speech-Backend`; `X-Speech-Fallback` identifies a fallback. VibeVoice does
+not affect `/readyz`, which continues to depend on the existing macOS speech
+prerequisites. Linux mocks do not qualify the memory policy or inference on a
+macOS target host. `/readyz` reports the optional worker state in
+`X-VibeVoice-Status` while its readiness result remains based on macOS speech.
+
 ## Qualification and release gates
 
 Mocked Linux checks validate code paths and fixtures only. They are not evidence

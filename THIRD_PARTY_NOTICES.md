@@ -80,6 +80,35 @@ metadata and notices before bundling or redistributing it. Do the same for
 other separately installed runtime components; the project license does not
 cover them.
 
+## Optional VibeVoice worker (release blocked)
+
+The optional worker runtime is isolated in
+`backend/vibevoice_worker/pyproject.toml` and pinned in
+`backend/vibevoice_worker/uv.lock` (69 resolved package records). The exact
+package artifacts and their license notices have not yet been audited. Do not
+install or distribute the worker yet. The implementation source reference is
+[microsoft/VibeVoice](https://github.com/microsoft/VibeVoice) at
+`0063f5b175d07c0a7d0aab2c5806bee9aa15f2a1`. The repository's MIT license
+requires retaining its copyright and license notice. The selected
+`VibeVoice-Realtime-0.5B` model card also identifies MIT, but separately limits
+its intended use to research and development, discourages commercial or
+real-world use without further work, and states responsible-use restrictions.
+The MIT label alone is not release approval or confirmation that a proposed
+deployment is permitted.
+
+The reviewed `en-Carter_man`, `de-Spk1_woman`, and `de-Spk0_man` presets depend
+on bundled or separately obtained model voice assets. Their exact artifact
+provenance and applicable terms have not been independently established. The
+model documentation describes German as experimental or unsupported depending
+on the referenced revision; German deployment therefore also remains subject
+to host and voice qualification. The runtime lock's exact package artifacts,
+licenses, and notices must be audited before installation or redistribution.
+
+Keep VibeVoice disabled unless the model and voice artifact provenance, exact
+runtime inventory, supported-host behavior, intended-use terms, and required
+owner/legal approvals have all been reviewed for the specific deployment.
+These are release gates, not a statement of legal approval.
+
 ## Release status
 
 The lockfile audit found no dependency license that requires making this

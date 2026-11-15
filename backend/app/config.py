@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import stat
 from dataclasses import dataclass, field
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -26,6 +27,28 @@ class _SettingsValues(BaseModel):
     max_temp_bytes: int = Field(default=268_435_456, ge=1, le=1_073_741_824)
     say_path: str = "/usr/bin/say"
     ffmpeg_path: str = "ffmpeg"
+    default_backend: Literal["macos-say", "vibevoice"] = "macos-say"
+    vibevoice_enabled: bool = False
+    vibevoice_qualified: bool = False
+    vibevoice_worker_timeout_seconds: int = Field(default=60, ge=1, le=180)
+    vibevoice_worker_python: str | None = None
+    vibevoice_source_path: str | None = None
+    vibevoice_model_path: str | None = None
+    vibevoice_worker_peak_memory_bytes: int | None = Field(default=None, ge=1)
+    higher_priority_memory_reserve_bytes: int | None = Field(default=None, ge=1)
+    @model_validator(mode="after")
+    def vibevoice_requires_qualification_and_budgets(self) -> _SettingsValues:
+        if self.default_backend == "vibevoice" and not self.vibevoice_enabled:
+            raise ValueError("TTS_DEFAULT_BACKEND=vibevoice requires TTS_VIBEVOICE_ENABLED=true")
+        if self.vibevoice_enabled:
+            if not self.vibevoice_qualified:
+                raise ValueError("VibeVoice must be qualified before it can be enabled")
+            if (
+                self.vibevoice_worker_peak_memory_bytes is None
+                or self.higher_priority_memory_reserve_bytes is None
+            ):
+                raise ValueError("VibeVoice requires measured worker and memory reserve budgets")
+        return self
 
     @field_validator("api_key")
     @classmethod
@@ -54,6 +77,13 @@ class _SettingsValues(BaseModel):
             raise ValueError("configured string settings must not be blank")
         return value
 
+    @field_validator("vibevoice_worker_python", "vibevoice_source_path", "vibevoice_model_path")
+    @classmethod
+    def optional_path_must_not_be_blank(cls, value: str | None) -> str | None:
+        if value is not None and not value.strip():
+            raise ValueError("configured path settings must not be blank")
+        return value
+
 
 @dataclass(frozen=True)
 class Settings:
@@ -73,6 +103,15 @@ class Settings:
     max_temp_bytes: int
     say_path: str
     ffmpeg_path: str
+    default_backend: Literal["macos-say", "vibevoice"]
+    vibevoice_enabled: bool
+    vibevoice_qualified: bool
+    vibevoice_worker_timeout_seconds: int
+    vibevoice_worker_python: str | None
+    vibevoice_source_path: str | None
+    vibevoice_model_path: str | None
+    vibevoice_worker_peak_memory_bytes: int | None
+    higher_priority_memory_reserve_bytes: int | None
 
     @classmethod
     def from_env(cls) -> Settings:
@@ -93,6 +132,15 @@ class Settings:
             "TTS_MAX_TEMP_BYTES": "max_temp_bytes",
             "TTS_SAY_PATH": "say_path",
             "TTS_FFMPEG_PATH": "ffmpeg_path",
+            "TTS_DEFAULT_BACKEND": "default_backend",
+            "TTS_VIBEVOICE_ENABLED": "vibevoice_enabled",
+            "TTS_VIBEVOICE_QUALIFIED": "vibevoice_qualified",
+            "TTS_VIBEVOICE_WORKER_TIMEOUT_SECONDS": "vibevoice_worker_timeout_seconds",
+            "TTS_VIBEVOICE_WORKER_PYTHON": "vibevoice_worker_python",
+            "TTS_VIBEVOICE_SOURCE_PATH": "vibevoice_source_path",
+            "TTS_VIBEVOICE_MODEL_PATH": "vibevoice_model_path",
+            "TTS_VIBEVOICE_WORKER_PEAK_MEMORY_BYTES": "vibevoice_worker_peak_memory_bytes",
+            "TTS_HIGHER_PRIORITY_MEMORY_RESERVE_BYTES": "higher_priority_memory_reserve_bytes",
         }
         values = {
             field: os.environ[env_name]

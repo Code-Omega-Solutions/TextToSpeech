@@ -146,14 +146,140 @@ def test_success_returns_binary_audio_and_expected_headers(settings, monkeypatch
     assert response.headers["x-request-id"]
 
 
+def test_response_reports_actual_backend(settings_factory, monkeypatch):
+    settings = settings_factory(
+        vibevoice_enabled=True,
+        vibevoice_qualified=True,
+        vibevoice_worker_peak_memory_bytes=100,
+        higher_priority_memory_reserve_bytes=50,
+    )
+    app = create_app(settings)
+    monkeypatch.setattr(
+        app.state.speech_service,
+        "synthesize_reserved",
+        lambda *_args: SynthesisResult(
+            b"audio", "audio/wav", "speech.wav", actual_backend="vibevoice"
+        ),
+    )
+    response = TestClient(app).post(
+        "/v1/audio/speech",
+        json={"input": "Hello there", "model": "vibevoice", "language": "en-US"},
+        headers={"Authorization": f"Bearer {settings.api_key}"},
+    )
+    assert response.status_code == 200
+    assert response.headers["x-speech-backend"] == "vibevoice"
+    assert response.headers["x-speech-fallback"] == "false"
+
+
+def test_fallback_response_reports_macos_backend(settings_factory, monkeypatch):
+    settings = settings_factory(
+        vibevoice_enabled=True,
+        vibevoice_qualified=True,
+        vibevoice_worker_peak_memory_bytes=100,
+        higher_priority_memory_reserve_bytes=50,
+    )
+    app = create_app(settings)
+    monkeypatch.setattr(
+        app.state.speech_service,
+        "synthesize_reserved",
+        lambda *_args: SynthesisResult(
+            b"complete fallback",
+            "audio/mpeg",
+            "speech.mp3",
+            actual_backend="macos-say",
+            fallback=True,
+            failure_reason="vibevoice_unavailable",
+        ),
+    )
+    response = TestClient(app).post(
+        "/v1/audio/speech",
+        json={"input": "Hello there", "model": "vibevoice", "language": "en-US"},
+        headers={"Authorization": f"Bearer {settings.api_key}"},
+    )
+    assert response.status_code == 200
+    assert response.content == b"complete fallback"
+    assert response.headers["x-speech-backend"] == "macos-say"
+    assert response.headers["x-speech-fallback"] == "true"
+
+
+def test_invalid_vibevoice_voice_is_rejected_before_capacity(settings_factory, monkeypatch):
+    settings = settings_factory(
+        vibevoice_enabled=True,
+        vibevoice_qualified=True,
+        vibevoice_worker_peak_memory_bytes=100,
+        higher_priority_memory_reserve_bytes=50,
+    )
+    app = create_app(settings)
+    monkeypatch.setattr(
+        app.state.speech_service,
+        "try_acquire",
+        lambda: pytest.fail("invalid voice reached synthesis admission"),
+    )
+    response = TestClient(app).post(
+        "/v1/audio/speech",
+        json={
+            "input": "Hello there",
+            "model": "vibevoice",
+            "language": "en-US",
+            "voice": "de-Spk1_woman",
+        },
+        headers={"Authorization": f"Bearer {settings.api_key}"},
+    )
+    assert response.status_code == 422
+    assert response.json() == {"detail": "Invalid request."}
+
+
+def test_configured_backend_and_explicit_override_reach_service(settings_factory, monkeypatch):
+    settings = settings_factory(
+        default_backend="vibevoice",
+        vibevoice_enabled=True,
+        vibevoice_qualified=True,
+        vibevoice_worker_peak_memory_bytes=100,
+        higher_priority_memory_reserve_bytes=50,
+    )
+    app = create_app(settings)
+    calls = []
+
+    def synthesize(*args):
+        calls.append(args)
+        return SynthesisResult(b"audio", "audio/mpeg", "speech.mp3")
+
+    monkeypatch.setattr(app.state.speech_service, "synthesize_reserved", synthesize)
+    client = TestClient(app)
+    headers = {"Authorization": f"Bearer {settings.api_key}"}
+    for model in (None, "macos-say"):
+        payload = {"input": "Hello there", "language": "en-US"}
+        if model is not None:
+            payload["model"] = model
+        response = client.post("/v1/audio/speech", json=payload, headers=headers)
+        assert response.status_code == 200
+    assert [call[-2:] for call in calls] == [("vibevoice", None), ("macos-say", None)]
+
+
+def test_disabled_vibevoice_override_is_rejected_before_synthesis(settings, monkeypatch):
+    app = create_app(settings)
+    monkeypatch.setattr(
+        app.state.speech_service,
+        "synthesize_reserved",
+        lambda *_args: pytest.fail("disabled backend reached synthesis"),
+    )
+    response = TestClient(app).post(
+        "/v1/audio/speech",
+        json={"input": "Hello there", "model": "vibevoice", "language": "en-US"},
+        headers={"Authorization": f"Bearer {settings.api_key}"},
+    )
+    assert response.status_code == 422
+    assert response.json() == {"detail": "Invalid request."}
+
+
 def test_unsupported_detected_language_synthesizes_with_en_us(settings_factory, monkeypatch):
     settings = settings_factory(default_language="de-DE")
     app = create_app(settings)
     calls = []
     monkeypatch.setattr("app.language.langid.classify", lambda _text: ("fr", 0.9))
 
-    def synthesize(text, language, speed, response_format, cancel_event):
-        calls.append(language)
+    def synthesize(text, language, speed, response_format, cancel_event, backend, voice):
+        calls.append((language, backend, voice))
         return SynthesisResult(b"fixture-audio", "audio/mpeg", "speech.mp3")
 
     monkeypatch.setattr(app.state.speech_service, "synthesize_reserved", synthesize)
@@ -165,7 +291,7 @@ def test_unsupported_detected_language_synthesizes_with_en_us(settings_factory, 
     assert response.status_code == 200
     assert response.content == b"fixture-audio"
     assert response.headers["content-type"] == "audio/mpeg"
-    assert calls == ["en-US"]
+    assert calls == [("en-US", "macos-say", None)]
 
 
 def test_speech_body_limit_accepts_exact_32_kib(settings, monkeypatch):
@@ -289,7 +415,7 @@ def test_request_cancellation_terminates_work_and_releases_capacity(settings, mo
     cancelled = threading.Event()
 
     def wait_for_cancellation(*arguments):
-        cancel_event = arguments[-1]
+        cancel_event = arguments[4]
         started.set()
         while not cancel_event.is_set():
             time.sleep(0.005)

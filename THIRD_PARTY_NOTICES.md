@@ -101,8 +101,20 @@ on bundled or separately obtained model voice assets. Their exact artifact
 provenance and applicable terms have not been independently established. The
 model documentation describes German as experimental or unsupported depending
 on the referenced revision; German deployment therefore also remains subject
-to host and voice qualification. The runtime lock's exact package artifacts,
-licenses, and notices must be audited before installation or redistribution.
+to host and voice qualification.
+
+PyPI JSON metadata for the 68 external versions in the worker lock reports
+`soxr==1.1.0` as `LGPL-2.1-or-later`, `certifi==2026.10.23` with an MPL-2.0
+classifier, and `tqdm==4.67.1` with MIT and MPL-2.0 classifiers. Twelve locked
+NVIDIA CUDA packages declare `Other/Proprietary` metadata; the thirteenth,
+`nvidia-cusparselt-cu12==0.6.2`, has only freeform license metadata. All 13 are
+conditional `torch==2.6.0` dependencies for Linux x86_64, not the macOS worker
+target. Five other packages expose only freeform metadata:
+`charset-normalizer==3.5.2`, `decorator==5.3.1`, `llvmlite==0.44.0`,
+`psutil==7.2.2`, and `nvidia-cusparselt-cu12==0.6.2`. PyPI metadata and
+classifiers are not substitutes for inspecting the exact distributions,
+bundled notices, or corresponding source. Those artifact-level reviews remain
+required before installing or redistributing the worker.
 
 Keep VibeVoice disabled unless the model and voice artifact provenance, exact
 runtime inventory, supported-host behavior, intended-use terms, and required

@@ -11,7 +11,7 @@ worker boundary and deferred prototype cleanup visible throughout.
 **Wave 1 — independent (different files):**
 
 - [x] **T001** [P] [US1] Create a separate optional worker project with pinned-runtime intent and no model download at startup · `backend/vibevoice_worker/pyproject.toml`
-- [ ] **T002** [P] [US4] Review VibeVoice source, model, voice-preset, and runtime terms and provenance; update the third-party inventory without implying release approval · `THIRD_PARTY_NOTICES.md`
+- [x] **T002** [P] [US4] Review VibeVoice source, model, voice-preset, and runtime terms and provenance; update the third-party inventory without implying release approval · `THIRD_PARTY_NOTICES.md`
 
 **⟶ Wait for Wave 1 to finish, then:**
 

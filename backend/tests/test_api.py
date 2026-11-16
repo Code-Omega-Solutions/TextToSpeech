@@ -202,6 +202,104 @@ def test_fallback_response_reports_macos_backend(settings_factory, monkeypatch):
     assert response.headers["x-speech-fallback"] == "true"
 
 
+def test_german_vibevoice_request_uses_say_when_vibevoice_is_disabled(settings_factory, monkeypatch):
+    settings = settings_factory(vibevoice_enabled=False, vibevoice_research_only=False)
+    app = create_app(settings)
+    service = app.state.speech_service
+    calls = []
+
+    def say(_text, language, *_args, **_kwargs):
+        calls.append(language)
+        return SynthesisResult(
+            b"German speech", "audio/wav", "speech.wav", actual_backend="macos-say"
+        )
+
+    monkeypatch.setattr(service, "_synthesize_macos", say)
+    monkeypatch.setattr(
+        service.vibevoice_worker,
+        "_ensure_process",
+        lambda *_args: pytest.fail("German request started the VibeVoice process"),
+    )
+    response = TestClient(app).post(
+        "/v1/audio/speech",
+        json={"input": "Guten Morgen", "model": "vibevoice", "language": "de-DE"},
+        headers={"Authorization": f"Bearer {settings.api_key}"},
+    )
+
+    assert response.status_code == 200
+    assert response.content == b"German speech"
+    assert response.headers["x-speech-backend"] == "macos-say"
+    assert response.headers["x-speech-fallback"] == "true"
+    assert calls == ["de-DE"]
+
+
+def test_german_vibevoice_request_is_available_in_research_mode(settings_factory, monkeypatch):
+    settings = settings_factory(
+        vibevoice_enabled=True,
+        vibevoice_research_only=True,
+        vibevoice_qualified=True,
+        vibevoice_worker_peak_memory_bytes=100,
+        higher_priority_memory_reserve_bytes=50,
+    )
+    app = create_app(settings)
+    calls = []
+
+    def synthesize(text, language, voice, _cancel_event=None):
+        calls.append((text, language, voice))
+        return b"German research audio"
+
+    monkeypatch.setattr(app.state.speech_service.vibevoice_worker, "synthesize", synthesize)
+    response = TestClient(app).post(
+        "/v1/audio/speech",
+        json={
+            "input": "Guten Morgen",
+            "model": "vibevoice",
+            "language": "de-DE",
+            "response_format": "wav",
+        },
+        headers={"Authorization": f"Bearer {settings.api_key}"},
+    )
+
+    assert response.status_code == 200
+    assert response.content == b"German research audio"
+    assert response.headers["x-speech-backend"] == "vibevoice"
+    assert response.headers["x-speech-fallback"] == "false"
+    assert calls == [("Guten Morgen", "de-DE", "de-Spk1_woman")]
+
+
+def test_openai_tts_blank_voice_auto_detects_german_and_selects_default(settings_factory, monkeypatch):
+    settings = settings_factory(
+        vibevoice_enabled=True,
+        vibevoice_research_only=True,
+        vibevoice_qualified=True,
+        vibevoice_worker_peak_memory_bytes=100,
+        higher_priority_memory_reserve_bytes=50,
+    )
+    app = create_app(settings)
+    calls = []
+
+    def synthesize(text, language, voice, _cancel_event=None):
+        calls.append((language, voice))
+        return b"German speech"
+
+    monkeypatch.setattr(app.state.speech_service.vibevoice_worker, "synthesize", synthesize)
+    response = TestClient(app).post(
+        "/v1/audio/speech",
+        json={
+            "input": "Guten Morgen, dies ist ein ausreichend langer deutscher Beispielsatz.",
+            "model": "vibevoice",
+            "voice": "",
+            "response_format": "wav",
+        },
+        headers={"Authorization": f"Bearer {settings.api_key}"},
+    )
+
+    assert response.status_code == 200
+    assert response.content == b"German speech"
+    assert response.headers["x-speech-backend"] == "vibevoice"
+    assert calls == [("de-DE", "de-Spk1_woman")]
+
+
 def test_invalid_vibevoice_voice_is_rejected_before_capacity(settings_factory, monkeypatch):
     settings = settings_factory(
         vibevoice_enabled=True,

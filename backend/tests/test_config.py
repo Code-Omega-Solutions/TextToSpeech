@@ -52,25 +52,45 @@ def test_defaults_and_environment_values(settings):
     assert settings.default_backend == "macos-say"
     assert settings.vibevoice_enabled is False
     assert settings.vibevoice_qualified is False
+    assert settings.vibevoice_research_only is False
     assert settings.vibevoice_worker_peak_memory_bytes is None
     assert settings.higher_priority_memory_reserve_bytes is None
 
 
+def test_all_interface_host_binding_is_configurable(monkeypatch):
+    monkeypatch.setenv("TTS_HOST", "0.0.0.0")
+    monkeypatch.setenv("TTS_API_KEY", "unit-test-api-key")
+    assert Settings.from_env().host == "0.0.0.0"
+
+
 def test_vibevoice_requires_explicit_measured_memory_budgets(monkeypatch):
     monkeypatch.setenv("TTS_VIBEVOICE_ENABLED", "true")
+    monkeypatch.setenv("TTS_VIBEVOICE_RESEARCH_ONLY", "true")
     monkeypatch.delenv("TTS_VIBEVOICE_WORKER_PEAK_MEMORY_BYTES", raising=False)
     monkeypatch.delenv("TTS_HIGHER_PRIORITY_MEMORY_RESERVE_BYTES", raising=False)
     with pytest.raises(ValidationError):
         Settings.from_env()
 
 
-def test_vibevoice_can_be_enabled_with_explicit_memory_budgets(monkeypatch):
+def test_vibevoice_requires_explicit_research_only_authorization(monkeypatch):
     monkeypatch.setenv("TTS_VIBEVOICE_ENABLED", "true")
     monkeypatch.setenv("TTS_VIBEVOICE_QUALIFIED", "true")
     monkeypatch.setenv("TTS_VIBEVOICE_WORKER_PEAK_MEMORY_BYTES", "8589934592")
     monkeypatch.setenv("TTS_HIGHER_PRIORITY_MEMORY_RESERVE_BYTES", "4294967296")
+    monkeypatch.delenv("TTS_VIBEVOICE_RESEARCH_ONLY", raising=False)
+    with pytest.raises(ValidationError, match="research-only"):
+        Settings.from_env()
+
+
+def test_vibevoice_can_be_enabled_with_explicit_memory_budgets(monkeypatch):
+    monkeypatch.setenv("TTS_VIBEVOICE_ENABLED", "true")
+    monkeypatch.setenv("TTS_VIBEVOICE_QUALIFIED", "true")
+    monkeypatch.setenv("TTS_VIBEVOICE_RESEARCH_ONLY", "true")
+    monkeypatch.setenv("TTS_VIBEVOICE_WORKER_PEAK_MEMORY_BYTES", "8589934592")
+    monkeypatch.setenv("TTS_HIGHER_PRIORITY_MEMORY_RESERVE_BYTES", "4294967296")
     settings = Settings.from_env()
     assert settings.vibevoice_enabled is True
+    assert settings.vibevoice_research_only is True
     assert settings.vibevoice_qualified is True
     assert settings.vibevoice_worker_peak_memory_bytes == 8_589_934_592
     assert settings.higher_priority_memory_reserve_bytes == 4_294_967_296
@@ -102,6 +122,7 @@ def test_vibevoice_default_requires_it_to_be_enabled(monkeypatch):
 def test_invalid_vibevoice_limits_are_rejected(monkeypatch, name, value):
     monkeypatch.setenv("TTS_VIBEVOICE_ENABLED", "true")
     monkeypatch.setenv("TTS_VIBEVOICE_QUALIFIED", "true")
+    monkeypatch.setenv("TTS_VIBEVOICE_RESEARCH_ONLY", "true")
     monkeypatch.setenv("TTS_VIBEVOICE_WORKER_PEAK_MEMORY_BYTES", "8589934592")
     monkeypatch.setenv("TTS_HIGHER_PRIORITY_MEMORY_RESERVE_BYTES", "4294967296")
     monkeypatch.setenv(name, value)

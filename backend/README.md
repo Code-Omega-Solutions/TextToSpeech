@@ -97,10 +97,14 @@ missing, empty, unreadable, insecure, symlink, or malformed file prevents use.
 The checker reports credential accessibility without printing the secret.
 Provisioning and rotation remain operator responsibilities.
 
-The backend defaults to `127.0.0.1:8000`; do not bind it to a wider interface
-unless a separately reviewed network boundary requires it. Health (`/healthz`)
-is distinct from readiness (`/readyz`), which verifies runtime dependencies and
-required voices. The speech endpoint is `POST /v1/audio/speech`. The existing
+The backend defaults to `127.0.0.1:8000`. For the private Open WebUI R&D setup,
+`TTS_HOST=0.0.0.0` binds the service to all interfaces. This exposes port 8000
+to every network that can route to the host. Bearer authentication does not
+encrypt HTTP traffic; restrict access with a trusted private network or
+firewall, and do not expose this listener to untrusted networks. Health
+(`/healthz`) is distinct from readiness (`/readyz`), which verifies runtime
+dependencies and required voices. The speech endpoint is
+`POST /v1/audio/speech`. The existing
 request limit is 5,000 UTF-16 code units; the service applies bounded request,
 concurrency, timeout, output, and per-request temporary-storage limits.
 
@@ -108,6 +112,12 @@ When no language is specified, short inputs use `TTS_DEFAULT_LANGUAGE`; longer
 inputs use language detection. An unsupported detection falls back to `en-US`.
 Explicit supported languages bypass detection; unsupported explicit languages
 remain invalid.
+
+For Open WebUI's OpenAI-compatible TTS engine, set the model to `vibevoice` and
+leave the voice field blank to use the detected-language default. Open WebUI
+does not send a language field. Detection runs when text has at least
+`TTS_MIN_DETECTION_CHARS` alphabetic characters (default `20`); shorter text
+uses `TTS_DEFAULT_LANGUAGE` (default `en-US`).
 
 German (`de-DE`) and US English (`en-US`) voices are required. Defaults are
 `Anna (Deutsch (Deutschland))` and `Samantha`; British English (`en-GB`,
@@ -140,22 +150,27 @@ model, voice assets, runtime package inventory, host behavior, and intended-use
 terms have been reviewed and the specific deployment has received approval.
 The upstream model card identifies research and development as its intended
 use, discourages commercial or real-world use without further work, and
-includes responsible-use restrictions. See the [third-party inventory](../THIRD_PARTY_NOTICES.md);
-the current review is not release approval.
+includes responsible-use restrictions. This deployment is limited to private
+research and development. That scope is not production approval, Microsoft
+permission for unsupported languages, or redistribution approval. See the
+[third-party inventory](../THIRD_PARTY_NOTICES.md).
 
 After all release gates are satisfied, the worker runtime is isolated from the
 API environment under `vibevoice_worker/`. It requires Python 3.11, a checkout
 of the reviewed VibeVoice source at the pinned revision, local Realtime 0.5B
-model files, and the reviewed Carter/Spk1/Spk0 prompt files. The worker uses
-offline-only model loading and does not download assets. Do not install this
-runtime until its exact locked package artifacts and notices have been
-reviewed. A separately managed worker environment can then be prepared from
-that directory with `uv sync --locked`.
+model files, and the reviewed Carter/Spk1/Spk0 prompt files. German generation
+is experimental. The worker uses offline-only model loading and does not
+download assets during startup. The owner has authorized local installation
+for private R&D only. Exact package-artifact review, production use, and
+redistribution remain separate gates. The isolated worker environment is
+managed separately from the API environment with `uv sync --locked`.
 
 The operator settings are:
 
 - `TTS_VIBEVOICE_ENABLED=true` and `TTS_VIBEVOICE_QUALIFIED=true` to enable a
 previously qualified deployment.
+- `TTS_VIBEVOICE_RESEARCH_ONLY=true` to acknowledge the private R&D-only scope.
+  Configuration rejects worker enablement without this setting.
 - `TTS_DEFAULT_BACKEND=vibevoice` to make it the configured default; requests
 may instead select `model` as `macos-say` or `vibevoice`.
 - `TTS_VIBEVOICE_WORKER_PYTHON`, `TTS_VIBEVOICE_SOURCE_PATH`, and
@@ -167,9 +182,12 @@ operator-selected reserve budgets. Both are required; do not guess values.
 - `TTS_VIBEVOICE_WORKER_TIMEOUT_SECONDS` to bound worker startup and synthesis;
 the existing request timeout remains authoritative.
 
-The service admits one worker only when the available-memory probe covers both
-budgets. It terminates the worker when available memory drops below the reserve
-and does not reload it until capacity recovers. Missing assets, unsupported
+Cold admission requires available memory for both the measured worker peak and
+the higher-priority reserve. While the worker is resident, the service adds
+back its measured RSS when evaluating external memory pressure, so its own
+footprint does not trigger a false yield. It terminates the worker when
+external available memory drops below reserve and does not reload until
+capacity recovers. Missing assets, unsupported
 runtime, failed probes, or worker errors fall back to `say` at most once and
 discard partial VibeVoice output. Successful responses include
 `X-Speech-Backend`; `X-Speech-Fallback` identifies a fallback. VibeVoice does

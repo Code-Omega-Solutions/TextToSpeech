@@ -66,3 +66,53 @@ def test_reserve_crossing_during_generation_evicts_worker(settings_factory):
     assert process.terminated
     assert worker._yielded is True
     worker.stop()
+
+
+def test_resident_worker_rss_is_excluded_from_reserve_pressure(settings_factory):
+    settings = settings_factory(
+        vibevoice_enabled=True,
+        vibevoice_research_only=True,
+        vibevoice_qualified=True,
+        vibevoice_worker_peak_memory_bytes=100,
+        higher_priority_memory_reserve_bytes=50,
+    )
+    process = WaitingProcess()
+    process.pid = 123
+    worker = VibeVoiceWorker(
+        settings,
+        process_factory=lambda *_args, **_kwargs: pytest.fail("unexpected worker start"),
+        memory_probe=lambda: 40,
+        process_memory_probe=lambda _process: 20,
+    )
+    worker._process = process
+
+    worker._check_admission()
+
+    assert process.terminated is False
+    assert worker._yielded is False
+    worker.stop()
+
+
+def test_resident_worker_yields_when_external_pressure_exhausts_reserve(settings_factory):
+    settings = settings_factory(
+        vibevoice_enabled=True,
+        vibevoice_research_only=True,
+        vibevoice_qualified=True,
+        vibevoice_worker_peak_memory_bytes=100,
+        higher_priority_memory_reserve_bytes=50,
+    )
+    process = WaitingProcess()
+    process.pid = 123
+    worker = VibeVoiceWorker(
+        settings,
+        process_factory=lambda *_args, **_kwargs: pytest.fail("unexpected worker start"),
+        memory_probe=lambda: 40,
+        process_memory_probe=lambda _process: 5,
+    )
+    worker._process = process
+
+    with pytest.raises(VibeVoiceError, match="memory reserve reached"):
+        worker._check_admission()
+
+    assert process.terminated is True
+    assert worker._yielded is True

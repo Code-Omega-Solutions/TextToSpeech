@@ -73,14 +73,22 @@ offer.
 The VibeVoice source, model artifacts, voice presets, and isolated runtime
 SHALL be reviewed separately. MIT license labels SHALL NOT be treated as
 overriding model-card intended-use guidance or responsible-use restrictions.
-Exact runtime artifact licenses, model and voice provenance, and intended-use
-approval SHALL be resolved before installation or distribution. Unresolved
-review SHALL keep the worker disabled and the release blocked.
+An owner-authorized private research installation SHALL require an explicit
+research-only configuration and SHALL NOT imply legal clearance, production
+support, or permission to redistribute. Exact runtime artifact licenses, model
+and voice provenance, and intended-use approval SHALL be resolved before
+production use or distribution. Unresolved review SHALL keep the worker
+disabled outside the private research scope and keep production release blocked.
 
-#### Scenario: a VibeVoice package or asset has unresolved terms
+#### Scenario: an owner authorizes a private research installation
 
-- **WHEN** the exact dependency, model artifact, voice prompt, or intended use has not been reviewed
-- **THEN** the worker is not installed or distributed, and the notice records the unresolved gate without claiming legal approval.
+- **WHEN** the owner authorizes VibeVoice for private research but exact package, model, or voice review remains incomplete
+- **THEN** the worker may run only with an explicit research-only setting on the private host, while the notice retains unresolved terms and makes no legal or production clearance claim.
+
+#### Scenario: VibeVoice is considered for production or distribution
+
+- **WHEN** the exact dependency, model artifact, voice provenance, intended use, or required notices remain unresolved
+- **THEN** production use and redistribution remain blocked, regardless of private research authorization.
 
 ## Uncovered
 

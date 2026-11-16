@@ -205,6 +205,20 @@ class SpeechService:
             )
         if selected_backend != "vibevoice":
             raise SynthesisUnavailable
+        if not self.settings.vibevoice_enabled or not self.settings.vibevoice_research_only:
+            if language.startswith("de-"):
+                fallback = self._synthesize_macos(
+                    text, language, speed, response_format, cancel_event
+                )
+                return SynthesisResult(
+                    fallback.audio,
+                    fallback.media_type,
+                    fallback.filename,
+                    actual_backend="macos-say",
+                    fallback=True,
+                    failure_reason="research_only_disabled",
+                )
+            raise SynthesisUnavailable
         try:
             return self._synthesize_vibevoice(
                 text, language, speed, response_format, voice, cancel_event

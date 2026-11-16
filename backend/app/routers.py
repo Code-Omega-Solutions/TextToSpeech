@@ -79,7 +79,9 @@ def build_router(settings: Settings, speech_service: SpeechService) -> APIRouter
             _authenticate(authorization, settings)
             selected_language = resolve_language(payload, settings)
             if selected_backend == "vibevoice":
-                if not settings.vibevoice_enabled:
+                if (
+                    not settings.vibevoice_enabled or not settings.vibevoice_research_only
+                ) and not selected_language.startswith("de-"):
                     raise HTTPException(status_code=422, detail="Invalid request.")
                 if payload.voice is not None:
                     voice_languages = {

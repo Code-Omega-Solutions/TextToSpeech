@@ -100,24 +100,49 @@ Unexpected detector failures remain errors.
 - **THEN** the service selects `en-US` for synthesis.
 
 ### Synthesis uses configured voices and bounded worker processes
-<!-- touches: backend/app/services.py, backend/app/voices.py, backend/app/config.py, backend/app/vibevoice.py, backend/vibevoice_worker/worker.py, backend/tests/test_services.py, backend/tests/test_vibevoice.py, backend/tests/test_vibevoice_memory.py, backend/tests/test_voices.py -->
+<!-- touches: backend/app/services.py, backend/app/voices.py, backend/app/models.py, backend/app/config.py, backend/app/vibevoice.py, backend/vibevoice_worker/worker.py, backend/tests/test_services.py, backend/tests/test_models.py, backend/tests/test_config.py, backend/tests/test_api.py, backend/tests/test_vibevoice.py, backend/tests/test_vibevoice_memory.py, backend/tests/test_voices.py -->
 
 The service SHALL use configured macOS voices, scale the configured base
 words-per-minute rate by request speed, and use ffmpeg to produce mono 44.1 kHz
 PCM WAV or 128 kbps MP3. The optional VibeVoice path SHALL use one persistent
-isolated worker, local offline assets, the reviewed language-compatible presets,
-and only its speech decoder. It SHALL be admitted only when available memory
-covers the measured worker peak and higher-priority reserve; reserve pressure or
-an unavailable probe SHALL terminate the worker and prevent reload until
-capacity recovers. Both paths SHALL preserve request, output, timeout, and
-temporary-disk bounds, without an unbounded queue. A VibeVoice failure SHALL
-discard partial audio and attempt the macOS backend at most once. Cancellation
-or failure SHALL stop work and release request capacity.
+isolated worker, local offline assets, the reviewed English Carter and German
+Spk1/Spk0 presets, and only its speech decoder. It SHALL be available only in
+explicit private research-only mode; this does not establish production
+support. When disabled or outside research mode, German requests SHALL use the
+configured macOS voice and report macOS speech as the actual backend.
+
+Before loading, available memory SHALL cover the measured worker peak plus the
+higher-priority reserve. While the worker is resident, its own resident memory
+SHALL be excluded from the external-pressure measurement. If external available
+memory falls below the reserve, the service SHALL terminate the worker, discard
+partial audio, and use macOS speech at most once. It SHALL NOT reload the worker
+while the reserve remains unmet. An unavailable or untrustworthy probe SHALL
+deny admission or terminate the worker. Both paths SHALL preserve request,
+output, timeout, and temporary-disk bounds without an unbounded queue.
+
+A blank VibeVoice voice field SHALL be treated as omitted. After automatic
+language detection, the service SHALL select Carter for English or Spk1 for
+German unless the caller explicitly selects the supported German Spk0 preset.
 
 #### Scenario: a VibeVoice worker is admitted and later yields
 
-- **WHEN** a VibeVoice request is admitted with sufficient measured capacity and memory later falls below the configured reserve
-- **THEN** one worker serves the request, terminates on reserve crossing, and does not reload while pressure remains.
+- **WHEN** external memory pressure reduces available capacity below the configured reserve during generation
+- **THEN** the worker terminates, partial audio is discarded, the request falls back to macOS speech, and the worker does not reload while pressure remains.
+
+#### Scenario: the worker's own memory does not trigger a false yield
+
+- **WHEN** the resident worker uses memory but external available capacity remains above the reserve
+- **THEN** the worker remains available for the next admitted request.
+
+#### Scenario: research mode is not explicitly enabled
+
+- **WHEN** the operator enables VibeVoice without the research-only acknowledgment
+- **THEN** configuration rejects startup rather than enabling the worker for routine service.
+
+#### Scenario: OpenAI-compatible request leaves the voice blank
+
+- **WHEN** a private research request omits a voice and language detection resolves English or German
+- **THEN** the service selects Carter or Spk1 respectively; an explicit German Spk0 selection is preserved.
 
 #### Scenario: VibeVoice cannot produce a complete response
 
@@ -134,7 +159,7 @@ or failure SHALL stop work and release request capacity.
 - **WHEN** a request is cancelled or exceeds its deadline, segment, output-size, or temporary-disk limit
 - **THEN** the service returns a bounded error, makes partial audio unavailable, and frees capacity for later requests.
 
-#### Scenario: a valid synthesis request completes
+#### Scenario: a valid request completes
 
 - **WHEN** a valid request is synthesized with an available configured voice
 - **THEN** the service returns the requested audio format with the configured rate and preserved sentence and paragraph pauses.

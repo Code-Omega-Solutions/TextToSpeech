@@ -8,36 +8,46 @@
 
 ### User Story 1 - Choose a speech backend and voice (Priority: P1)
 
-As a caller of the speech service, I want to select VibeVoice or the existing
-macOS voice, so I can use the voice quality that best fits the current inference
-workload.
+As a caller in the private research deployment, I want to select VibeVoice for
+English or German so the operator can measure resource use and fallback while
+keeping routine speech on the existing macOS voice.
 
 **Why this priority**: VibeVoice received higher review ratings, while keeping
 macOS speech selectable preserves control and a reliable alternative.
 
-**Independent Test**: Select each backend for the same English and German
-inputs. Confirm the selected voice, requested audio format, and actual backend
-used for every response.
+**Independent Test**: In explicit research-only mode, select VibeVoice for
+English and German. Confirm the reviewed language-compatible preset is used
+when admitted, fallback reports macOS speech accurately, and requests outside
+research mode cannot start the worker.
 
 **Acceptance Scenarios**:
 
-1. **Given** a qualified host with VibeVoice enabled, **When** a caller uses the
-   configured default backend, **Then** the service uses VibeVoice unless a
+1. **Given** a qualified private research host with VibeVoice enabled,
+   **When** a caller explicitly selects VibeVoice for English or German,
+   **Then** the service uses the corresponding reviewed preset unless a
    higher-priority resource need requires macOS speech.
 2. **Given** a caller explicitly selects macOS speech, **When** a valid request
    is submitted, **Then** the service uses macOS speech without loading
    VibeVoice.
 3. **Given** a VibeVoice request with no explicit voice, **When** the language
-   is German, **Then** the service uses the reviewed female preset; when the
-   language is English, it uses the reviewed male preset.
-4. **Given** a caller selects a supported German male preset, **When** the
-   language is German, **Then** the service uses that preset and does not
-   substitute another voice.
+   is English or German, **Then** the service uses the reviewed default Carter
+   or Spk1 preset respectively.
+4. **Given** a research request explicitly selects the German male Spk0 preset,
+   **When** the request is admitted, **Then** the worker uses that preset and
+   does not substitute another voice.
 5. **Given** an unsupported voice or a voice that does not match the selected
    language, **When** a request is validated, **Then** the service rejects it
    before synthesis and returns no audio.
-6. **Given** VibeVoice is selected on a qualified host, **When** synthesis
-   begins, **Then** the service uses the reviewed Realtime 0.5B model.
+6. **Given** VibeVoice is selected in research-only mode on a qualified host,
+   **When** synthesis begins, **Then** the service uses the reviewed Realtime
+   0.5B model and records no production-use claim.
+7. **Given** VibeVoice is selected and the voice is omitted or blank,
+   **When** the language is detected from sufficiently long text, **Then** the
+   service selects the default preset for the resolved language.
+8. **Given** an operator binds the research service to all interfaces for a
+  trusted Open WebUI client, **When** a valid authenticated speech request
+  arrives, **Then** it receives the normal response and unauthenticated
+  requests remain rejected.
 
 ### User Story 2 - Protect higher-priority inference workloads (Priority: P1)
 
@@ -131,9 +141,12 @@ remains usable in every case where its own prerequisites are present.
 3. **Given** VibeVoice has yielded its memory, **When** readiness is checked,
    **Then** the service remains ready if macOS speech is available and reports
    VibeVoice as unavailable or yielded.
-4. **Given** model terms, artifact provenance, or host requirements are
-   unresolved, **When** a deployment is prepared, **Then** VibeVoice is not
-   installed or distributed and macOS speech remains available.
+4. **Given** model terms, artifact provenance, intended use, or host requirements
+  are unresolved, **When** a deployment is prepared, **Then** VibeVoice is not
+  installed or enabled and macOS speech remains available.
+5. **Given** VibeVoice is enabled, **When** a request reaches the service
+  without the research-only setting, **Then** configuration fails closed and
+  the worker cannot start.
 
 ## Edge Cases
 
@@ -166,13 +179,18 @@ remains usable in every case where its own prerequisites are present.
 - **FR-002**: A speech request MUST be able to override the configured default
   backend when that backend is enabled.
 - **FR-003**: The service MUST use VibeVoice Realtime 0.5B for the reviewed
-  English and German presets.
-- **FR-004**: With VibeVoice selected, the default English voice MUST be the
-  reviewed male Carter preset and the default German voice MUST be the reviewed
-  female Spk1 preset.
-- **FR-005**: The service MUST allow the reviewed German male Spk0 preset as an
-  optional voice and MUST reject unknown or language-incompatible voice
+  English and German presets only in an explicitly enabled research-only
+  deployment.
+- **FR-004**: With VibeVoice selected in research-only mode, the default
+  English voice MUST be Carter and the default German voice MUST be Spk1.
+- **FR-005**: The service MUST allow the reviewed German Spk0 preset for
+  research requests and MUST reject unknown or language-incompatible voice
   selections before synthesis.
+- **FR-019**: An omitted or blank VibeVoice voice MUST select the default preset
+  for the request's resolved language after automatic language detection.
+- **FR-020**: The operator MAY bind the research service to all interfaces for
+  a trusted private Open WebUI client, but bearer authentication MUST remain
+  enabled and unencrypted HTTP MUST NOT be exposed to untrusted networks.
 - **FR-006**: Both backends MUST preserve the existing MP3 and WAV response
   formats, media types, speed behavior, and bounded request and output limits.
 - **FR-007**: Both backends MUST use the existing authentication and safe error
@@ -186,8 +204,9 @@ remains usable in every case where its own prerequisites are present.
 - **FR-010**: The serving model MUST load only components required to generate
   speech and MUST release its voice-prompt caches whenever it yields memory.
 - **FR-011**: VibeVoice MUST have lower resource priority than image-generation
-  and Ollama workloads and MUST yield memory when a trustworthy system signal
-  indicates that those workloads need it.
+  and Ollama workloads. Reserve checks for a resident worker MUST exclude the
+  worker's own resident memory and MUST yield when external available capacity
+  falls below the configured reserve.
 - **FR-012**: When VibeVoice cannot safely start or continue, the service MUST
   release its model and prompt-cache allocations and use macOS speech for the
   request at most once when that backend is available.
@@ -205,6 +224,8 @@ remains usable in every case where its own prerequisites are present.
 - **FR-017**: Deployment MUST verify the model, runtime, voice, and dependency
   terms, artifact provenance, and supported host requirements before
   installing or distributing them.
+- **FR-018**: VibeVoice MUST require an explicit research-only setting and MUST
+  NOT be enabled for routine or production speech service.
 
 ## Key Entities
 
@@ -224,17 +245,16 @@ remains usable in every case where its own prerequisites are present.
 - **SC-001**: In backend-selection tests, every valid request uses its selected
   backend unless a documented availability, language, or resource condition
   requires fallback.
-- **SC-002**: English defaults to Carter and German defaults to Spk1; an
-  explicitly selected supported German Spk0 voice is used, and unsupported
-  voice choices produce no audio.
+- **SC-002**: In research-only mode, English defaults to Carter, German
+  defaults to Spk1, and an explicitly selected German Spk0 is preserved.
 - **SC-003**: Both backends produce playable MP3 and WAV responses with correct
   media types while preserving existing input and output limits.
 - **SC-004**: A model-load trace shows one shared VibeVoice weight set for both
-  languages and no resident component that is not required for speech
+  research languages and no resident component that is not required for speech
   generation.
-- **SC-005**: In simulated memory-pressure tests, VibeVoice stops retaining
-  memory, new VibeVoice work is not admitted while pressure remains, and
-  available macOS speech requests succeed without restarting the service.
+- **SC-005**: Tests show that the worker's own memory does not trigger a false
+  reserve crossing, while external pressure below reserve evicts it, blocks
+  reload, and preserves macOS speech without restarting the service.
 - **SC-006**: When VibeVoice is denied or evicted, the response identifies
   macOS speech as the actual backend; when both backends fail, no partial audio
   is returned.
@@ -245,6 +265,11 @@ remains usable in every case where its own prerequisites are present.
   paths do not appear in logs or error responses.
 - **SC-009**: A benchmark records cold and warm latency and peak memory before
   and after yielding, with the tested host and model configuration identified.
+- **SC-010**: OpenAI-compatible requests with an omitted or blank voice select
+  Carter for detected English and Spk1 for detected German.
+- **SC-011**: On the private research network, an authenticated Open WebUI
+  request succeeds through the all-interface listener and an unauthenticated
+  request is rejected.
 
 ## Assumptions
 
@@ -253,12 +278,14 @@ remains usable in every case where its own prerequisites are present.
 - VibeVoice is the configured default on a qualified host when enabled.
   Operators can instead configure macOS speech, and callers can select a
   permitted backend per request.
-- The reviewed VibeVoice presets are `en-Carter_man`, `de-Spk1_woman`, and
-  `de-Spk0_man`. English uses Carter by default, German uses Spk1 by default,
-  and Spk0 is an optional German voice.
+- The active VibeVoice presets are `en-Carter_man`, `de-Spk1_woman`, and
+  `de-Spk0_man`. German remains experimental and is enabled only for private
+  research, not routine or production service.
 - Existing language detection and supported output formats remain in place.
-  VibeVoice is qualified only for the reviewed English and German presets;
-  other existing language choices continue through macOS speech.
+  Other supported languages use macOS speech.
+- The operator has authorized private R&D use of the English and German
+  presets. This does not constitute Microsoft permission, legal approval, or
+  authorization to publish or distribute model artifacts or generated data.
 - The service will not modify or stop image-generation or Ollama workloads.
   If it cannot reliably detect memory pressure or coordinate resource claims,
   it must choose macOS speech instead of loading VibeVoice.

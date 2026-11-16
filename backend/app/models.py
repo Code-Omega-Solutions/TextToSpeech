@@ -24,6 +24,13 @@ class SpeechRequest(BaseModel):
     response_format: Literal["mp3", "wav"] = "mp3"
     speed: float = Field(default=1.0, ge=0.5, le=2.0, allow_inf_nan=False)
 
+    @field_validator("voice", mode="before")
+    @classmethod
+    def blank_voice_is_unspecified(cls, value: str | None) -> str | None:
+        if isinstance(value, str) and not value.strip():
+            return None
+        return value
+
     @field_validator("input")
     @classmethod
     def limit_utf16_units(cls, value: str) -> str:

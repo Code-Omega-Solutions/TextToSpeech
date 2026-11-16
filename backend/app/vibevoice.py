@@ -20,6 +20,7 @@ from app.config import Settings
 _MAX_REQUEST_LINE_BYTES = 64 * 1024
 _MAX_RESPONSE_LINE_BYTES = 4 * 1024
 _POLL_INTERVAL_SECONDS = 0.05
+_PROCESS_MEMORY_SAMPLE_INTERVAL_SECONDS = 0.25
 
 
 class VibeVoiceError(RuntimeError):
@@ -33,13 +34,17 @@ class VibeVoiceWorker:
         *,
         process_factory: Callable[..., Any] | None = None,
         memory_probe: Callable[[], int] | None = None,
+        process_memory_probe: Callable[[Any], int] | None = None,
     ) -> None:
         self.settings = settings
         self._process_factory = process_factory or subprocess.Popen
         self._memory_probe = memory_probe or available_memory_bytes
+        self._process_memory_probe = process_memory_probe or process_resident_memory_bytes
         self._lock = threading.Lock()
         self._process_lock = threading.Lock()
+        self._process_memory_lock = threading.Lock()
         self._process: Any | None = None
+        self._process_memory_sample: tuple[int, float, int] | None = None
         self._yielded = False
         self._monitor_stop = threading.Event()
 
@@ -50,7 +55,7 @@ class VibeVoiceWorker:
         voice: str,
         cancel_event: threading.Event | None = None,
     ) -> bytes:
-        if not self.settings.vibevoice_enabled:
+        if not self.settings.vibevoice_enabled or not self.settings.vibevoice_research_only:
             raise VibeVoiceError("disabled")
         if not self._lock.acquire(blocking=False):
             raise VibeVoiceError("busy")
@@ -70,7 +75,7 @@ class VibeVoiceWorker:
 
     @property
     def status(self) -> str:
-        if not self.settings.vibevoice_enabled:
+        if not self.settings.vibevoice_enabled or not self.settings.vibevoice_research_only:
             return "disabled"
         if self._yielded:
             return "yielded"
@@ -96,8 +101,12 @@ class VibeVoiceWorker:
         reserve = self.settings.higher_priority_memory_reserve_bytes
         if peak_budget is None or reserve is None:
             raise VibeVoiceError("memory budget unavailable")
+        with self._process_lock:
+            process = self._process
+        if process is not None and process.poll() is not None:
+            process = None
         try:
-            available = self._memory_probe()
+            available = self._available_memory_for_reserve(process)
         except (OSError, ValueError, subprocess.SubprocessError):
             self.stop()
             raise VibeVoiceError("memory probe unavailable") from None
@@ -108,7 +117,7 @@ class VibeVoiceWorker:
             self._yielded = True
             self.stop()
             raise VibeVoiceError("memory reserve reached")
-        if available < peak_budget + reserve:
+        if process is None and available < peak_budget + reserve:
             self.stop()
             raise VibeVoiceError("worker memory budget unavailable")
         self._yielded = False
@@ -178,6 +187,9 @@ class VibeVoiceWorker:
                     "HF_HUB_OFFLINE": "1",
                     "TRANSFORMERS_OFFLINE": "1",
                     "HF_DATASETS_OFFLINE": "1",
+                    "TTS_VIBEVOICE_RESEARCH_ONLY": str(
+                        self.settings.vibevoice_research_only
+                    ).lower(),
                     "TTS_VIBEVOICE_SOURCE_PATH": source_path,
                     "TTS_VIBEVOICE_MODEL_PATH": model_path,
                     "TTS_MAX_OUTPUT_BYTES": str(
@@ -209,8 +221,12 @@ class VibeVoiceWorker:
     def _monitor_reserve(self) -> None:
         reserve = self.settings.higher_priority_memory_reserve_bytes
         while not self._monitor_stop.wait(_POLL_INTERVAL_SECONDS):
+            with self._process_lock:
+                process = self._process
+            if process is None or process.poll() is not None:
+                return
             try:
-                available = self._memory_probe()
+                available = self._available_memory_for_reserve(process)
             except (OSError, ValueError, subprocess.SubprocessError):
                 self.stop()
                 return
@@ -245,7 +261,7 @@ class VibeVoiceWorker:
                 self.stop()
                 raise VibeVoiceError("worker timed out")
             try:
-                available = self._memory_probe()
+                available = self._available_memory_for_reserve(process)
             except (OSError, ValueError, subprocess.SubprocessError):
                 self.stop()
                 raise VibeVoiceError("memory probe unavailable") from None
@@ -268,6 +284,31 @@ class VibeVoiceWorker:
             if len(line.encode("utf-8")) > _MAX_RESPONSE_LINE_BYTES:
                 raise VibeVoiceError("worker response exceeds protocol limit")
             return line
+
+    def _available_memory_for_reserve(self, process: Any | None) -> int:
+        available = self._memory_probe()
+        if type(available) is not int or available < 0:
+            raise ValueError("available memory is unavailable")
+        if process is None or process.poll() is not None:
+            return available
+        process_id = getattr(process, "pid", None)
+        if type(process_id) is not int or process_id <= 0:
+            return available
+        now = time.monotonic()
+        with self._process_memory_lock:
+            sample = self._process_memory_sample
+            if (
+                sample is not None
+                and sample[0] == process_id
+                and now - sample[1] < _PROCESS_MEMORY_SAMPLE_INTERVAL_SECONDS
+            ):
+                resident = sample[2]
+            else:
+                resident = self._process_memory_probe(process)
+                if type(resident) is not int or resident < 0:
+                    raise ValueError("worker memory is unavailable")
+                self._process_memory_sample = (process_id, now, resident)
+        return available + resident
 
     def _read_wav(self, output_path: Path) -> bytes:
         details = output_path.lstat()
@@ -315,6 +356,29 @@ class VibeVoiceWorker:
                     close()
                 except OSError:
                     pass
+
+
+def process_resident_memory_bytes(process: Any) -> int:
+    process_id = getattr(process, "pid", None)
+    if type(process_id) is not int or process_id <= 0:
+        return 0
+    try:
+        output = subprocess.run(
+            ["/bin/ps", "-o", "rss=", "-p", str(process_id)],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=2,
+        ).stdout.strip()
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise OSError("worker memory is unavailable") from exc
+    try:
+        resident_kilobytes = int(output)
+    except ValueError as exc:
+        raise ValueError("worker memory is unavailable") from exc
+    if resident_kilobytes < 0:
+        raise ValueError("worker memory is unavailable")
+    return resident_kilobytes * 1024
 
 
 def available_memory_bytes() -> int:

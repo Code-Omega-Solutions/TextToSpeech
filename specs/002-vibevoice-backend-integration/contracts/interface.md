@@ -26,24 +26,27 @@ authentication and validation before backend admission or model loading.
 ```
 
 | Field | Type | Contract |
-|---|---|---|
+| --- | --- | --- |
 | `input` | string | Required, nonempty, at most 5,000 UTF-16 code units. |
 | `model` | string | Optional backend selector. `macos-say` selects the existing macOS speech backend; `vibevoice` selects VibeVoice. When omitted, the operator-configured default applies. The selected VibeVoice model is always VibeVoice Realtime 0.5B. |
-| `language` | string or `null` | Optional. Existing supported language tags and aliases remain accepted: `de-DE`, `en-US`, `en-GB`, `de`, and `en`. The normalized locale is used for voice validation. VibeVoice supports only the reviewed English and German presets; other supported locales use macOS speech. |
-| `voice` | string or `null` | Optional. For VibeVoice, accepted values are `en-Carter_man`, `de-Spk1_woman`, and `de-Spk0_man`; the value must match the request locale. If omitted, English defaults to `en-Carter_man` and German to `de-Spk1_woman`. macOS voice selection retains the existing behavior. |
+| `language` | string or `null` | Optional. Existing supported language tags and aliases remain accepted: `de-DE`, `en-US`, `en-GB`, `de`, and `en`. The normalized locale is used for backend routing. VibeVoice supports the reviewed English and experimental German presets only in an explicitly enabled private research-only deployment; other supported locales use macOS speech. |
+| `voice` | string or `null` | Optional. For VibeVoice, accepted values are `en-Carter_man`, `de-Spk1_woman`, and `de-Spk0_man`; the value must match the resolved locale. An omitted or blank value selects Carter for English or Spk1 for German research requests. German requests use macOS speech when research-only mode is disabled. |
 | `response_format` | string | Optional; `mp3` or `wav`. Defaults to `mp3`. |
 | `speed` | number | Optional; inclusive range `0.5`–`2.0`. Defaults to `1.0`; existing speed behavior is preserved. |
 
-Unknown fields are rejected. An invalid or language-incompatible VibeVoice
-voice is rejected before synthesis and produces no audio. The service does not
-silently substitute a different voice.
+Unknown fields are rejected. A blank `voice` is treated as omitted. An invalid
+or language-incompatible VibeVoice voice is rejected before synthesis and
+produces no audio. VibeVoice enablement
+requires the operator's explicit research-only setting. When it is disabled, a
+German VibeVoice selection is routed through macOS speech and reports
+`X-Speech-Backend: macos-say` and `X-Speech-Fallback: true`.
 
 ### Response
 
 A successful response is the audio payload, not a JSON envelope:
 
 | Requested format | Media type | Filename |
-|---|---|---|
+| --- | --- | --- |
 | `mp3` | `audio/mpeg` | `speech.mp3` |
 | `wav` | `audio/wav` | `speech.wav` |
 
@@ -59,7 +62,7 @@ fallback. Partial VibeVoice output is never returned.
 The existing safe error contract remains in effect:
 
 | Status | Meaning |
-|---|---|
+| --- | --- |
 | `401` | Missing or invalid bearer token when authentication is enabled. |
 | `413` | Request body or generated audio exceeds the configured size limit. |
 | `422` | Invalid request, unsupported voice/locale pairing, or more than 100 speech segments. |
@@ -79,12 +82,14 @@ macOS speech prerequisites are available, even if VibeVoice is disabled,
 yielded, or missing its optional runtime or assets.
 
 The memory gate uses the host's available-memory observation and an operator
-configured reserve. It admits a worker only when available memory covers both
-the measured worker peak budget and the reserve, and evicts it when available
-memory falls below the reserve. This is a capacity-based signal, not
-process-aware coordination. If target-host qualification cannot establish that
-the gate reliably protects higher-priority workloads, VibeVoice must remain
-disabled and macOS speech remains the fallback.
+configured reserve. Cold admission requires available memory for both the
+measured worker peak budget and the reserve. For a resident worker, reserve
+checks add back the worker's measured resident memory so the worker does not
+count its own footprint as external pressure. The worker is evicted when
+external available memory falls below the reserve. This remains a
+capacity-based signal, not process-aware workload coordination. If target-host
+qualification cannot establish that the gate reliably protects higher-priority
+workloads, VibeVoice must remain disabled and macOS speech remains the fallback.
 
 ## Private worker protocol
 
@@ -103,14 +108,20 @@ through the existing audio path. The worker does not return audio bytes on
 stdout, log speech text, or include private artifact paths in diagnostics.
 
 The worker serializes inference and uses one shared resident model for English
-and German. Terminating it is the memory-release mechanism; worker startup,
+and German research requests. Terminating it is the memory-release mechanism; worker startup,
 model loading, failure, and yielding are not exposed as additional public API
 routes.
 
+The worker's private process receives a research-only marker from the
+application and refuses to initialize without it. This marks scope; it is not
+production approval or permission to redistribute model assets or generated
+audio.
+
 ## Identifiers carried from the feature specification
 
-Voice preset identifiers are copied verbatim: `en-Carter_man`,
-`de-Spk1_woman`, and `de-Spk0_man`. Requirement and success-criterion
+The VibeVoice voice preset identifiers are `en-Carter_man`,
+`de-Spk1_woman`, and `de-Spk0_man`, active only in research-only mode.
+Requirement and success-criterion
 identifiers are also retained verbatim for consumer and test traceability:
 
 | Requirements | Success criteria |

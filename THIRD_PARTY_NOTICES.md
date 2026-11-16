@@ -85,23 +85,51 @@ cover them.
 The optional worker runtime is isolated in
 `backend/vibevoice_worker/pyproject.toml` and pinned in
 `backend/vibevoice_worker/uv.lock` (69 resolved package records). The exact
-package artifacts and their license notices have not yet been audited. Do not
-install or distribute the worker yet. The implementation source reference is
+package artifacts and their license notices have not yet been audited. The
+operator authorized installation on the private R&D host only; this does not
+clear the artifacts for redistribution. Do not distribute the worker. The
+implementation source reference is
 [microsoft/VibeVoice](https://github.com/microsoft/VibeVoice) at
 `0063f5b175d07c0a7d0aab2c5806bee9aa15f2a1`. The repository's MIT license
 requires retaining its copyright and license notice. The selected
-`VibeVoice-Realtime-0.5B` model card also identifies MIT, but separately limits
-its intended use to research and development, discourages commercial or
-real-world use without further work, and states responsible-use restrictions.
-The MIT label alone is not release approval or confirmation that a proposed
-deployment is permitted.
+`VibeVoice-Realtime-0.5B` model revision
+`6bce5f06044837fe6d2c5d7a71a84f0416bd57e4` identifies MIT. Its model card
+limits direct intended use to research, says the model is intended for English
+speech only, and lists unsupported languages as out of scope. It discourages
+commercial or real-world use without further testing and development, and
+states responsible-use restrictions. The card also claims that generated audio
+contains an audible AI disclaimer and an imperceptible watermark; the integrated
+worker must verify that the exact checkpoint preserves these safeguards. The
+model revision must be pinned and recorded with the deployed artifact. The MIT
+label alone is not release approval or confirmation that a proposed deployment
+is permitted. The operator has authorized private R&D use only; this is not
+legal approval, Microsoft permission, or a basis for production or
+redistribution claims. German is experimental and unsupported in the reviewed
+model card, so do not present German VibeVoice as a supported production use.
 
-The reviewed `en-Carter_man`, `de-Spk1_woman`, and `de-Spk0_man` presets depend
-on bundled or separately obtained model voice assets. Their exact artifact
-provenance and applicable terms have not been independently established. The
-model documentation describes German as experimental or unsupported depending
-on the referenced revision; German deployment therefore also remains subject
-to host and voice qualification.
+At source commit `0063f5b175d07c0a7d0aab2c5806bee9aa15f2a1`, the selected voice
+files are present under `demo/voices/streaming_model/`: `en-carter_man.pt`
+(blob `1d795ef667e6641eecb8b22452bb853b089bfdbe`), `de-Spk1_woman.pt`
+(blob `c67e669e718639e1d7e451330e3122eb8a0ac071`), and `de-Spk0_man.pt`
+(blob `740731426768eb1902ede9276c9e1f33fb8bd37f`). This identifies their
+source artifacts, but neither their filenames nor the repository's MIT license
+establishes consent or provenance for the represented voices. The owner has
+authorized these bundled presets for private R&D only. This does not establish
+third-party consent, legal clearance, production support, or permission to
+redistribute the voice files or generated audio. German generation remains an
+unsupported experiment under the reviewed model card. Do not clone or
+impersonate a real person without explicit consent.
+
+The pinned source's `demo/download_experimental_voices.sh` links an additional
+`experimental_voices_de.tar.gz` GitHub attachment. A non-extracting listing
+identified `de-Spk2_woman.pt`, `de-Spk3_man.pt`, `de-Spk4_woman.pt`,
+`de-Spk5_man.pt`, and `de-Spk6_man.pt` under `de/`. The upstream inference
+example recursively scans the voice directory for `.pt` files, so these prompts
+are structurally compatible with that loader. The integrated worker does not
+currently load them: its preset catalog and file lookup support only the three
+listed bundled prompts. The download script provides no archive checksum or
+separate license, voice-consent, or provenance record. These experimental files
+do not make German an officially supported use of the English-only model.
 
 PyPI JSON metadata for the 68 external versions in the worker lock reports
 `soxr==1.1.0` as `LGPL-2.1-or-later`, `certifi==2026.10.23` with an MPL-2.0
@@ -114,11 +142,12 @@ target. Five other packages expose only freeform metadata:
 `psutil==7.2.2`, and `nvidia-cusparselt-cu12==0.6.2`. PyPI metadata and
 classifiers are not substitutes for inspecting the exact distributions,
 bundled notices, or corresponding source. Those artifact-level reviews remain
-required before installing or redistributing the worker.
+required before production use or redistribution. The owner-authorized local
+R&D install does not clear these release gates.
 
-Keep VibeVoice disabled unless the model and voice artifact provenance, exact
-runtime inventory, supported-host behavior, intended-use terms, and required
-owner/legal approvals have all been reviewed for the specific deployment.
+Keep VibeVoice disabled outside the explicitly authorized private R&D scope, and
+do not enable a deployment until model and voice provenance, exact runtime
+inventory, host behavior, safeguards, and intended-use terms have been reviewed.
 These are release gates, not a statement of legal approval.
 
 ## Release status

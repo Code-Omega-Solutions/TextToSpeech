@@ -68,6 +68,12 @@ def test_voice_hint_is_accepted_but_bounded():
         SpeechRequest(input="hello", voice="v" * 129)
 
 
+@pytest.mark.parametrize("voice", ["", "   "])
+def test_blank_voice_is_treated_as_unspecified(voice):
+    request = SpeechRequest(input="hello", model="vibevoice", voice=voice)
+    assert request.voice is None
+
+
 @pytest.mark.parametrize(
     ("language", "voice"),
     [

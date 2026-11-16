@@ -1,5 +1,4 @@
 import io
-import io
 import json
 import threading
 import wave
@@ -9,7 +8,7 @@ from types import SimpleNamespace
 import pytest
 
 from app.vibevoice import VibeVoiceError, VibeVoiceWorker
-from vibevoice_worker.worker import _create_decoder_only_tokenizer, serve
+from vibevoice_worker.worker import _create_decoder_only_tokenizer, main as worker_main, serve
 
 
 _wav_buffer = io.BytesIO()
@@ -82,6 +81,7 @@ def make_worker(settings_factory, *, memory_probe=None, timeout_seconds=60, audi
         assert kwargs["shell"] is False
         assert kwargs["env"]["HF_HUB_OFFLINE"] == "1"
         assert kwargs["env"]["TRANSFORMERS_OFFLINE"] == "1"
+        assert kwargs["env"]["TTS_VIBEVOICE_RESEARCH_ONLY"] == "true"
         assert "TTS_API_KEY" not in kwargs["env"]
         assert kwargs["env"]["TTS_MAX_OUTPUT_BYTES"] == str(settings.max_output_bytes)
         process = FakeProcess(audio)
@@ -100,7 +100,7 @@ def test_worker_reuses_one_process_and_bounds_protocol(monkeypatch, settings_fac
     worker, processes = make_worker(settings_factory)
     results = [
         worker.synthesize("hello", "en-US", "en-Carter_man"),
-        worker.synthesize("hallo", "de-DE", "de-Spk1_woman"),
+        worker.synthesize("Guten Morgen", "de-DE", "de-Spk1_woman"),
     ]
     worker.stop()
     assert results == [_WAV, _WAV]
@@ -283,6 +283,34 @@ def test_worker_protocol_returns_only_safe_error_reasons():
     assert b"/private/model/path" not in output.getvalue()
 
 
+def test_worker_protocol_accepts_german_research_request():
+    request = {
+        "request_id": "a" * 32,
+        "text": "Guten Morgen",
+        "locale": "de-DE",
+        "voice": "de-Spk1_woman",
+        "output_path": "/tmp/vibevoice-request-test/speech.wav",
+    }
+
+    class Engine:
+        def synthesize(self, _request):
+            return None
+
+    output = io.BytesIO()
+    serve(Engine(), io.BytesIO((json.dumps(request) + "\n").encode()), output)
+    response = json.loads(output.getvalue())
+    assert response["status"] == "ok"
+
+
+def test_worker_entrypoint_requires_research_only(monkeypatch):
+    monkeypatch.delenv("TTS_VIBEVOICE_RESEARCH_ONLY", raising=False)
+    monkeypatch.setattr(
+        "vibevoice_worker.worker.VibeVoiceEngine",
+        lambda *_args: pytest.fail("worker initialized without R&D-only mode"),
+    )
+    assert worker_main() == 2
+
+
 def test_worker_protocol_rejects_oversized_lines_without_running_engine():
     class Engine:
         def synthesize(self, _request):
@@ -293,6 +321,22 @@ def test_worker_protocol_rejects_oversized_lines_without_running_engine():
     response = json.loads(output.getvalue().splitlines()[0])
     assert response["status"] == "error"
     assert response["reason"] == "invalid_request"
+
+
+def test_worker_entrypoint_requires_research_only_mode(monkeypatch, tmp_path):
+    source_path = tmp_path / "source"
+    model_path = tmp_path / "model"
+    source_path.mkdir()
+    model_path.mkdir()
+    monkeypatch.setenv("TTS_VIBEVOICE_SOURCE_PATH", str(source_path))
+    monkeypatch.setenv("TTS_VIBEVOICE_MODEL_PATH", str(model_path))
+    monkeypatch.delenv("TTS_VIBEVOICE_RESEARCH_ONLY", raising=False)
+    monkeypatch.setattr(
+        "vibevoice_worker.worker.VibeVoiceEngine",
+        lambda *_args: pytest.fail("worker initialized without research-only mode"),
+    )
+
+    assert worker_main() == 2
 
 
 def test_decoder_only_tokenizer_constructs_only_the_speech_decoder():

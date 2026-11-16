@@ -14,6 +14,7 @@ from app.services import SynthesisFailure, SynthesisResult
         ("macos-say", "wav", "de-DE", None, "audio/wav"),
         ("vibevoice", "mp3", "en-US", "en-Carter_man", "audio/mpeg"),
         ("vibevoice", "wav", "de-DE", "de-Spk0_man", "audio/wav"),
+        ("vibevoice", "wav", "de-DE", "de-Spk0_man", "audio/wav"),
     ],
 )
 def test_backends_preserve_binary_audio_contract(

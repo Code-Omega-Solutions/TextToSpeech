@@ -29,6 +29,7 @@ class _SettingsValues(BaseModel):
     ffmpeg_path: str = "ffmpeg"
     default_backend: Literal["macos-say", "vibevoice"] = "macos-say"
     vibevoice_enabled: bool = False
+    vibevoice_research_only: bool = False
     vibevoice_qualified: bool = False
     vibevoice_worker_timeout_seconds: int = Field(default=60, ge=1, le=180)
     vibevoice_worker_python: str | None = None
@@ -41,6 +42,8 @@ class _SettingsValues(BaseModel):
         if self.default_backend == "vibevoice" and not self.vibevoice_enabled:
             raise ValueError("TTS_DEFAULT_BACKEND=vibevoice requires TTS_VIBEVOICE_ENABLED=true")
         if self.vibevoice_enabled:
+            if not self.vibevoice_research_only:
+                raise ValueError("VibeVoice is approved for research-only use")
             if not self.vibevoice_qualified:
                 raise ValueError("VibeVoice must be qualified before it can be enabled")
             if (
@@ -105,6 +108,7 @@ class Settings:
     ffmpeg_path: str
     default_backend: Literal["macos-say", "vibevoice"]
     vibevoice_enabled: bool
+    vibevoice_research_only: bool
     vibevoice_qualified: bool
     vibevoice_worker_timeout_seconds: int
     vibevoice_worker_python: str | None
@@ -134,6 +138,7 @@ class Settings:
             "TTS_FFMPEG_PATH": "ffmpeg_path",
             "TTS_DEFAULT_BACKEND": "default_backend",
             "TTS_VIBEVOICE_ENABLED": "vibevoice_enabled",
+            "TTS_VIBEVOICE_RESEARCH_ONLY": "vibevoice_research_only",
             "TTS_VIBEVOICE_QUALIFIED": "vibevoice_qualified",
             "TTS_VIBEVOICE_WORKER_TIMEOUT_SECONDS": "vibevoice_worker_timeout_seconds",
             "TTS_VIBEVOICE_WORKER_PYTHON": "vibevoice_worker_python",

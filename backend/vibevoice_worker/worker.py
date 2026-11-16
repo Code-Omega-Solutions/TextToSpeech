@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any, BinaryIO
 
 _SOURCE_REVISION = "0063f5b175d07c0a7d0aab2c5806bee9aa15f2a1"
+_TOKENIZER_REVISION = "060db6499f32faf8b98477b0a26969ef7d8b9987"
 _MAX_PROTOCOL_LINE_BYTES = 64 * 1024
 _MAX_AUDIO_BYTES = int(os.environ.get("TTS_MAX_OUTPUT_BYTES", "26214400"))
 _VOICE_FILES = {
@@ -196,7 +197,9 @@ def _load_model(torch: Any, source_path: Path, model_path: Path, device: str):
     transformers.AutoModel.from_config = classmethod(decoder_only_factory)
     try:
         processor = VibeVoiceStreamingProcessor.from_pretrained(
-            str(model_path), local_files_only=True
+            str(model_path),
+            local_files_only=True,
+            revision=_TOKENIZER_REVISION,
         )
         model = VibeVoiceStreamingForConditionalGenerationInference.from_pretrained(
             str(model_path),
@@ -278,6 +281,8 @@ def _verify_source_revision(source_path: Path) -> None:
 
 
 def main() -> int:
+    if os.environ.get("TTS_VIBEVOICE_RESEARCH_ONLY") != "true":
+        return 2
     source_path = Path(os.environ.get("TTS_VIBEVOICE_SOURCE_PATH", ""))
     model_path = Path(os.environ.get("TTS_VIBEVOICE_MODEL_PATH", ""))
     if not source_path.is_dir() or not model_path.is_dir():

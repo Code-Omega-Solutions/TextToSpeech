@@ -1,5 +1,19 @@
 # Research: VibeVoice Backend Integration
 
+## Decision: Limit current use to private R&D
+
+**Decision**: The operator authorizes English and German preset testing only
+for private research and development on the named private system. Require the
+explicit `TTS_VIBEVOICE_RESEARCH_ONLY` setting. Do not treat this as production
+support, legal clearance, Microsoft permission for unsupported German output,
+or permission to publish or redistribute model assets, prompts, or audio.
+
+**Rationale**: The reviewed model card limits direct intended use to research
+and says English is supported while German is unsupported. The German tests
+are exploratory measurements, not a claim that the model supports German
+reliably. Preserve the reported fallback behavior and keep user data and audio
+outside the repository.
+
 ## Decision: Keep the model in one persistent child process
 
 **Decision**: The API process owns one lazy, persistent VibeVoice worker. The

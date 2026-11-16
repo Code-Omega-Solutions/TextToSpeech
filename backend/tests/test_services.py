@@ -484,3 +484,38 @@ def test_vibevoice_failure_discards_partial_output_before_one_fallback(settings_
     assert result.actual_backend == "macos-say"
     assert result.fallback is True
     assert calls == ["vibevoice", "macos-say"]
+
+
+def test_german_vibevoice_request_uses_worker_only_in_research_mode(settings_factory):
+    settings = settings_factory(
+        vibevoice_enabled=True,
+        vibevoice_research_only=True,
+        vibevoice_qualified=True,
+        vibevoice_worker_peak_memory_bytes=100,
+        higher_priority_memory_reserve_bytes=50,
+    )
+    service = SpeechService(settings)
+    calls = []
+
+    class Worker:
+        def synthesize(self, *_args):
+            calls.append("vibevoice")
+            return _TEST_WAV
+
+    service.vibevoice_worker = Worker()
+
+    def say(*_args, **_kwargs):
+        calls.append("macos-say")
+        return SynthesisResult(
+            b"complete German audio", "audio/wav", "speech.wav", actual_backend="macos-say"
+        )
+
+    service._synthesize_macos = say
+    result = service.synthesize_reserved(
+        "hallo", "de-DE", 1, "wav", backend="vibevoice", voice="de-Spk1_woman"
+    )
+
+    assert result.audio == _TEST_WAV
+    assert result.actual_backend == "vibevoice"
+    assert result.fallback is False
+    assert calls == ["vibevoice"]

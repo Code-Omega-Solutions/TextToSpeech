@@ -28,7 +28,7 @@ Files: `backend/app/config.py`, `backend/app/services.py`, `backend/app/vibevoic
 - [x] **T004** [P] [US4] Add failing tests for default-backend validation, disabled-worker behavior, and required measured worker/reserve budgets · `backend/tests/test_config.py`
 - [x] **T005** [P] [US1] Add failing tests for one worker process, bounded JSON-lines messages, decoder-only loading, timeout, and complete process cleanup · `backend/tests/test_vibevoice.py`
 - [x] **T006** [P] [US3] Add failing service tests for both backends, WAV/MP3 conversion, actual-backend reporting, and discarding partial output before one fallback · `backend/tests/test_services.py`
-- [x] **T007** [P] [US2] Add failing resource tests for admission, reserve crossing, eviction, no reload while pressure remains, and recovery after capacity returns · `backend/tests/test_vibevoice_memory.py`
+- [x] **T007** [P] [US2] Add failing resource tests for cold admission, resident-worker RSS exclusion, external reserve crossing, eviction, no reload while pressure remains, and recovery after capacity returns · `backend/tests/test_vibevoice_memory.py`
 - [x] **T008** [P] [US3] Add failing cross-backend contract tests for authentication, request/output bounds, media types, cancellation, safe errors, and fallback metadata · `backend/tests/test_speech_contract.py`
 - [x] **T009** [P] [US4] Add failing startup/readiness tests for missing VibeVoice assets and worker shutdown without blocking macOS speech · `backend/tests/test_vibevoice_startup.py`
 
@@ -39,7 +39,7 @@ Files: `backend/app/config.py`, `backend/app/services.py`, `backend/app/vibevoic
 **Wave 2 — independent (different files):**
 
 - [x] **T010** [P] [US4] Add validated optional backend, worker, timeout, and explicit memory-budget settings; keep unavailable or unqualified VibeVoice fail-closed · `backend/app/config.py`
-- [x] **T011** [P] [US1] Implement the isolated persistent worker protocol, load only the speech decoder and validated local assets, and return bounded WAV artifacts without runtime downloads · `backend/vibevoice_worker/worker.py`
+- [x] **T011** [P] [US1] Implement the isolated persistent research-only worker protocol for reviewed English and German presets, load only the speech decoder and validated local assets, and return bounded WAV artifacts without runtime downloads · `backend/vibevoice_worker/worker.py`
 
 **⟶ Wait for Wave 2 to finish, then:**
 **Wave 3 — worker manager:**
@@ -81,7 +81,7 @@ Files: `backend/app/models.py`, `backend/app/routers.py`, `backend/tests/test_mo
 
 **⟶ Wait for Wave 3 to finish, then:**
 
-- [x] **T018** [US1] Run the focused request-model and route tests and confirm invalid requests are rejected before worker admission · `backend/tests/test_models.py`, `backend/tests/test_api.py`
+- [x] **T018** [US1] Run the focused request-model and route tests, including blank-voice automatic preset selection and invalid requests rejected before worker admission · `backend/tests/test_models.py`, `backend/tests/test_api.py`
 
 **Checkpoint:** Backend selection and reviewed voice defaults work through the existing authenticated speech endpoint, with invalid voice choices rejected before synthesis.
 
@@ -104,7 +104,7 @@ Files: none; resource-policy code and deterministic tests are owned by Foundatio
 **⟶ Wait for Wave 1 to finish, then:**
 **Wave 2 — target-host qualification:**
 
-- [ ] **T020** [US2] On an operator-authorized qualified macOS host, use the existing `vm_stat` memory probe to measure the decoder-only worker peak, exercise reserve crossing during generation, and verify memory release, fallback, and no reload under sustained pressure. Keep VibeVoice disabled if the capacity signal or eviction behavior is not trustworthy · `backend/evaluation/vibevoice/inspection.py`
+- [ ] **T020** [US2] Under the authorized private R&D scope on a qualified macOS host, measure decoder-only worker peak for English and German, exercise reserve crossing during generation, and verify memory release, fallback to macOS speech, and no reload under sustained pressure. Keep VibeVoice disabled if the capacity signal or eviction behavior is not trustworthy · `backend/evaluation/vibevoice/inspection.py`
 
 **Checkpoint:** A qualified reserve crossing evicts the worker and preserves higher-priority capacity; otherwise the deployment remains on `say`.
 
@@ -178,7 +178,7 @@ Files: `backend/README.md`, `living-specs.yml`, `capabilities/backend-synthesis/
 
 **⟶ Wait for Wave 2 to finish, then:**
 
-- [ ] **T033** [US4] Run the final target-host smoke and benchmark for both languages, both output formats, warm and cold latency, memory admission, eviction, fallback, and readiness; retain evidence needed for release review
+- [ ] **T033** [US4] Run the final private R&D target-host smoke and benchmark for English and German VibeVoice, both output formats, warm and cold latency, memory admission, eviction, fallback to `say`, and readiness. Verify authenticated Open WebUI access through the all-interface listener and rejection without a bearer token; retain private evidence and make no production or redistribution claim
 
 **⟶ Wait for Wave 3 to finish, then:**
 

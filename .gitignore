@@ -38,6 +38,7 @@ desktop.ini
 
 # memory-sync: rebuildable index and SQLite side files stay local
 data/rag-index/
+/.basic-memory/project-TextToSpeech/
 data/memory-store/*/*.db-wal
 data/memory-store/*/*.db-shm
 data/memory-store/*.db

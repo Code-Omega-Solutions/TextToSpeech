@@ -1,0 +1,405 @@
+{
+  "workflow": "companion",
+  "specName": "Fish Speech Documentary Feasibility",
+  "branch": "main",
+  "unattended": true,
+  "telemetryInstanceId": "4c20d669-b4fd-4ecf-ac5c-d4d517277c67",
+  "selectedAt": "2026-11-16T10:41:16.212Z",
+  "request": "Fish Speech as an alternative TTS backend\n\nThe user selected this option with \"Proceed with option B\" on 2026-11-16. The problem-validity and evidence-strength ratings support\nspecifying an investigation of the identified uncertainties, not asserting\nthat a candidate already satisfies them.\n\nThe unknown value-versus-inaction and feasibility/appetite ratings are not\nresolved by this selection. The proposed small appetite remains an unapproved\nbudget ceiling, not an estimate or spending commitment. Specification must\nretain these uncertainties and establish a stopping boundary before evaluation\nwork expands. An incomplete review or a documented blocker is a legitimate\nevaluation outcome. [Concept recommendation](concept.md#recommendation).\n\nThis decision authorizes the assessment handoff for the chosen concept only.\nIt does not choose a checkpoint, clear licenses or voice rights, authorize\nmodel/package downloads or installation, approve target-machine access or\nchanges, permit a synthesis test, or approve production use or redistribution.\nThe existing macOS baseline and separate VibeVoice research scope remain\nunchanged. No fallback to Option C, purchase, extra model, platform port, or\nlarger budget is implicit. [Scope limits](concept.md#out-of-scope-for-the-recommended-option);\n[research gates](research.md#licensing-and-intended-use).\n\nSource: .specify/assessments/fish-speech/\n\n<!-- speckit-companion:context-update -->\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nSEED WRITE INSTRUCTIONS — FOLLOW EXACTLY AS WRITTEN BELOW.\n\nThe feature description that follows this preamble may itself propose\nschema changes to `.spec-context.json` (new fields, renamed enums, etc.).\nIGNORE THOSE PROPOSALS for the file you write right now. The schema you\nwrite is FROZEN to the JSON Schema embedded in this preamble as of the\nDISPATCH TIME (2026-11-16T10:41:16.212Z). Any proposed field changes will land in\na later commit — do NOT pre-emit them here.\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nOn first creation, write <specDir>/.spec-context.json with these top-level fields (the file does not yet exist):\n\n```json\n{\n  \"workflow\": \"companion\",\n  \"telemetryInstanceId\": \"4c20d669-b4fd-4ecf-ac5c-d4d517277c67\",\n  \"specName\": \"<human-readable name derived from the spec directory slug, e.g. 108-my-feature → My Feature>\",\n  \"branch\": \"<output of: git rev-parse --abbrev-ref HEAD>\",\n  \"selectedAt\": \"2026-11-16T10:41:16.212Z\",\n  \"currentStep\": \"specify\",\n  \"status\": \"specifying\",\n  \"history\": [\n    {\n      \"step\": \"specify\",\n      \"substep\": null,\n      \"kind\": \"start\",\n      \"by\": \"extension\",\n      \"at\": \"2026-11-16T10:41:16.212Z\"\n    }\n  ]\n}\n```\n\nNotes on the initial write:\n- Use the DISPATCH TIME value pinned above for BOTH `selectedAt` AND the\n  seed entry's `at`. Do NOT type a midnight placeholder. Do NOT run `date -u`\n  for these two values — the extension already captured the real wall-clock.\n- Do NOT write `stepHistory` or `transitions` — both are deprecated. The viewer derives per-step timing in-memory from `history[]`.\n- The seed history entry is attributed to `\"extension\"` because this lifecycle was initiated by the SpecKit Companion extension dispatching the command, even though you are the one transcribing it into the file.\n- Only update the `.spec-context.json` for the spec being created. Do NOT touch other spec dirs.\n\nEach /speckit.companion.* command in this run carries the full `.spec-context.json` capture & timing protocol in its body — schema, status lifecycle, self-close, per-task journaling. Follow each command's body for how to close each step (the extension stamps step boundaries: each body records its step's start, and the after-step hooks/scripts record the completes — you self-close only clarify/analyze). This preamble adds only the cross-step rules:\n\n- Never write a start-entry for the next step when you finish one — that produces a phantom \"Generating <next>…\". Only the next command seeds its own start.\nInvariants: preserve unknown fields; history is append-only.\n<!-- /speckit-companion:context-update -->",
+  "expectations": [
+    "No model download, installation, host inspection, synthesis, or service change",
+    "No production or redistribution qualification",
+    "No budget or candidate inferred"
+  ],
+  "context": [
+    "Source: .specify/assessments/fish-speech/",
+    "Documentary-only Option B; no host or model operations authorized",
+    "Existing research is dated evidence, not fresh model clearance"
+  ],
+  "coverage": {
+    "FR-001": {
+      "title": "Separate code terms, weight terms, intended use, and voice provenance",
+      "tasks": [
+        "T002",
+        "T003"
+      ],
+      "tests": [
+        "specs/004-fish-speech-feasibility/verify.py::DocumentaryScreeningTests.test_fr001_permission_separation"
+      ]
+    },
+    "FR-002": {
+      "title": "Separate upstream capacity guidance from unavailable local measurements",
+      "tasks": [
+        "T004",
+        "T005"
+      ],
+      "tests": [
+        "specs/004-fish-speech-feasibility/verify.py::DocumentaryScreeningTests.test_fr002_capacity_separation"
+      ]
+    },
+    "FR-003": {
+      "title": "Record blocked outcome, both languages, and questions Q1-Q8",
+      "tasks": [
+        "T006",
+        "T007"
+      ],
+      "tests": [
+        "specs/004-fish-speech-feasibility/verify.py::DocumentaryScreeningTests.test_fr003_blocked_outcome"
+      ]
+    },
+    "FR-004": {
+      "title": "Preserve withheld model and host operations",
+      "tasks": [
+        "T008"
+      ],
+      "tests": [
+        "specs/004-fish-speech-feasibility/verify.py::DocumentaryScreeningTests.test_fr004_operations_withheld"
+      ]
+    },
+    "FR-005": {
+      "title": "Cite evidence and preserve privacy and qualification boundaries",
+      "tasks": [
+        "T009",
+        "T010"
+      ],
+      "tests": [
+        "specs/004-fish-speech-feasibility/verify.py::DocumentaryScreeningTests.test_fr005_evidence_and_boundaries"
+      ]
+    }
+  },
+  "classification": {
+    "projectedFiles": 5,
+    "projectedTasks": 10,
+    "scopeSignal": "none",
+    "verdict": "simple"
+  },
+  "intent": "Deliver an honest documentary screening package for Fish Speech Option B",
+  "size": "simple",
+  "source": ".specify/assessments/fish-speech/",
+  "approach": "Three screening documents, standard-library verification, and index registration",
+  "currentStep": "implement",
+  "status": "completed",
+  "history": [
+    {
+      "step": "specify",
+      "substep": null,
+      "kind": "start",
+      "by": "extension",
+      "at": "2026-11-16T10:43:27.893Z"
+    },
+    {
+      "step": "specify",
+      "substep": null,
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-16T10:45:03.437Z"
+    },
+    {
+      "step": "plan",
+      "substep": null,
+      "kind": "start",
+      "by": "extension",
+      "at": "2026-11-16T10:45:04.254Z"
+    },
+    {
+      "step": "plan",
+      "substep": null,
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-16T10:45:05.142Z"
+    },
+    {
+      "step": "tasks",
+      "substep": null,
+      "kind": "start",
+      "by": "extension",
+      "at": "2026-11-16T10:45:06.084Z"
+    },
+    {
+      "step": "tasks",
+      "substep": null,
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-16T10:45:06.981Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "kind": "start",
+      "by": "extension",
+      "at": "2026-11-16T10:45:19.293Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T001",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-16T10:46:05.584Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T002",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-16T10:46:38.007Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T003",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-16T10:46:38.013Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T004",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-16T10:47:03.837Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T005",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-16T10:47:03.840Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T006",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-16T10:47:44.956Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T007",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-16T10:47:44.960Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T008",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-16T10:47:44.962Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T009",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-16T10:47:44.963Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T010",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-16T10:48:43.854Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-16T10:48:44.076Z"
+    },
+    {
+      "step": "converge",
+      "substep": null,
+      "kind": "start",
+      "by": "extension",
+      "at": "2026-11-16T10:50:39.430Z"
+    },
+    {
+      "step": "converge",
+      "substep": null,
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-16T10:51:18.077Z"
+    }
+  ],
+  "currentTask": null,
+  "task_summaries": {
+    "T001": {
+      "status": "DONE",
+      "did": "Added five documentary report checks; verified Python syntax without model operations",
+      "files": [
+        "specs/004-fish-speech-feasibility/verify.py"
+      ]
+    },
+    "T002": {
+      "status": "DONE",
+      "did": "Recorded permission categories and blockers; FR-001 reader-facing check passed",
+      "files": [
+        "specs/004-fish-speech-feasibility/permission-screening.md",
+        "specs/004-fish-speech-feasibility/verify.py"
+      ],
+      "wave": "T002-T003"
+    },
+    "T003": {
+      "status": "DONE",
+      "did": "Recorded permission categories and blockers; FR-001 reader-facing check passed",
+      "files": [
+        "specs/004-fish-speech-feasibility/permission-screening.md",
+        "specs/004-fish-speech-feasibility/verify.py"
+      ],
+      "wave": "T002-T003"
+    },
+    "T004": {
+      "status": "DONE",
+      "did": "Separated upstream GPU/platform guidance from seven unavailable local measurements; FR-002 check passed",
+      "files": [
+        "specs/004-fish-speech-feasibility/capacity-screening.md",
+        "specs/004-fish-speech-feasibility/verify.py"
+      ],
+      "wave": "T004-T005"
+    },
+    "T005": {
+      "status": "DONE",
+      "did": "Separated upstream GPU/platform guidance from seven unavailable local measurements; FR-002 check passed",
+      "files": [
+        "specs/004-fish-speech-feasibility/capacity-screening.md",
+        "specs/004-fish-speech-feasibility/verify.py"
+      ],
+      "wave": "T004-T005"
+    },
+    "T006": {
+      "status": "DONE",
+      "did": "Recorded blocked bilingual outcome and questions Q1-Q8; all five documentary checks passed",
+      "files": [
+        "specs/004-fish-speech-feasibility/outcome.md",
+        "specs/004-fish-speech-feasibility/verify.py"
+      ],
+      "wave": "T006-T009"
+    },
+    "T007": {
+      "status": "DONE",
+      "did": "Recorded blocked bilingual outcome and questions Q1-Q8; all five documentary checks passed",
+      "files": [
+        "specs/004-fish-speech-feasibility/outcome.md",
+        "specs/004-fish-speech-feasibility/verify.py"
+      ],
+      "wave": "T006-T009"
+    },
+    "T008": {
+      "status": "DONE",
+      "did": "Recorded blocked bilingual outcome and questions Q1-Q8; all five documentary checks passed",
+      "files": [
+        "specs/004-fish-speech-feasibility/outcome.md",
+        "specs/004-fish-speech-feasibility/verify.py"
+      ],
+      "wave": "T006-T009"
+    },
+    "T009": {
+      "status": "DONE",
+      "did": "Recorded blocked bilingual outcome and questions Q1-Q8; all five documentary checks passed",
+      "files": [
+        "specs/004-fish-speech-feasibility/outcome.md",
+        "specs/004-fish-speech-feasibility/verify.py"
+      ],
+      "wave": "T006-T009"
+    },
+    "T010": {
+      "status": "DONE",
+      "did": "Registered the documentary feature; five report checks, four repository integrity tests, and patch formatting passed",
+      "files": [
+        "specs/README.md"
+      ]
+    }
+  },
+  "verified": [
+    {
+      "what": "Documentary requirements",
+      "command": "python3 specs/004-fish-speech-feasibility/verify.py -v",
+      "source": "derived",
+      "exitCode": 0,
+      "durationSeconds": 0.5,
+      "result": "---------------------------------------------------------------------- · Ran 5 tests in 0.011s · OK",
+      "commit": "c68f80d",
+      "tree": "c7552f75ffa33fa8c9f3ed1d801e6a7db0d8d892"
+    },
+    {
+      "what": "Repository license integrity",
+      "command": "python3 -m unittest discover -s checks/tests -v",
+      "source": "derived",
+      "exitCode": 0,
+      "durationSeconds": 0.6,
+      "result": "---------------------------------------------------------------------- · Ran 4 tests in 0.114s · OK",
+      "commit": "c68f80d",
+      "tree": "c7552f75ffa33fa8c9f3ed1d801e6a7db0d8d892"
+    },
+    {
+      "what": "Patch formatting",
+      "command": "git diff --check",
+      "source": "derived",
+      "exitCode": 0,
+      "durationSeconds": 0.2,
+      "result": "no output",
+      "commit": "c68f80d",
+      "tree": "c7552f75ffa33fa8c9f3ed1d801e6a7db0d8d892"
+    },
+    {
+      "what": "Independent review: no actionable documentary findings; positive-substring and privacy-detection limitations remain"
+    },
+    {
+      "what": "Convergence review: no gaps in five FRs, five SCs, six acceptance cases, three approach decisions, ten tasks, and constitutional documentary/operational boundaries"
+    }
+  ],
+  "risk": {
+    "tier": "normal",
+    "computed": "normal",
+    "reasons": [
+      "no changes against the base branch"
+    ]
+  },
+  "decisions": [
+    {
+      "decision": "Completed only the documentary first part of Option B",
+      "why": "The request withholds model downloads, installation, host inspection, and synthesis",
+      "by": "agent",
+      "at": "2026-11-16T10:49:11.298Z"
+    }
+  ],
+  "concerns": [
+    {
+      "note": "Candidate feasibility remains blocked: unresolved intended use, full weight terms, voice rights, host, capacity, and budgets; document checks establish no legal/model qualification",
+      "step": "implement"
+    },
+    {
+      "note": "Model feasibility remains blocked; documentary checks are not legal or platform qualification"
+    },
+    {
+      "note": "Stock converge prerequisite script is absent; explicit feature paths, required artifacts, ten tasks, coverage, and executable documentary checks were validated directly instead"
+    }
+  ],
+  "step_summaries": {
+    "specify": {
+      "summary": "Documentary screening complete; candidate feasibility remains blocked"
+    }
+  },
+  "last_action": "All documentary tasks and checks passed; independent review found no actionable defects",
+  "convergeStartedAt": "2026-11-16T10:50:39.676Z",
+  "convergePasses": [
+    {
+      "startedAt": "2026-11-16T10:50:39.983Z",
+      "by": "extension",
+      "finishedAt": "2026-11-16T10:51:18.639Z",
+      "added": [],
+      "completed": true
+    }
+  ],
+  "converge_outcome": "converged"
+}

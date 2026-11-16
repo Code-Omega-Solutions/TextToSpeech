@@ -34,6 +34,13 @@ The [private VibeVoice evaluation](../capabilities/vibevoice-evaluation/vibevoic
 is a separate, optional tool. Its report and audio remain local and owner-only;
 its tests use fakes and do not qualify models or target hardware.
 
+The [Fish Speech documentary feasibility feature](004-fish-speech-feasibility/spec.md)
+records Option B's permission and capacity screening. Its
+[outcome](004-fish-speech-feasibility/outcome.md) is blocked pending intended-use,
+rights, voice, and authorized-machine evidence. Completing its documentary
+checks does not approve model downloads, installation, host inspection,
+synthesis, service integration, production use, or redistribution.
+
 Two additional draft feature specifications separate the proposed
 [local speech prototype](002-local-speech-prototype/spec.md) from the
 [publishable voice-cloning interface](003-voice-cloning-ui/spec.md). Their
@@ -90,6 +97,56 @@ files into a nonempty checkout and may overwrite conflicts; inspect existing
 `.specify` and `.github/skills` files first, and do not force over customized
 tooling. Keep the constitution tracked when updating the generated scaffold.
 Spec Kit initialization does not install or restart application services.
+
+### Repairing a partial scaffold
+
+If stock helpers such as the convergence prerequisite checker are missing,
+generate a clean scaffold with the installed CLI and copy only missing files.
+In Git Bash, this preserves the constitution, extension configuration, feature
+state, and existing Copilot skills instead of forcing initialization over them:
+
+```bash
+scratch=$(mktemp -d)
+specify init "$scratch/scaffold" --script sh --integration copilot --non-interactive --ignore-agent-tools
+cp -an "$scratch/scaffold/.specify/." .specify/
+bash .specify/scripts/bash/check-prerequisites.sh --json --require-spec --require-tasks --include-tasks
+bash .specify/scripts/bash/resolve-template.sh spec-template --json
+```
+
+Use an active feature with a nonempty spec, plan, and task list for the first
+check. The scaffold remains ignored local tooling and must be installed on
+each machine. Optional `jq` must work if selected by the Bash helpers; a stale
+launcher can exist on PATH while its executable is missing. Check `jq --version`
+when diagnosing JSON errors. The repaired local helper falls back when that
+probe fails.
+
+Copilot skill discovery also requires `chat.useAgentSkills` to be enabled in
+the workspace settings. Reload the VS Code window after enabling it if existing
+skills are not yet listed. Changing this setting does not rewrite the skills.
+
+### Workspace-open setup check
+
+The versioned [VS Code task](../.vscode/tasks.json) runs the read-only
+[local setup checker](../checks/check_speckit_setup.py) whenever this workspace
+opens, including on another machine. It checks CLI responsiveness, required
+stock/Companion files, Copilot integration metadata, and workspace skill settings.
+It does not need an active feature, install tooling, or run a workflow.
+
+On first use, trust the workspace and allow its automatic tasks when VS Code
+prompts. If automatic tasks were previously disabled, use **Tasks: Manage
+Automatic Tasks in Folder** to enable them. Workspace files do not override that
+consent. Python must be available as `python` on Windows or `python3` on macOS/Linux.
+
+Failures appear in the **Spec Kit: Check Local Setup** task terminal with the
+missing items and a reference to the repair instructions above. Run it manually
+with **Tasks: Run Task**, or from the repository root:
+
+```bash
+python3 checks/check_speckit_setup.py
+```
+
+Use `python` instead on Windows when running outside Git Bash. A successful
+setup check confirms tooling availability, not model or platform qualification.
 
 The optional Companion VS Code extension and the Spec Kit extension are separate.
 For the installed Companion VS Code extension 0.37.0 and Spec Kit CLI 1.2.2.dev0,

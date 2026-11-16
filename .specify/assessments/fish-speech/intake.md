@@ -15,7 +15,7 @@ Explore whether Fish Speech could be an alternative text-to-speech backend for E
 
 ## Origin & Context
 
-- **Raised by**: [NEEDS CLARIFICATION: original idea author; the source was committed on 2026-11-15.]
+- **Raised by**: Patrik Gfeller; the source was committed on 2026-11-15.
 - **Trigger**: The captured idea reports legal restrictions on the earlier option and an English/German language scope.
 - **Recovery**: Reconstructed from the committed draft on 2026-11-16. No original assessment report was found in the fetched Git history. This intake does not reconstruct missing research, approval, or a decision.
 

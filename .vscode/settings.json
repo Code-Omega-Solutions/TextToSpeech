@@ -6,5 +6,5 @@
     "~/.claude/skills": false,
     ".agents/skills": false
   },
-  "chat.useAgentSkills": false
+  "chat.useAgentSkills": true
 }

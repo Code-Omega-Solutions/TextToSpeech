@@ -3,24 +3,6 @@
 		"orchestrator": {
 			"url": "http://192.168.0.118:4500/mcp",
 			"type": "http"
-		},
-		"basic-memory-general": {
-			"type": "stdio",
-			"command": "/home/pgfeller/.local/bin/basic-memory",
-			"args": [
-				"mcp",
-				"--project",
-				"general"
-			]
-		},
-		"basic-memory-project-TextToSpeech": {
-			"type": "stdio",
-			"command": "/home/pgfeller/.local/bin/basic-memory",
-			"args": [
-				"mcp",
-				"--project",
-				"project-TextToSpeech"
-			]
 		}
 	}
 }

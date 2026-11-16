@@ -83,5 +83,6 @@
       "title": "The dependency lock MUST resolve reproducibly and the third-party inventory MUST record the resolved package license and scope."
     }
   },
-  "last_action": "Drafted a small follow-up feature spec for the Starlette TestClient deprecation warning."
+  "last_action": "Drafted a small follow-up feature spec for the Starlette TestClient deprecation warning.",
+  "assistant": "ide-chat"
 }

@@ -17,6 +17,13 @@
 !/.specify/companion/nodes/states.md
 !/.specify/companion/nodes/screens.md
 
+# Keep the recovered Fish Speech idea portable without tracking local state.
+!/.specify/assessments/
+/.specify/assessments/*
+!/.specify/assessments/fish-speech/
+/.specify/assessments/fish-speech/*
+!/.specify/assessments/fish-speech/*.md
+
 # Dependencies, builds, and test output
 __pycache__/
 *.py[cod]

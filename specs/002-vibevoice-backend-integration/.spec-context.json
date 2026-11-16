@@ -82,6 +82,238 @@
       "kind": "complete",
       "by": "ai",
       "at": "2026-11-15T19:58:42.210Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T001",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-15T20:11:43.152Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T004",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-15T20:11:43.152Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T005",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-15T20:11:43.152Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T006",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-15T20:11:43.152Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T007",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-15T20:11:43.152Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T008",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-15T20:11:43.152Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T009",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-15T20:11:43.152Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T010",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-15T20:11:43.152Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T011",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-15T20:11:43.152Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T012",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-15T20:11:43.152Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T013",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-15T20:11:43.152Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T014",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-15T20:11:43.152Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T015",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-15T20:11:43.153Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T016",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-15T20:11:43.153Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T017",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-15T20:11:43.153Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T018",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-15T20:11:43.153Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T019",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-15T20:11:43.153Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T021",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-15T20:11:43.153Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T022",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-15T20:11:43.153Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T023",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-15T20:11:43.153Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T024",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-15T20:11:43.153Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T025",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-15T20:11:43.153Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T026",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-15T20:11:43.153Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T027",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-15T20:11:43.153Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T028",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-15T20:11:43.153Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T029",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-15T20:11:43.153Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T030",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-15T20:11:43.153Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T031",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-15T20:11:43.153Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T032",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-15T20:11:43.153Z"
     }
   ],
   "telemetryInstanceId": "e5a95d64-76b2-4305-8ead-1c0d825b1143",
@@ -302,7 +534,87 @@
     {
       "what": "Whitespace check",
       "command": "git diff --check",
-      "result": "No whitespace errors"
+      "source": "derived",
+      "exitCode": 0,
+      "durationSeconds": 0,
+      "result": "no output",
+      "commit": "c622a5d",
+      "tree": "d3571bcf236351b4eb25f740b822746986f19e0d"
+    },
+    {
+      "what": "Worker lock consistency",
+      "command": "cd backend/vibevoice_worker && uv lock --check",
+      "result": "exit 0; resolved 69 packages"
+    },
+    {
+      "what": "Backend routing and worker tests",
+      "command": "uv run --project /home/pgfeller/Documents/GitHub/TextToSpeech/backend --no-sync pytest /home/pgfeller/Documents/GitHub/TextToSpeech/backend/tests/test_services.py /home/pgfeller/Documents/GitHub/TextToSpeech/backend/tests/test_api.py /home/pgfeller/Documents/GitHub/TextToSpeech/backend/tests/test_vibevoice.py",
+      "source": "derived",
+      "exitCode": 0,
+      "durationSeconds": 2.9,
+      "result": "    from starlette.testclient import TestClient as TestClient  # noqa · -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html · 60 passed, 1 warning in 2.02s",
+      "commit": "c622a5d",
+      "tree": "ea4c1bc1a9a8940861021a804f24333b705a988b"
+    },
+    {
+      "what": "License integrity",
+      "command": "pytest -q /home/pgfeller/Documents/GitHub/TextToSpeech/checks/tests/test_license_integrity.py",
+      "source": "derived",
+      "exitCode": 0,
+      "durationSeconds": 0.4,
+      "result": "....                                                                     [100%] · 4 passed in 0.01s",
+      "commit": "2a7ae54",
+      "tree": "945f61cef1710163714897f5b551593b6117877d"
+    },
+    {
+      "what": "Backend test suite",
+      "command": "uv run --project /home/pgfeller/Documents/GitHub/TextToSpeech/backend --no-sync pytest /home/pgfeller/Documents/GitHub/TextToSpeech/backend/tests",
+      "source": "derived",
+      "exitCode": 0,
+      "durationSeconds": 5.4,
+      "result": "    from starlette.testclient import TestClient as TestClient  # noqa · -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html · 222 passed, 1 warning in 4.38s",
+      "commit": "c622a5d",
+      "tree": "d3571bcf236351b4eb25f740b822746986f19e0d"
+    },
+    {
+      "what": "Worker lock check",
+      "command": "cd /home/pgfeller/Documents/GitHub/TextToSpeech/backend/vibevoice_worker && uv lock --check",
+      "source": "derived",
+      "exitCode": 0,
+      "durationSeconds": 0.1,
+      "result": "Using CPython 3.11.15 · Resolved 69 packages in 0.77ms",
+      "commit": "c622a5d",
+      "tree": "018833b4bbbe9900604b2250c678f6f49ae1f566"
+    },
+    {
+      "what": "Backend suite",
+      "command": "uv run --project /home/pgfeller/Documents/GitHub/TextToSpeech/backend --no-sync pytest /home/pgfeller/Documents/GitHub/TextToSpeech/backend/tests",
+      "source": "derived",
+      "exitCode": 0,
+      "durationSeconds": 5.1,
+      "result": "    from starlette.testclient import TestClient as TestClient  # noqa · -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html · 234 passed, 1 warning in 4.41s",
+      "commit": "2a7ae54",
+      "tree": "945f61cef1710163714897f5b551593b6117877d"
+    },
+    {
+      "what": "Worker lock",
+      "command": "cd /home/pgfeller/Documents/GitHub/TextToSpeech/backend/vibevoice_worker && uv lock --check",
+      "source": "derived",
+      "exitCode": 0,
+      "durationSeconds": 0.1,
+      "result": "Using CPython 3.11.15 · Resolved 69 packages in 0.85ms",
+      "commit": "2a7ae54",
+      "tree": "945f61cef1710163714897f5b551593b6117877d"
+    },
+    {
+      "what": "Whitespace",
+      "command": "git -C /home/pgfeller/Documents/GitHub/TextToSpeech diff --check",
+      "source": "derived",
+      "exitCode": 0,
+      "durationSeconds": 0.0,
+      "result": "no output",
+      "commit": "2a7ae54",
+      "tree": "945f61cef1710163714897f5b551593b6117877d"
     }
   ],
   "decisions": [
@@ -361,6 +673,70 @@
       "rejected": "Treating a reproducible lock or unqualified host as approval to install or enable VibeVoice.",
       "by": "agent",
       "at": "2026-11-15T20:01:16.896Z"
+    },
+    {
+      "decision": "The operator authorizes private, non-publishing evaluation and target-host testing; keep PII, speech text, audio, and raw traces outside the repository.",
+      "why": "The operator explicitly authorized private use and test content while prohibiting PII publication.",
+      "rejected": "Publishing host traces or private speech data in repository artifacts.",
+      "by": "agent",
+      "at": "2026-11-15T20:27:41.694Z"
+    },
+    {
+      "decision": "Do not choose fixed worker or reserve memory budgets before target-host measurement; retain timestamped resource traces and evaluate native pressure notifications.",
+      "why": "The operator requires empirical resource evidence rather than assumed thresholds.",
+      "rejected": "Selecting unmeasured static memory values.",
+      "by": "agent",
+      "at": "2026-11-15T20:27:41.694Z"
+    },
+    {
+      "decision": "Route VibeVoice only for English; route German through macOS say and report fallback when VibeVoice was selected.",
+      "why": "The selected deployment uses the model only for English and preserves German speech through the configured macOS voice.",
+      "rejected": "Use German VibeVoice prompt presets in the active integration.",
+      "by": "agent",
+      "at": "2026-11-15T21:16:06.435Z"
+    },
+    {
+      "decision": "Keep VibeVoice disabled for ordinary private non-R&D use until written clarification confirms that use is permitted.",
+      "why": "The reviewed model card describes research and development as intended use; private non-R&D use is not cleared by the MIT label alone.",
+      "rejected": "Enable VibeVoice based only on local/private execution or the MIT license label.",
+      "by": "agent",
+      "at": "2026-11-15T21:16:06.435Z"
+    },
+    {
+      "decision": "Owner authorizes private R&D use of English and German VibeVoice presets on the private system only.",
+      "why": "The goal is interactive research measurements of resource use and fallback, not routine production speech.",
+      "rejected": "Treating private R&D authorization as production, publication, or redistribution approval.",
+      "by": "agent",
+      "at": "2026-11-15T23:32:44.525Z"
+    },
+    {
+      "decision": "Bind the private Glados research listener to all interfaces while retaining bearer authentication and a macOS-say default.",
+      "why": "Open WebUI needs network reachability to the backend for explicit interactive VibeVoice experiments.",
+      "rejected": "Changing application defaults or removing authentication.",
+      "by": "agent",
+      "at": "2026-11-15T23:32:44.525Z"
+    },
+    {
+      "id": "vibevoice-language-scope",
+      "decision": "Owner authorizes English and German VibeVoice only for private R&D on the private system; this supersedes the earlier English-only operational scope but does not approve production use or redistribution.",
+      "why": "The purpose is interactive resource, language, and fallback evaluation with user-approved private inputs.",
+      "rejected": "Treating the R&D activation as a supported product feature or permission to publish model assets, prompts, audio, or traces.",
+      "by": "agent",
+      "at": "2026-11-15T23:53:13.441Z"
+    },
+    {
+      "decision": "Owner authorizes English and German VibeVoice preset use only for private R&D with TTS_VIBEVOICE_RESEARCH_ONLY=true; production and redistribution remain blocked.",
+      "why": "Interactive evaluation is intended to measure language output, resource use, and fallback on the private system.",
+      "rejected": "Treating R&D authorization as vendor-supported German, production approval, or distribution rights.",
+      "by": "agent",
+      "at": "2026-11-16T00:10:53.132Z"
+    },
+    {
+      "decision": "While the worker is resident, add measured worker RSS back to vm_stat available memory when checking external reserve; cold admission still requires raw available memory for peak plus reserve.",
+      "why": "The resident TTS process is the memory being measured and should not count against the higher-priority reserve; observed external pressure still causes eviction.",
+      "rejected": "Evicting the worker solely because its own resident model lowers free memory.",
+      "by": "agent",
+      "at": "2026-11-16T00:10:53.132Z"
     }
   ],
   "step_summaries": {
@@ -380,10 +756,38 @@
     {
       "note": "T003 remains blocked pending exact runtime artifact review and approval. Voice prompt provenance and intended-use approval remain unresolved. Target-host memory qualification and full smoke benchmark are still open; glados currently lacks the worker runtime, source, model/voice assets, and configured memory budgets.",
       "step": "implement"
+    },
+    {
+      "note": "T003 remains blocked until exact worker artifacts, voice provenance, intended-use terms, and dependency approvals are reviewed; do not install or enable VibeVoice meanwhile.",
+      "step": "implement"
+    },
+    {
+      "note": "The exact reviewed model revision states research-only and English-only use, and claims audible AI disclosure plus watermarking. The current feature includes German and custom decoder loading; voice rights and exact checkpoint safeguard behavior remain unverified. Keep VibeVoice disabled pending scope and artifact review. A private baseline trace and passive Dispatch pressure-source probe were recorded outside the repository; no worker was loaded and no worker peak was measured.",
+      "step": "implement"
+    },
+    {
+      "note": "Target-host memory qualification and full smoke benchmark remain open. Deployment is also blocked pending exact worker artifact review and clarification of non-R&D intended use.",
+      "step": "implement"
+    },
+    {
+      "note": "T003 remains blocked until exact worker artifacts, voice provenance, dependency terms, and intended-use clearance are resolved. No packages or model assets were installed.",
+      "step": "implement"
+    },
+    {
+      "note": "The macOS firewall is disabled and the listener uses unencrypted HTTP. Keep access on trusted private networks; bearer credentials are not protected in transit. VibeVoice safeguards and unsupported German output remain exploratory, not production-cleared.",
+      "step": "implement"
+    },
+    {
+      "note": "German is explicitly outside the reviewed model card language scope. Safeguard preservation is not yet independently verified; treat output as private experimental data only. The host firewall is disabled and HTTP is plaintext, so use only a trusted private network with bearer authentication.",
+      "step": "implement"
+    },
+    {
+      "note": "The service listens on all interfaces over plaintext HTTP, and macOS Application Firewall is disabled. Bearer auth is active, but only use on a trusted private network. Model-card safeguards and German support remain experimental and not production-cleared.",
+      "step": "implement"
     }
   ],
   "assistant": "ide-chat",
-  "currentTask": "T002",
+  "currentTask": "T003",
   "task_summaries": {
     "T002": {
       "status": "DONE",
@@ -393,5 +797,5 @@
       ]
     }
   },
-  "last_action": "T002 closed with inventory findings. Next task T003 remains pending; no VibeVoice installation or enablement."
+  "last_action": "Bilingual blank-voice R&D mode is active on Glados with RSS-excluded external-pressure checks. Open Speckit release gates remain; private context excluded from push."
 }

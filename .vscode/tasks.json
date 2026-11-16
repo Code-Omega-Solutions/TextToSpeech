@@ -8,7 +8,9 @@
       "windows": {
         "command": "python"
       },
-      "args": ["${workspaceFolder}/checks/check_speckit_setup.py"],
+      "args": [
+        "${workspaceFolder}/checks/check_speckit_setup.py"
+      ],
       "options": {
         "cwd": "${workspaceFolder}"
       },

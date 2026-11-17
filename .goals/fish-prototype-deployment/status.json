@@ -1,6 +1,6 @@
 {
   "goal_id": "fish-prototype-deployment",
-  "status": "building",
+  "status": "inspecting",
   "iteration": 3,
   "builder_model": "GPT:5.6-Luna",
   "inspector_model": "GPT:5.6-Sol",
@@ -18,6 +18,12 @@
       "verdict": "FAIL",
       "summary": "Credentials and exact allowlisting are server-side and Docker gates pass, but the UI no longer offers the required production/prototype selection; live Fish deployment remains blocked.",
       "at": "2026-11-17T13:05:00+01:00"
+    },
+    {
+      "iteration": 3,
+      "verdict": "FAIL",
+      "summary": "Opaque target routing works locally, but privileged endpoint persistence no longer affects fallback traffic; live Fish deployment and exact artifact/reference approvals remain blocked.",
+      "at": "2026-11-17T13:25:57+01:00"
     }
   ]
 }

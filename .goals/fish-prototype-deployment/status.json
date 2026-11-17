@@ -1,6 +1,6 @@
 {
   "goal_id": "fish-prototype-deployment",
-  "status": "building",
+  "status": "inspecting",
   "iteration": 2,
   "builder_model": "GPT:5.6-Luna",
   "inspector_model": "GPT:5.6-Sol",
@@ -12,6 +12,12 @@
       "verdict": "FAIL",
       "summary": "No Fish deployment or live qualification; target access and artifact gates remain blocked, browser token handling violates privacy requirements, and the container gate fails.",
       "at": "2026-11-17T12:38:50.789+01:00"
+    },
+    {
+      "iteration": 2,
+      "verdict": "FAIL",
+      "summary": "Credentials and exact allowlisting are server-side and Docker gates pass, but the UI no longer offers the required production/prototype selection; live Fish deployment remains blocked.",
+      "at": "2026-11-17T13:05:00+01:00"
     }
   ]
 }

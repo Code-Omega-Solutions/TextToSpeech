@@ -116,6 +116,57 @@ test("discovery failure displays a safe status and prevents submission", async (
   );
 });
 
+test("discovery authorization failure is distinct from an unavailable service", async ({
+  page,
+}) => {
+  await open(page, { status: 401, json: { detail: "private auth failure" } });
+  await expect(page.locator("#discovery-status")).toHaveText(
+    "Discovery authorization failed.",
+  );
+});
+
+test("discovery connectivity failure is distinct from an HTTP failure", async ({
+  page,
+}) => {
+  await page.route(`**${catalogPath}`, (route) => route.abort("failed"));
+  await page.route("**/api/healthz", (route) =>
+    route.fulfill({ json: { status: "ok" } }),
+  );
+  await page.goto("/");
+  await expect(page.locator("#discovery-status")).toHaveText(
+    "Could not reach the speech service. Check the service connection and try again.",
+  );
+});
+
+test("a token-triggered configuration load cannot overwrite a later endpoint edit", async ({
+  page,
+}) => {
+  let releaseTokenLoad;
+  const tokenLoad = new Promise((resolve) => {
+    releaseTokenLoad = resolve;
+  });
+  await page.route("**/api/configuration", async (route) => {
+    if (route.request().method() === "PUT") {
+      return route.fulfill({ json: { origin: "http://service-b" } });
+    }
+    if (route.request().headers().authorization) {
+      await tokenLoad;
+      return route.fulfill({ json: { origin: "http://service-a" } });
+    }
+    return route.fulfill({ json: { origin: "http://service-a" } });
+  });
+  await open(page);
+  await page.getByRole("button", { name: "Configuration" }).click();
+  await page.locator("#operator-token").fill("operator");
+  await page.locator("#endpoint-input").fill("http://service-b");
+  await expect.poll(() => Boolean(releaseTokenLoad)).toBe(true);
+  releaseTokenLoad();
+  await expect(page.locator("#endpoint-input")).toHaveValue("http://service-b");
+  await expect(page.locator("#unsaved-endpoint")).toBeVisible();
+  await page.getByRole("button", { name: "Save endpoint" }).click();
+  await expect(page.getByRole("button", { name: "Save endpoint" })).toBeDisabled();
+});
+
 test("an empty available catalog explains why submission is disabled", async ({
   page,
 }) => {

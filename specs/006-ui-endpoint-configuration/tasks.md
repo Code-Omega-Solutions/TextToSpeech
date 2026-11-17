@@ -24,7 +24,7 @@ Files: `frontend/app.js`, `frontend/tests/config.test.js`, `frontend/tests/e2e/e
 ### Tests
 
 - [x] **T008** [US1] Test valid, invalid, unauthorized, failed, and atomic endpoint saves first · `frontend/tests/config.test.js`
-- [x] **T009** [US1] Test keyboard save, active-versus-unsaved state, and post-save routing first · `frontend/tests/production.test.js`
+- [x] **T009** [US1] Test keyboard endpoint change/save, active-versus-unsaved state, disabled post-save state, and post-save routing first · `frontend/tests/production.test.js`
 
 ### Implementation
 
@@ -43,7 +43,7 @@ Files: `frontend/app.js`, `frontend/runtime/api-handler.js`, `frontend/tests/e2e
 
 ### Tests
 
-- [x] **T013** [US2] Test supported, unsupported, invalid, and empty discovery outcomes first · `frontend/tests/e2e/engine-discovery.spec.js`
+- [x] **T013** [US2] Test supported, unsupported, authentication, connectivity, invalid, and empty discovery outcomes first · `frontend/tests/e2e/engine-discovery.spec.js`
 - [x] **T014** [US2] Test legacy speech with omitted model/voice and existing default backend contract first · `frontend/tests/e2e/engine-discovery.spec.js`
 
 ### Implementation

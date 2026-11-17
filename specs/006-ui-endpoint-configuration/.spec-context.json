@@ -525,7 +525,7 @@
     },
     "specify": {
       "summary": "Implemented operator endpoint tab, durable proxy routing, legacy discovery handling, and documentation.",
-      "last_action": "Iteration 4 correction: T009, T013, and T018 mappings now point to assertions that actually exist; current counts and production-container evidence are recorded after the serial validation run."
+      "last_action": "Iteration 5 correction: speech ownership, token-load edit protection, keyboard save assertions, distinguishable late fixtures, fresh-context persistence, and authentication/connectivity discovery evidence are covered by passing serial tests."
     }
   },
   "approach": "Add operator-authorized server-side endpoint persistence, then scope frontend health, discovery, and speech state to the saved endpoint revision.",
@@ -591,7 +591,7 @@
     },
     "T009": {
       "status": "DONE",
-      "did": "Covered active versus unsaved configuration UI and post-save routing in the committed production browser test",
+      "did": "Covered keyboard endpoint change/save, active versus unsaved configuration UI, disabled post-save state, and post-save routing in the committed production browser test",
       "files": [
         "frontend/tests/production.test.js"
       ]
@@ -620,7 +620,7 @@
     },
     "T013": {
       "status": "DONE",
-      "did": "Distinguished supported, unsupported, invalid, and empty discovery outcomes in committed browser assertions; authentication and network outcomes are not claimed here",
+      "did": "Distinguished supported, unsupported, authentication, connectivity, invalid, and empty discovery outcomes in committed browser assertions",
       "files": [
         "frontend/tests/e2e/engine-discovery.spec.js"
       ]
@@ -720,11 +720,22 @@
       {
         "at": "2026-11-17T06:20:00+01:00",
         "iteration": 4,
-        "note": "Additive current correction: production evidence is now committed and executed serially. T009 maps to production browser configuration/save/routing assertions; T013 claims only supported, unsupported, invalid, and empty discovery assertions; T018 maps to config unit coverage plus production container replacement.",
+        "note": "Iteration 4 evidence was rejected by independent verification: production speech assertion raced hidden static result text, stale speech ownership was incomplete, late fixtures were indistinguishable, and keyboard/persistence/authentication/connectivity coverage was incomplete.",
         "verification": {
           "hook": "C:\\Program Files\\Git\\bin\\bash.exe checks/run_companion_validation.sh: PASS (155 backend, 7 frontend unit, 58 browser, 13 integrity; 2 fidelity skipped)",
-          "production": "npm --prefix frontend run test:production: PASS (real Chromium against committed production container; two synthetic services; late health/speech; same named volume after container removal/recreation)",
+          "production": "npm --prefix frontend run test:production: FAIL (service B speech assertion raced a hidden static result)",
           "docker": "npm --prefix frontend run test:docker: PASS (6 tests; GET/HEAD static method regression included)",
+          "build": "npm --prefix frontend run build: PASS"
+        }
+      },
+      {
+        "at": "2026-11-17T07:00:00+01:00",
+        "iteration": 5,
+        "note": "Corrected async ownership and configuration edit races; production evidence now waits on visible/current results and controlled requests, uses failing-versus-healthy health fixtures, and verifies persisted routing in a fresh browser context. FR-008 authentication and connectivity cases are explicit.",
+        "verification": {
+          "hook": "C:\\Program Files\\Git\\bin\\bash.exe checks/run_companion_validation.sh: PASS (155 backend, 7 frontend unit, 64 browser, 13 integrity; 2 fidelity skipped)",
+          "production": "npm --prefix frontend run test:production: PASS three serial runs against the production container",
+          "docker": "npm --prefix frontend run test:docker: PASS (6 tests)",
           "build": "npm --prefix frontend run build: PASS"
         }
       }

@@ -31,13 +31,24 @@ let availableEngines = [];
 let audioUrl;
 let endpointRevision = 0;
 let activeOrigin = "";
+let endpointEditVersion = 0;
+let speechRequestSequence = 0;
+let currentSpeechRequest = 0;
+let currentSpeechRevision = 0;
+
+function isNetworkError(error) {
+  return error instanceof TypeError || error?.message === "Failed to fetch";
+}
 
 function updateUnsaved() {
   unsavedEndpoint.hidden = endpointInput.value === activeOrigin;
   endpointSave.disabled = unsavedEndpoint.hidden || !operatorToken.value;
 }
 
-endpointInput.addEventListener("input", updateUnsaved);
+endpointInput.addEventListener("input", () => {
+  endpointEditVersion += 1;
+  updateUnsaved();
+});
 operatorToken.addEventListener("input", updateUnsaved);
 operatorToken.addEventListener("change", () => {
   loadConfiguration()
@@ -59,6 +70,7 @@ speechTab.addEventListener("click", () => showTab("speech"));
 configurationTab.addEventListener("click", () => showTab("configuration"));
 
 async function loadConfiguration() {
+  const editVersion = endpointEditVersion;
   const response = await fetch("/api/configuration", {
     cache: "no-store",
     headers: operatorToken.value ? { Authorization: `Bearer ${operatorToken.value}` } : {},
@@ -66,7 +78,7 @@ async function loadConfiguration() {
   if (!response.ok) throw new Error("The active endpoint could not be loaded.");
   const data = await response.json();
   activeOrigin = data.origin;
-  endpointInput.value = activeOrigin;
+  if (editVersion === endpointEditVersion) endpointInput.value = activeOrigin;
   activeEndpoint.textContent = `Active endpoint: ${activeOrigin}`;
   updateUnsaved();
 }
@@ -75,6 +87,7 @@ endpointSave.addEventListener("click", async () => {
   configurationStatus.textContent = "";
   endpointSave.disabled = true;
   const revision = ++endpointRevision;
+  const editVersion = endpointEditVersion;
   try {
     const response = await fetch("/api/configuration", {
       method: "PUT",
@@ -91,17 +104,21 @@ endpointSave.addEventListener("click", async () => {
     if (!response.ok) throw new Error(data.detail || "The endpoint was not saved.");
     if (revision !== endpointRevision) return;
     activeOrigin = data.origin;
-    endpointInput.value = activeOrigin;
+    if (editVersion === endpointEditVersion) endpointInput.value = activeOrigin;
     activeEndpoint.textContent = `Active endpoint: ${activeOrigin}`;
     updateUnsaved();
     configurationStatus.textContent = "Endpoint saved. Speech options refreshed.";
     availableEngines = [];
     clearAudio();
     await Promise.all([checkService(), loadEngineCatalog()]);
+    if (currentSpeechRequest && currentSpeechRevision < endpointRevision) {
+      generateButton.disabled = false;
+      generateButton.firstElementChild.textContent = "Generate speech";
+    }
   } catch (error) {
     configurationStatus.textContent = error.message;
   } finally {
-    endpointSave.disabled = false;
+    updateUnsaved();
   }
 });
 
@@ -324,7 +341,9 @@ async function loadEngineCatalog() {
     engineSelect.disabled = true;
     voiceSelect.disabled = true;
     generateButton.disabled = true;
-    discoveryStatus.textContent = error.message;
+    discoveryStatus.textContent = isNetworkError(error)
+      ? "Could not reach the speech service. Check the service connection and try again."
+      : error.message;
   }
 }
 
@@ -346,6 +365,9 @@ form.addEventListener("submit", async (event) => {
   clearAudio();
   generateButton.disabled = true;
   const speechRevision = endpointRevision;
+  const speechRequest = ++speechRequestSequence;
+  currentSpeechRequest = speechRequest;
+  currentSpeechRevision = speechRevision;
   generateButton.firstElementChild.textContent = "Generating…";
 
   const request = {
@@ -397,14 +419,18 @@ form.addEventListener("submit", async (event) => {
   } catch (error) {
     if (speechRevision !== endpointRevision) return;
     statusMessage.textContent =
-      error instanceof TypeError
+      isNetworkError(error)
         ? "Could not reach the speech service. Check the service connection and try again."
         : error.message;
     serviceStatus.dataset.state = "offline";
     serviceStatus.lastChild.textContent = " SERVICE UNAVAILABLE";
   } finally {
-    generateButton.disabled = false;
-    generateButton.firstElementChild.textContent = "Generate speech";
+    if (currentSpeechRequest === speechRequest) {
+      currentSpeechRequest = 0;
+      currentSpeechRevision = 0;
+      generateButton.disabled = false;
+      generateButton.firstElementChild.textContent = "Generate speech";
+    }
   }
 });
 

@@ -8,7 +8,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { test } from "node:test";
-import { chromium } from "@playwright/test";
+import { chromium, expect } from "@playwright/test";
 
 const root = fileURLToPath(new URL("../..", import.meta.url));
 const image = "private-speech-studio-frontend:local";
@@ -57,8 +57,8 @@ function service(name, options = {}) {
       response.end(Buffer.concat([audio, Buffer.from(name)]));
       return;
     }
-    response.writeHead(200, { "Content-Type": "application/json" });
-    response.end(JSON.stringify({ status: "ok", service: name }));
+    response.writeHead(options.healthStatus || 200, { "Content-Type": "application/json" });
+    response.end(JSON.stringify({ status: options.healthStatus === 200 ? "ok" : "failed", service: name }));
   });
   return { server, requests };
 }
@@ -68,7 +68,7 @@ test("production container switches real services, isolates late work, and retai
   skip: !dockerAvailable && "Docker is unavailable",
 }, async (t) => {
   docker("build", "-f", "frontend/Dockerfile", "-t", image, ".");
-  const a = service("a", { delayHealth: 1800, delaySpeech: 2200 });
+  const a = service("a", { delayHealth: 1800, delaySpeech: 2200, healthStatus: 503 });
   const b = service("b");
   a.server.listen(0, "0.0.0.0");
   b.server.listen(0, "0.0.0.0");
@@ -106,6 +106,7 @@ test("production container switches real services, isolates late work, and retai
     await page.locator("#operator-token").fill("synthetic-operator-token");
     await page.locator("#endpoint-input").fill(aOrigin);
     await page.locator("#endpoint-input").press("Tab");
+    await expect(page.locator("#endpoint-input")).toHaveValue(aOrigin);
     await page.getByRole("button", { name: "Speech" }).click();
     await expectText(page, "#discovery-status", "Speech options are ready.");
 
@@ -113,24 +114,48 @@ test("production container switches real services, isolates late work, and retai
     await page.getByRole("button", { name: "Generate speech" }).click();
     await page.getByRole("button", { name: "Configuration" }).click();
     await page.locator("#endpoint-input").fill(bOrigin);
-    await page.getByRole("button", { name: "Save endpoint" }).click();
+    await expect(page.locator("#unsaved-endpoint")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Save endpoint" })).toBeEnabled();
+    await page.getByRole("button", { name: "Save endpoint" }).focus();
+    await page.keyboard.press("Enter");
     await expectText(page, "#configuration-status", "Endpoint saved.");
+    await expect(page.locator("#unsaved-endpoint")).toBeHidden();
+    await expect(page.getByRole("button", { name: "Save endpoint" })).toBeDisabled();
     await page.getByRole("button", { name: "Speech" }).click();
     await expectText(page, "#discovery-status", "Speech options are ready.");
     await delay(2600);
-    assert.equal(await page.locator("#service-status").textContent(), " SERVICE CONNECTED");
+    await expect(page.locator("#service-status")).toHaveText(" SERVICE CONNECTED");
+    await expect(page.locator("#result")).toBeHidden();
     await waitForEnabled(page.locator("#generate"));
     await page.locator("#speech-text").fill("new speech");
     await page.getByRole("button", { name: "Generate speech" }).click();
-    await expectText(page, "#result", "Ready to listen.");
+    await expect.poll(() => b.requests.filter((request) => request === "/v1/audio/speech").length).toBeGreaterThan(0);
+    await expect(page.locator("#result")).toBeVisible();
+    await expect(page.locator("#result")).toContainText("Ready to listen.");
     assert.ok(a.requests.includes("/v1/audio/speech"));
     assert.ok(b.requests.includes("/v1/audio/speech"));
     await browser.close();
+    browser = undefined;
 
     docker("rm", "-f", container);
     container = create();
     docker("start", container);
     await waitFor(url);
+    browser = await chromium.launch({ headless: true });
+    const freshContext = await browser.newContext();
+    const freshPage = await freshContext.newPage();
+    await freshPage.goto(url);
+    await freshPage.getByRole("button", { name: "Configuration" }).click();
+    await freshPage.locator("#operator-token").fill("synthetic-operator-token");
+    await freshPage.locator("#operator-token").press("Tab");
+    await expect(freshPage.locator("#active-endpoint")).toHaveText(`Active endpoint: ${bOrigin}`);
+    await freshPage.getByRole("button", { name: "Speech" }).click();
+    await expectText(freshPage, "#discovery-status", "Speech options are ready.");
+    await freshPage.locator("#speech-text").fill("persisted routing");
+    await freshPage.getByRole("button", { name: "Generate speech" }).click();
+    await expect.poll(() => b.requests.filter((request) => request === "/v1/audio/speech").length).toBeGreaterThan(1);
+    await expect(freshPage.locator("#result")).toBeVisible();
+    await freshContext.close();
     const persisted = await fetch(`${url}/api/configuration`, {
       headers: { Authorization: "Bearer synthetic-operator-token" },
     });

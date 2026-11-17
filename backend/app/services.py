@@ -14,11 +14,11 @@ from app.config import Settings
 from app.engines import EngineDescriptor, EngineRegistration, EngineRegistry
 from app.fish_process import FishProcess, FishResourceUnavailable
 from app.fish_speech import (
-    FISH_REFERENCE_VOICES,
     FishSpeechAudioTooLarge,
     FishSpeechEngine,
     FishSpeechError,
     FishSpeechTimeout,
+    load_qualified_reference_catalog,
 )
 from app.voices import (
     VoiceInventoryError,
@@ -172,6 +172,9 @@ class SpeechService:
         self._permits = threading.BoundedSemaphore(settings.max_concurrent_synthesis)
         self.fish_speech = FishSpeechEngine(settings)
         self.fish_process = FishProcess(settings, self.fish_speech)
+        self.fish_reference_voices = load_qualified_reference_catalog(
+            settings.fish_reference_manifest
+        )
         self.engine_registry = EngineRegistry(
             (
                 EngineRegistration(
@@ -191,11 +194,12 @@ class SpeechService:
                 ),
                 EngineRegistration(
                     descriptor=EngineDescriptor(
-                        "fish-speech", ("de-DE", "en-US"), FISH_REFERENCE_VOICES
+                        "fish-speech", ("de-DE", "en-US"), self.fish_reference_voices
                     ),
                     enabled=lambda: settings.fish_enabled,
                     ready=self._fish_engine_ready,
                     synthesize=self._synthesize_fish,
+                    voice_catalog=lambda: self.fish_reference_voices,
                 ),
             )
         )
@@ -210,9 +214,10 @@ class SpeechService:
         self.fish_process.close()
 
     def _fish_engine_ready(self) -> bool:
-        # A reviewed managed launcher is lazy: discovery must advertise the
-        # configured engine without starting a neural worker. External Fish
-        # services still require their authenticated health probe.
+        # A reviewed managed launcher is lazy: readiness must not start a
+        # neural worker. An empty qualified-reference catalog is never ready.
+        if not self.fish_reference_voices:
+            return False
         if self.settings.fish_worker_command is not None:
             return self.settings.fish_enabled
         return self.fish_speech.is_available()
@@ -264,6 +269,12 @@ class SpeechService:
         engine = self.engine_registry.resolve(selected_backend)
         if engine is None or not engine.enabled():
             raise SynthesisUnavailable
+        if (
+            selected_backend == "fish-speech"
+            and self.settings.fish_references_approved
+            and not self.fish_reference_voices
+        ):
+            raise SynthesisUnavailable
         return engine.synthesize(
             text, language, speed, response_format, cancel_event, voice
         )
@@ -284,7 +295,15 @@ class SpeechService:
         if cancel_event is not None and cancel_event.is_set():
             raise SynthesisFailure
         reason = "fish_unavailable"
-        if selected_backend == "fish-speech" and self.settings.fish_enabled and language in {"de-DE", "en-US"}:
+        if (
+            selected_backend == "fish-speech"
+            and self.settings.fish_enabled
+            and language in {"de-DE", "en-US"}
+            and (
+                not self.settings.fish_references_approved
+                or self.fish_reference_voices
+            )
+        ):
             native_reserve = min(10, self.settings.request_timeout_seconds / 2)
             fish_deadline = min(
                 deadline - native_reserve,

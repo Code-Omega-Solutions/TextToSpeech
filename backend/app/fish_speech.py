@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import hashlib
 import io
 import json
 import socket
 import wave
+from pathlib import Path
 from threading import Event
 from urllib.error import HTTPError, URLError
 from urllib.request import HTTPRedirectHandler, ProxyHandler, Request, build_opener
@@ -13,10 +15,90 @@ import msgpack
 from app.config import Settings
 
 
-# No reference is advertised until the exact recording, transcript,
-# provenance, and cloning consent are present in an authorized local manifest.
-# Fish may still be screened without a reference, using its own default timbre.
-FISH_REFERENCE_VOICES: dict[str, tuple[str, ...]] = {}
+_REFERENCE_PROFILES = {
+    ("de-DE", "male"): "de-male",
+    ("de-DE", "female"): "de-female",
+    ("en-US", "male"): "en-male",
+    ("en-US", "female"): "en-female",
+}
+
+
+def _file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as artifact:
+        for chunk in iter(lambda: artifact.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def load_qualified_reference_catalog(path: str | None) -> dict[str, tuple[str, ...]]:
+    """Load exactly four locally pinned, consented reference records.
+
+    Invalid or incomplete manifests intentionally collapse to an empty catalog
+    so an unqualified voice can never become publicly discoverable.
+    """
+
+    if not path:
+        return {}
+    try:
+        manifest_path = Path(path).expanduser().resolve()
+        if manifest_path.is_symlink() or not manifest_path.is_file():
+            return {}
+        document = json.loads(manifest_path.read_text(encoding="utf-8"))
+        if not isinstance(document, dict):
+            return {}
+        records = document.get("references")
+        if document.get("status") != "approved" or not isinstance(records, list):
+            return {}
+        if len(records) != len(_REFERENCE_PROFILES):
+            return {}
+        catalog: dict[str, list[str]] = {"de-DE": [], "en-US": []}
+        seen: set[str] = set()
+        for record in records:
+            if not isinstance(record, dict):
+                return {}
+            language = str(record.get("language", ""))
+            gender = str(record.get("gender", ""))
+            reference_id = _REFERENCE_PROFILES.get((language, gender))
+            if (
+                reference_id is None
+                or record.get("id") != reference_id
+                or reference_id in seen
+                or record.get("consent_status") != "speaker-consent"
+                or record.get("speaker_category") != "non-celebrity"
+                or record.get("terms_status") != "approved"
+                or record.get("intended_use") != "private-noncommercial"
+                or not str(record.get("source_revision", "")).strip()
+                or not str(record.get("terms_revision", "")).strip()
+                or not str(record.get("source_url", "")).startswith("https://")
+                or not str(record.get("terms_url", "")).startswith("https://")
+                or not str(record.get("source_license", "")).strip()
+            ):
+                return {}
+            wav = Path(str(record.get("wav", ""))).expanduser().resolve()
+            transcript = Path(str(record.get("transcript", ""))).expanduser().resolve()
+            wav_hash = str(record.get("wav_sha256", ""))
+            transcript_hash = str(record.get("transcript_sha256", ""))
+            if (
+                wav.is_symlink()
+                or transcript.is_symlink()
+                or not wav.is_file()
+                or not transcript.is_file()
+                or len(wav_hash) != 64
+                or len(transcript_hash) != 64
+                or any(character not in "0123456789abcdef" for character in wav_hash)
+                or any(character not in "0123456789abcdef" for character in transcript_hash)
+                or _file_sha256(wav) != wav_hash
+                or _file_sha256(transcript) != transcript_hash
+            ):
+                return {}
+            seen.add(reference_id)
+            catalog[language].append(reference_id)
+        if seen != set(_REFERENCE_PROFILES.values()):
+            return {}
+        return {language: tuple(sorted(voices)) for language, voices in catalog.items()}
+    except (OSError, UnicodeError, TypeError, ValueError, json.JSONDecodeError):
+        return {}
 
 
 class FishSpeechError(RuntimeError):

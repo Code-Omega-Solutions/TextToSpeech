@@ -87,6 +87,20 @@ def test_catalog_uses_dynamic_voice_availability():
     assert registry.catalog()[0]["voices"] == {"de-DE": ["Anna"], "en-US": ["Samantha"]}
 
 
+def test_fish_catalog_is_unavailable_without_qualified_references(settings_factory):
+    service = SpeechService(settings_factory(fish_enabled=True))
+
+    fish_info = next(
+        info for info in service.engine_registry.catalog() if info["id"] == "fish-speech"
+    )
+    assert fish_info == {
+        "id": "fish-speech",
+        "available": False,
+        "languages": [],
+        "voices": {},
+    }
+
+
 def test_unknown_and_legacy_vibevoice_selection_never_substitute(settings_factory):
     service = SpeechService(settings_factory())
     for engine in ("unknown", "vibevoice"):

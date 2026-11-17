@@ -139,15 +139,17 @@ listener acceptance, then verify existing service health and rollback.
   measured capacity versus published guidance, higher-priority workload reserve,
   and proposed memory, storage, concurrency, duration, and cost limits.
 - **FR-003**: Installation and enablement MUST require separate approval of the
-  exact runtime/model/codec revisions, applicable terms for the stated use,
-  voice provenance, resource budget, and service/network changes.
+  exact runtime/model/codec revisions, per-file hashes, applicable terms for
+  the stated use, voice provenance, resource budget, and service/network
+  changes. An exact approval manifest MUST be available before neural exec.
 - **FR-004**: Evaluation MUST use two consented bilingual speakers and expose
-  male and female voice choices for both German and English only after their
-  references and intended-use permissions have been verified.
+  exactly the four German/English male/female combinations only after each
+  exact WAV/transcript reference and intended-use permission has been verified.
 - **FR-005**: The model and speaker references MUST be treated as separate
   assets; neither private use nor model availability establishes voice rights.
-- **FR-006**: Fish MUST remain unavailable until its approved inference service
-  is ready. Missing prerequisites MUST be reported explicitly.
+- **FR-006**: Fish MUST remain unavailable until its approved inference service,
+  exact artifact manifest, and complete four-way qualified reference catalog
+  are ready. Missing prerequisites MUST be reported explicitly.
 - **FR-007**: Enablement MUST preserve production and the existing prototype's
   authentication, request compatibility, limits, and explicit failure behavior.
 - **FR-008**: Evaluation MUST cover all four language/voice combinations with

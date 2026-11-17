@@ -43,15 +43,17 @@ fallback, terminate only owned processes and preserve strict default behavior.
 - [x] T011 Update backend/README.md, capabilities/backend-synthesis/backend-synthesis.spec.md, capabilities/backend-synthesis/backend-synthesis.coverage.md, living-specs.yml and specs/README.md for the implemented opt-in policy and explicit deployment gates.
 - [x] T012 Run focused and directly affected regression checks from backend/tests/, inspect git diff for private data/unrelated edits, and record actual results in specs/007-fish-backend-enablement/quickstart.md without claiming native qualification.
 
-**Open gates**: T004 now has fixed private prototype hashes and a recorded
-local runtime/codec probe, but a redistributable codec manifest and complete
-artifact-term acceptance remain open. T005 has no approved bilingual identity
-or cloning consent, so no reference IDs are advertised. T006 has a live
-private MessagePack/WAV integration and a repository-managed launcher, but
-qualified reference approval remains open. T010 has live admission denial and
-language-preserving native fallback evidence, yet neural success, full
-native qualification, and the four consented voices remain unverified. Keep
-these four tasks open; the feature is not complete.
+**Open gates**: T004 has fixed historical private prototype hashes and a
+recorded local runtime/codec probe, but the exact approval manifest and
+authoritative artifact-term acceptance remain open. The repository launcher
+now fails closed without that manifest. T005 has no approved bilingual identity
+or cloning consent, so no reference IDs are advertised. T006 has a tested
+MessagePack/WAV adapter and lifecycle boundary, but qualified reference
+approval and actual Fish output remain open. T010 has historical admission
+denial and language-preserving native fallback evidence, yet neural success,
+full native qualification, stale unmanaged startup cleanup, and the four
+consented voices remain unverified. Keep these four tasks open; the feature is
+not complete.
 
 ## Dependencies and Execution Order
 

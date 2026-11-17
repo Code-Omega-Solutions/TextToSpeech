@@ -56,7 +56,9 @@ backend now has an opt-in managed-worker/native-fallback policy, defaulting to a
 12 GiB reserve and 16 GiB monitored worker budget. Smaller Fish variants are
 screened before considering the conditional 8 GiB reserve. Exact runtime/artifact
 terms, speaker evidence, native qualification, installation and live enablement
-remain separate gates. The feature does not claim Fish is running or qualified.
+remain separate gates. The checked-in prototype template fails closed on exact
+artifact and four-way reference approval, and the feature does not claim Fish is
+running or qualified.
 
 The [UI endpoint configuration feature](006-ui-endpoint-configuration/ui-endpoint-configuration.spec.md)
 proposes a configuration tab, capability-aware engine and voice controls, legacy

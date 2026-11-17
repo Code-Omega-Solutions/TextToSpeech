@@ -53,9 +53,14 @@ class EngineRegistration:
                 for language in self.descriptor.languages
                 if language in voices_by_language
             )
+        available = self.is_available()
+        if self.voice_catalog is not None and not languages:
+            # A dynamically qualified engine must not advertise availability
+            # before its approved voice catalog has been loaded.
+            available = False
         return {
             "id": self.descriptor.identifier,
-            "available": self.is_available(),
+            "available": available,
             "languages": list(languages),
             "voices": {
                 language: list(voices)

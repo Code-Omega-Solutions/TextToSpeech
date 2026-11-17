@@ -123,6 +123,10 @@ def test_fish_engine_requires_loopback_service_and_credential(monkeypatch):
     monkeypatch.setenv("TTS_FISH_ENABLED", "true")
     monkeypatch.setenv("TTS_FISH_SERVER_URL", "http://127.0.0.1:8080")
     monkeypatch.setenv("TTS_FISH_API_KEY", "fish-test-key")
+    monkeypatch.setenv("FISH_ARTIFACT_MANIFEST", "/approved/fish-artifacts.json")
+    monkeypatch.setenv("FISH_REFERENCE_MANIFEST", "/approved/fish-references.json")
+    monkeypatch.setenv("TTS_FISH_ARTIFACTS_APPROVED", "true")
+    monkeypatch.setenv("TTS_FISH_REFERENCES_APPROVED", "true")
     settings = Settings.from_env()
     assert settings.fish_enabled is True
     assert settings.fish_server_url == "http://127.0.0.1:8080"
@@ -133,8 +137,30 @@ def test_fish_engine_reuses_backend_credential_when_no_second_secret_is_set(monk
     monkeypatch.setenv("TTS_API_KEY", "shared-backend-key")
     monkeypatch.setenv("TTS_FISH_ENABLED", "true")
     monkeypatch.setenv("TTS_FISH_SERVER_URL", "http://127.0.0.1:8080")
+    monkeypatch.setenv("FISH_ARTIFACT_MANIFEST", "/approved/fish-artifacts.json")
+    monkeypatch.setenv("FISH_REFERENCE_MANIFEST", "/approved/fish-references.json")
+    monkeypatch.setenv("TTS_FISH_ARTIFACTS_APPROVED", "true")
+    monkeypatch.setenv("TTS_FISH_REFERENCES_APPROVED", "true")
     settings = Settings.from_env()
     assert settings.fish_api_key == "shared-backend-key"
+
+
+def test_fish_engine_is_disabled_without_exact_approval_gates(monkeypatch):
+    monkeypatch.setenv("TTS_FISH_ENABLED", "true")
+    monkeypatch.setenv("TTS_FISH_SERVER_URL", "http://127.0.0.1:8080")
+    monkeypatch.setenv("TTS_FISH_API_KEY", "fish-test-key")
+    with pytest.raises(ValidationError, match="artifact metadata"):
+        Settings.from_env()
+
+
+def test_fish_engine_requires_manifest_paths_when_approved(monkeypatch):
+    monkeypatch.setenv("TTS_FISH_ENABLED", "true")
+    monkeypatch.setenv("TTS_FISH_SERVER_URL", "http://127.0.0.1:8080")
+    monkeypatch.setenv("TTS_FISH_API_KEY", "fish-test-key")
+    monkeypatch.setenv("TTS_FISH_ARTIFACTS_APPROVED", "true")
+    monkeypatch.setenv("TTS_FISH_REFERENCES_APPROVED", "true")
+    with pytest.raises(ValidationError, match="approval manifest"):
+        Settings.from_env()
 
 
 @pytest.mark.parametrize("url", ["http://192.168.1.20:8080", "https://example.com", "http://127.0.0.1:8080/path"])
@@ -275,6 +301,10 @@ def test_opportunistic_fish_requires_managed_worker_and_native_capacity(monkeypa
     monkeypatch.setenv("TTS_FISH_ENABLED", "true")
     monkeypatch.setenv("TTS_FISH_SERVER_URL", "http://127.0.0.1:8080")
     monkeypatch.setenv("TTS_FISH_API_KEY", "synthetic-fish-key")
+    monkeypatch.setenv("FISH_ARTIFACT_MANIFEST", "/approved/fish-artifacts.json")
+    monkeypatch.setenv("FISH_REFERENCE_MANIFEST", "/approved/fish-references.json")
+    monkeypatch.setenv("TTS_FISH_ARTIFACTS_APPROVED", "true")
+    monkeypatch.setenv("TTS_FISH_REFERENCES_APPROVED", "true")
     with pytest.raises(ValidationError, match="managed worker"):
         Settings.from_env()
     monkeypatch.setenv("TTS_FISH_WORKER_COMMAND", '["/runtime/launcher"]')

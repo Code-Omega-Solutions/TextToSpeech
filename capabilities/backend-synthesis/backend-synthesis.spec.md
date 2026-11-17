@@ -45,7 +45,7 @@ SHALL not disclose credential values or credential-file paths.
 - **THEN** a valid speech request can proceed without an Authorization header.
 
 ### Speech engines are selected explicitly and discovered
-<!-- touches: backend/app/config.py, backend/app/models.py, backend/app/engines.py, backend/app/fish_speech.py, backend/app/services.py, backend/app/routers.py, backend/tests/test_config.py, backend/tests/test_models.py, backend/tests/test_engines.py, backend/tests/test_fish_speech.py, backend/tests/test_engine_catalog.py -->
+<!-- touches: backend/app/config.py, backend/app/models.py, backend/app/engines.py, backend/app/fish_speech.py, backend/app/services.py, backend/app/routers.py, backend/deployment/fish_worker_launcher.py, backend/tests/test_config.py, backend/tests/test_models.py, backend/tests/test_engines.py, backend/tests/test_fish_speech.py, backend/tests/test_engine_catalog.py, backend/tests/test_fish_worker_launcher.py -->
 
 The serving application SHALL use a fixed registry of configured speech
 engines. The `model` field SHALL select an enabled engine; omitting it SHALL
@@ -56,9 +56,13 @@ engine unless the explicit headroom-first policy below applies to a valid
 neural selection. Authenticated `GET /v1/audio/engines` SHALL list public engine IDs,
 availability, supported English/German locales, and public voice IDs without
 private paths or credentials. Fish Speech SHALL remain disabled unless a
-loopback service origin and a server-side credential are configured. By
-default, the Fish transport reuses the authenticated `TTS_API_KEY` credential;
-an explicit Fish credential is optional for separately authorized deployments.
+loopback service origin, a server-side credential, exact artifact/terms
+approval, and a complete qualified German/English male/female reference
+catalog are configured. By default, the Fish transport reuses the
+authenticated `TTS_API_KEY` credential; an explicit Fish credential is optional
+for separately authorized deployments. Engine discovery SHALL advertise Fish
+only when its qualified voice catalog is nonempty; no unqualified default or
+public/celebrity clone may be advertised.
 
 #### Scenario: an enabled engine is selected
 
@@ -81,9 +85,11 @@ an explicit Fish credential is optional for separately authorized deployments.
 - **THEN** the service returns configured public engine, availability,
   supported-language, and voice metadata without private configuration.
 
-#### Scenario: Fish service is not configured
+#### Scenario: Fish service is not configured or not qualified
 
-- **WHEN** Fish is disabled or its loopback endpoint or credential is absent
+- **WHEN** Fish is disabled, its loopback endpoint or credential is absent, exact
+  artifact terms are not approved, or the complete qualified reference catalog
+  is absent
 - **THEN** Fish reports unavailable and the macOS speech path remains usable.
 
 #### Scenario: Fish reuses the backend credential
@@ -157,7 +163,7 @@ Unexpected detector failures remain errors.
 - **THEN** the service selects `en-US` for synthesis.
 
 ### Synthesis uses configured bounded speech engines
-<!-- touches: backend/app/services.py, backend/app/voices.py, backend/app/models.py, backend/app/config.py, backend/app/engines.py, backend/app/fish_speech.py, backend/tests/test_services.py, backend/tests/test_models.py, backend/tests/test_config.py, backend/tests/test_api.py, backend/tests/test_engines.py, backend/tests/test_fish_speech.py, backend/tests/test_engine_catalog.py, backend/tests/test_voices.py -->
+<!-- touches: backend/app/services.py, backend/app/voices.py, backend/app/models.py, backend/app/config.py, backend/app/engines.py, backend/app/fish_speech.py, backend/deployment/fish_worker_launcher.py, backend/tests/test_services.py, backend/tests/test_models.py, backend/tests/test_config.py, backend/tests/test_api.py, backend/tests/test_engines.py, backend/tests/test_fish_speech.py, backend/tests/test_engine_catalog.py, backend/tests/test_voices.py, backend/tests/test_fish_worker_launcher.py -->
 
 The service SHALL use configured macOS voices and honor an explicitly selected
 installed public voice; an unrecognized legacy voice hint SHALL retain the
@@ -215,7 +221,7 @@ identify the engine that generated it and any explicitly configured fallback.
 - **THEN** the service returns the requested audio format with the configured rate and preserved sentence and paragraph pauses.
 
 ### Optional neural synthesis yields to native speech and host headroom
-<!-- touches: backend/app/config.py, backend/app/fish_process.py, backend/app/memory.py, backend/app/fish_speech.py, backend/app/services.py, backend/app/routers.py, backend/app/main.py, backend/tests/test_fish_process.py, backend/tests/test_config.py, backend/tests/test_engines.py, backend/tests/test_api.py -->
+<!-- touches: backend/app/config.py, backend/app/fish_process.py, backend/app/memory.py, backend/app/fish_speech.py, backend/app/services.py, backend/app/routers.py, backend/app/main.py, backend/deployment/fish_worker_launcher.py, backend/deployment/prototype-operations.md, backend/tests/test_fish_process.py, backend/tests/test_config.py, backend/tests/test_engines.py, backend/tests/test_api.py -->
 
 `TTS_FISH_OPPORTUNISTIC=true` SHALL explicitly opt in to language-preserving
 native fallback for valid neural selections, including retired `vibevoice`,
@@ -228,7 +234,10 @@ and report actual-engine/fallback metadata with a safe reason code. Cancellation
 oversized output and native failures SHALL not become success-shaped fallbacks.
 
 An enabled managed Fish service SHALL require a private, reviewed local argv
-launcher and at least two overall request permits. It SHALL lazily create one
+launcher and at least two overall request permits. Its launcher SHALL require
+an exact local approval manifest for immutable source/model/codec revisions,
+per-file model hashes, codec hash, and applicable terms before exec. It SHALL
+lazily create one
 low-priority owned process session, admit one neural request, and leave native
 admission independent of waiting neural requests. Defaults SHALL be a 16 GiB
 worker process-group RSS budget, 12 GiB available-memory reserve, and 30-second

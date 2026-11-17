@@ -36,6 +36,10 @@ class _SettingsValues(BaseModel):
     fish_server_url: str | None = None
     fish_api_key: str | None = Field(default=None, repr=False)
     fish_request_timeout_seconds: int = Field(default=30, ge=1, le=180)
+    fish_artifact_manifest: str | None = None
+    fish_reference_manifest: str | None = None
+    fish_artifacts_approved: bool = False
+    fish_references_approved: bool = False
     fish_opportunistic: bool = False
     fish_worker_command: tuple[str, ...] | None = Field(default=None, repr=False)
     fish_worker_peak_memory_bytes: int = Field(default=16 * 1024**3, ge=1)
@@ -78,6 +82,18 @@ class _SettingsValues(BaseModel):
             raise ValueError(
                 "Fish Speech requires a loopback service URL and the shared API key"
             )
+        if self.fish_enabled and not self.fish_artifacts_approved:
+            raise ValueError(
+                "Fish Speech requires exact artifact metadata and terms approval"
+            )
+        if self.fish_enabled and not self.fish_artifact_manifest:
+            raise ValueError("Fish Speech requires an exact artifact approval manifest")
+        if self.fish_enabled and not self.fish_references_approved:
+            raise ValueError(
+                "Fish Speech requires approved German/English reference voices"
+            )
+        if self.fish_enabled and not self.fish_reference_manifest:
+            raise ValueError("Fish Speech requires a qualified reference manifest")
         if self.fish_opportunistic:
             if self.fish_enabled and self.fish_worker_command is None:
                 raise ValueError("Opportunistic Fish requires a managed worker command")
@@ -169,7 +185,13 @@ class _SettingsValues(BaseModel):
             raise ValueError("configured string settings must not be blank")
         return value
 
-    @field_validator("vibevoice_worker_python", "vibevoice_source_path", "vibevoice_model_path")
+    @field_validator(
+        "fish_artifact_manifest",
+        "fish_reference_manifest",
+        "vibevoice_worker_python",
+        "vibevoice_source_path",
+        "vibevoice_model_path",
+    )
     @classmethod
     def optional_path_must_not_be_blank(cls, value: str | None) -> str | None:
         if value is not None and not value.strip():
@@ -200,6 +222,10 @@ class Settings:
     fish_server_url: str | None
     fish_api_key: str | None = field(repr=False)
     fish_request_timeout_seconds: int
+    fish_artifact_manifest: str | None
+    fish_reference_manifest: str | None
+    fish_artifacts_approved: bool
+    fish_references_approved: bool
     vibevoice_enabled: bool
     vibevoice_research_only: bool
     vibevoice_qualified: bool
@@ -240,6 +266,10 @@ class Settings:
             "TTS_FISH_SERVER_URL": "fish_server_url",
             "TTS_FISH_API_KEY": "fish_api_key",
             "TTS_FISH_REQUEST_TIMEOUT_SECONDS": "fish_request_timeout_seconds",
+            "FISH_ARTIFACT_MANIFEST": "fish_artifact_manifest",
+            "FISH_REFERENCE_MANIFEST": "fish_reference_manifest",
+            "TTS_FISH_ARTIFACTS_APPROVED": "fish_artifacts_approved",
+            "TTS_FISH_REFERENCES_APPROVED": "fish_references_approved",
             "TTS_FISH_OPPORTUNISTIC": "fish_opportunistic",
             "TTS_FISH_WORKER_COMMAND": "fish_worker_command",
             "TTS_FISH_WORKER_PEAK_MEMORY_BYTES": "fish_worker_peak_memory_bytes",

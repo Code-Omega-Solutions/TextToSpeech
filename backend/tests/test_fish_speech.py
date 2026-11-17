@@ -1,4 +1,6 @@
+import hashlib
 import io
+import json
 import msgpack
 import threading
 import time
@@ -8,7 +10,12 @@ from threading import Thread
 
 import pytest
 
-from app.fish_speech import FishSpeechAudioTooLarge, FishSpeechEngine, FishSpeechError
+from app.fish_speech import (
+    FishSpeechAudioTooLarge,
+    FishSpeechEngine,
+    FishSpeechError,
+    load_qualified_reference_catalog,
+)
 
 
 def wav_bytes():
@@ -189,3 +196,56 @@ def test_cancelled_request_is_not_sent(settings_factory, fish_fixture):
         engine.synthesize_wav("Hello", None, cancel_event=cancelled)
 
     assert fish_fixture.payloads == []
+
+
+def test_reference_catalog_requires_all_exact_consent_records(tmp_path):
+    records = []
+    for language, gender, reference_id in (
+        ("de-DE", "male", "de-male"),
+        ("de-DE", "female", "de-female"),
+        ("en-US", "male", "en-male"),
+        ("en-US", "female", "en-female"),
+    ):
+        wav = tmp_path / f"{reference_id}.wav"
+        transcript = tmp_path / f"{reference_id}.txt"
+        wav.write_bytes(reference_id.encode("ascii"))
+        transcript.write_text(f"Transcript for {reference_id}", encoding="utf-8")
+        records.append(
+            {
+                "id": reference_id,
+                "language": language,
+                "gender": gender,
+                "wav": str(wav),
+                "transcript": str(transcript),
+                "wav_sha256": hashlib.sha256(wav.read_bytes()).hexdigest(),
+                "transcript_sha256": hashlib.sha256(
+                    transcript.read_bytes()
+                ).hexdigest(),
+                "source_url": "https://example.test/source",
+                "source_revision": "source-revision",
+                "source_license": "CC0",
+                "terms_url": "https://example.test/terms",
+                "terms_revision": "terms-revision",
+                "consent_status": "speaker-consent",
+                "speaker_category": "non-celebrity",
+                "terms_status": "approved",
+                "intended_use": "private-noncommercial",
+            }
+        )
+    manifest = tmp_path / "references.json"
+    manifest.write_text(
+        json.dumps({"status": "approved", "references": records}),
+        encoding="utf-8",
+    )
+
+    assert load_qualified_reference_catalog(str(manifest)) == {
+        "de-DE": ("de-female", "de-male"),
+        "en-US": ("en-female", "en-male"),
+    }
+
+    records.pop()
+    manifest.write_text(
+        json.dumps({"status": "approved", "references": records}),
+        encoding="utf-8",
+    )
+    assert load_qualified_reference_catalog(str(manifest)) == {}

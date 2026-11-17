@@ -38,11 +38,36 @@ native fallback remain unverified. Production was not contacted or restarted.
 The server-side proxy and Fish configuration reuse the protected backend bearer
 credential rather than requiring an additional operator or Fish secret.
 
+## Iteration 7 fail-closed deployment state
+
+The checked-in prototype launch template now keeps neural Fish disabled until
+both exact artifact approval and the complete four-way qualified reference
+catalog are available. It sets `TTS_FISH_ENABLED=false` and does not provide a
+worker command, source root, checkpoint root, or Fish listener. Native
+language-preserving fallback remains the only executable prototype path.
+
+The repository-managed launcher independently requires an approval manifest
+with pinned source/model revisions, exact model-file and codec hashes, and
+recorded source/model/codec terms before it can exec a worker. Missing or
+invalid approval fails closed. No approved manifest or four-way consented
+German/English male/female reference set is present in this repository.
+Consequently, no Fish neural output is claimed as qualified in this iteration.
+
+The remote target was not changed in this iteration because no authorized
+deployment session was available in this checkout. Before any future rollout, disable the stale unmanaged prototype launch
+definition (and quarantine its file when the operator can identify it safely),
+then
+recreate only the repository-managed prototype backend and persistent UI.
+Repeat prototype-only startup, readiness, native fallback, rollback, and
+production-preservation checks; do not report those checks as complete until
+they are observed on the native target.
+
 ## Gated native evaluation
 
 Do not install or activate a runtime from this guide without separately
 reviewing exact checkpoint/codec/runtime terms and reference permissions.
-The iteration-6 deployment is a private, non-redistributed prototype using
+The historical iteration-6 deployment was a private, non-redistributed
+prototype using
 authorized local artifacts; credentials and local paths stay out of git.
 
 After separate rollout approval:
@@ -113,7 +138,7 @@ recreation and restoration; readiness and Fish speech returned HTTP 200.
 Never record the host identity, credential, private paths, raw inventories, or
 generated audio in this repository.
 
-## Iteration 6 current deployment record
+## Historical iteration 6 deployment record (superseded)
 
 The designated Apple Silicon target now runs the repository-managed prototype
 backend and a persistent dependency-free UI service. Production remains on its

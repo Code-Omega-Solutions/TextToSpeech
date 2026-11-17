@@ -196,6 +196,39 @@ These inputs block artifact installation, launcher/reference integration and
 native evaluation, not the model-independent policy in [plan.md](plan.md).
 The local design and task list deliberately leave those gated tasks open.
 
+## Iteration 7 approval and deployment evidence
+
+The exact artifact gate was rechecked against authoritative public sources.
+The pinned Fish source revision and tagged documentation remain readable and
+identify Apache-2.0 source, CC BY-NC-SA 4.0 model weights, a separate Firefly
+codec, and local WAV/transcript references. The authoritative model-card and
+configuration endpoints still return HTTP 403 from this environment. No
+restriction was bypassed, and no model or codec terms were inferred from the
+source license. The exact model/codec approval manifest therefore remains
+absent.
+
+The repository-managed launcher now requires a local approval manifest before
+it can exec. The manifest must pin source and model revisions, identify every
+model file with a hash, match the codec hash, and record exact source/model/
+codec terms. The prototype launch template sets both approval gates false,
+does not provide a worker command or artifact roots, and keeps native fallback
+available. Neural deployment is consequently disabled rather than accepted.
+
+The voice review likewise remains unqualified. Thorsten-Voice provides strong
+German male TTS-contribution and CC0 dataset evidence; OpenSLR SLR83 and
+LJ Speech provide public recording/transcript terms but do not establish
+explicit voice-cloning consent. None supplies the complete exact WAV/transcript
+matrix with verified consent for German/English male/female use. No celebrity
+or community voice is advertised, and no reference asset is committed.
+
+No live native Fish output, managed-worker lifecycle, stale-launch-agent
+cleanup, or prototype/UI recreation is claimed for this iteration. A future
+authorized target session must disable the unmanaged prototype definition,
+recreate only the managed prototype and persistent UI, and observe actual Fish
+output (not fallback) plus admission, pressure, probe failure, cancellation,
+deadline, cooldown, idle unload, cleanup, sampling, and native fallback before
+acceptance. Production must remain untouched.
+
 ## Iteration 6 deployment evidence
 
 The sanitized deployment record below supersedes the earlier "not deployed"

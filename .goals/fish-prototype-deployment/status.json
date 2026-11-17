@@ -60,6 +60,12 @@
       "verdict": "FAIL",
       "summary": "Stale-startup quarantine, local gates, secure native UI, privacy, and production preservation pass, but exact Fish approvals, four qualified outputs, live managed lifecycle, and deterministic recreation/rollback remain incomplete.",
       "at": "2026-11-17T20:54:44.6334662+01:00"
+    },
+    {
+      "iteration": 10,
+      "verdict": "FAIL",
+      "summary": "Authorized SSH, local gates, auth/privacy, stale quarantine, native UI, and production preservation pass, but the macOS zsh rollback trap is broken, the current launcher is undeployed, and artifact/reference/neural qualification remains open.",
+      "at": "2026-11-17T21:44:49.0273988+01:00"
     }
   ]
 }

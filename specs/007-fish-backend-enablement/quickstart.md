@@ -172,3 +172,43 @@ transcript, provenance, and cloning-consent evidence is supplied. The UI
 therefore exposes the qualified engine boundary without promising an
 unqualified voice identity. The production engine-discovery 404 is expected
 for that legacy service and the UI correctly falls back to service defaults.
+
+## Iteration 8 sanitized deployment record
+
+The authorized deployment probe confirmed an Apple Silicon macOS target with
+production, prototype, and UI listeners on distinct ports. Authenticated
+production health, readiness, and speech were HTTP 200 before the operation.
+The prototype-only stale startup definition owning the prototype port was
+identified by its exact label and disabled; no wildcard launchctl or process
+termination was used. Protected copies of the managed prototype and UI
+definitions were taken before recreation.
+
+Only the managed prototype and UI were recreated from the reviewed source and
+configuration. A first placeholder-template bootstrap was rejected and the
+managed definitions were restored from the protected copies; the subsequent
+path-corrected recreation started both services. Production was not booted out,
+restarted, or replaced. Post-recreation production health, readiness, and
+authenticated speech remained HTTP 200. Prototype health/readiness and
+authenticated native speech were HTTP 200, while an unauthenticated speech
+request returned HTTP 401. The prototype response reported `macos-say` as the
+actual backend and did not claim Fish output.
+
+The persistent UI served HTTP 200, exposed only opaque Production/Prototype
+targets, returned HTTP 403 for an unapproved target, and returned HTTP 401 for
+unauthorized privileged configuration. A session-selected prototype target
+proxied successfully; an authorized target write survived a clean UI
+recreation, then was restored to production. A transient listener race during
+`kickstart` was handled by booting out and bootstrapping only the UI label;
+the final UI and production target state were healthy.
+
+The deployed Fish path remains fail-closed. The authorized local checkpoint
+directory exists, but no exact artifact/terms manifest or qualified reference
+manifest is available. The source checkout has two unrelated working-tree
+edits, and its accessible reference tree contains two WAV files and no
+matching `.lab` transcripts; no reference IDs are approved. No assets were
+downloaded, no access controls were bypassed, and no four-way Fish outputs are
+claimed. The exact source revision/tree, every model file, codec file, and
+terms must be approved before enabling the worker. Mocked lifecycle tests cover
+admission, one-worker ownership, pressure/probe failure, cancellation,
+deadline, cooldown, idle unload, cleanup, and native fallback; live neural
+lifecycle and four-output qualification remain open gates.

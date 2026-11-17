@@ -173,7 +173,7 @@ class SpeechService:
         self.fish_speech = FishSpeechEngine(settings)
         self.fish_process = FishProcess(settings, self.fish_speech)
         self.fish_reference_voices = load_qualified_reference_catalog(
-            settings.fish_reference_manifest
+            settings.fish_reference_manifest, settings.fish_reference_root
         )
         self.engine_registry = EngineRegistry(
             (
@@ -272,7 +272,10 @@ class SpeechService:
         if (
             selected_backend == "fish-speech"
             and self.settings.fish_references_approved
-            and not self.fish_reference_voices
+            and (
+                not self.fish_reference_voices
+                or voice not in self.fish_reference_voices.get(language, ())
+            )
         ):
             raise SynthesisUnavailable
         return engine.synthesize(
@@ -301,7 +304,10 @@ class SpeechService:
             and language in {"de-DE", "en-US"}
             and (
                 not self.settings.fish_references_approved
-                or self.fish_reference_voices
+                or (
+                    self.fish_reference_voices
+                    and voice in self.fish_reference_voices.get(language, ())
+                )
             )
         ):
             native_reserve = min(10, self.settings.request_timeout_seconds / 2)

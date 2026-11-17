@@ -38,6 +38,7 @@ class _SettingsValues(BaseModel):
     fish_request_timeout_seconds: int = Field(default=30, ge=1, le=180)
     fish_artifact_manifest: str | None = None
     fish_reference_manifest: str | None = None
+    fish_reference_root: str | None = None
     fish_artifacts_approved: bool = False
     fish_references_approved: bool = False
     fish_opportunistic: bool = False
@@ -94,6 +95,8 @@ class _SettingsValues(BaseModel):
             )
         if self.fish_enabled and not self.fish_reference_manifest:
             raise ValueError("Fish Speech requires a qualified reference manifest")
+        if self.fish_enabled and not self.fish_reference_root:
+            raise ValueError("Fish Speech requires the Fish source reference root")
         if self.fish_opportunistic:
             if self.fish_enabled and self.fish_worker_command is None:
                 raise ValueError("Opportunistic Fish requires a managed worker command")
@@ -188,6 +191,7 @@ class _SettingsValues(BaseModel):
     @field_validator(
         "fish_artifact_manifest",
         "fish_reference_manifest",
+        "fish_reference_root",
         "vibevoice_worker_python",
         "vibevoice_source_path",
         "vibevoice_model_path",
@@ -224,6 +228,7 @@ class Settings:
     fish_request_timeout_seconds: int
     fish_artifact_manifest: str | None
     fish_reference_manifest: str | None
+    fish_reference_root: str | None
     fish_artifacts_approved: bool
     fish_references_approved: bool
     vibevoice_enabled: bool
@@ -266,8 +271,9 @@ class Settings:
             "TTS_FISH_SERVER_URL": "fish_server_url",
             "TTS_FISH_API_KEY": "fish_api_key",
             "TTS_FISH_REQUEST_TIMEOUT_SECONDS": "fish_request_timeout_seconds",
-            "FISH_ARTIFACT_MANIFEST": "fish_artifact_manifest",
-            "FISH_REFERENCE_MANIFEST": "fish_reference_manifest",
+            "TTS_FISH_ARTIFACT_MANIFEST": "fish_artifact_manifest",
+            "TTS_FISH_REFERENCE_MANIFEST": "fish_reference_manifest",
+            "TTS_FISH_REFERENCE_ROOT": "fish_reference_root",
             "TTS_FISH_ARTIFACTS_APPROVED": "fish_artifacts_approved",
             "TTS_FISH_REFERENCES_APPROVED": "fish_references_approved",
             "TTS_FISH_OPPORTUNISTIC": "fish_opportunistic",

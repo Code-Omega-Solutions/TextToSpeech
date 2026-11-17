@@ -6,6 +6,7 @@ import json
 import socket
 import wave
 from pathlib import Path
+from pathlib import PurePosixPath
 from threading import Event
 from urllib.error import HTTPError, URLError
 from urllib.request import HTTPRedirectHandler, ProxyHandler, Request, build_opener
@@ -21,6 +22,7 @@ _REFERENCE_PROFILES = {
     ("en-US", "male"): "en-male",
     ("en-US", "female"): "en-female",
 }
+_REFERENCE_AUDIO_SUFFIX = ".wav"
 
 
 def _file_sha256(path: Path) -> str:
@@ -31,7 +33,49 @@ def _file_sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def load_qualified_reference_catalog(path: str | None) -> dict[str, tuple[str, ...]]:
+def _safe_reference_path(
+    root: Path, reference_id: str, relative_name: object, suffix: str
+) -> Path | None:
+    if not isinstance(relative_name, str):
+        return None
+    relative = PurePosixPath(relative_name)
+    expected_parent = PurePosixPath("references") / reference_id
+    if (
+        relative.is_absolute()
+        or ".." in relative.parts
+        or relative.parent != expected_parent
+        or relative.suffix.lower() != suffix
+        or len(relative.name) <= len(suffix)
+    ):
+        return None
+    candidate_path = root / Path(*relative.parts)
+    if candidate_path.is_symlink() or not candidate_path.is_file():
+        return None
+    candidate = candidate_path.resolve()
+    if root not in candidate.parents:
+        return None
+    return candidate
+
+
+def _reference_files_are_exact(
+    root: Path, reference_id: str, audio: Path, transcript: Path
+) -> bool:
+    directory = root / "references" / reference_id
+    try:
+        if directory.is_symlink() or not directory.is_dir():
+            return False
+        entries = list(directory.rglob("*"))
+        if any(path.is_symlink() for path in entries):
+            return False
+        actual = {path.resolve() for path in entries if path.is_file()}
+    except OSError:
+        return False
+    return actual == {audio.resolve(), transcript.resolve()}
+
+
+def load_qualified_reference_catalog(
+    path: str | None, reference_root: str | None = None
+) -> dict[str, tuple[str, ...]]:
     """Load exactly four locally pinned, consented reference records.
 
     Invalid or incomplete manifests intentionally collapse to an empty catalog
@@ -41,8 +85,29 @@ def load_qualified_reference_catalog(path: str | None) -> dict[str, tuple[str, .
     if not path:
         return {}
     try:
-        manifest_path = Path(path).expanduser().resolve()
-        if manifest_path.is_symlink() or not manifest_path.is_file():
+        manifest_candidate = Path(path).expanduser()
+        if manifest_candidate.is_symlink():
+            return {}
+        manifest_path = manifest_candidate.resolve()
+        if not manifest_path.is_file():
+            return {}
+        if not reference_root:
+            return {}
+        root_candidate = Path(reference_root).expanduser()
+        if root_candidate.is_symlink():
+            return {}
+        root = root_candidate.resolve()
+        if not root.is_dir():
+            return {}
+        references_directory = root / "references"
+        if references_directory.is_symlink() or not references_directory.is_dir():
+            return {}
+        reference_directories = list(references_directory.iterdir())
+        expected_reference_ids = set(_REFERENCE_PROFILES.values())
+        if (
+            {entry.name for entry in reference_directories} != expected_reference_ids
+            or any(entry.is_symlink() or not entry.is_dir() for entry in reference_directories)
+        ):
             return {}
         document = json.loads(manifest_path.read_text(encoding="utf-8"))
         if not isinstance(document, dict):
@@ -75,22 +140,33 @@ def load_qualified_reference_catalog(path: str | None) -> dict[str, tuple[str, .
                 or not str(record.get("source_license", "")).strip()
             ):
                 return {}
-            wav = Path(str(record.get("wav", ""))).expanduser().resolve()
-            transcript = Path(str(record.get("transcript", ""))).expanduser().resolve()
-            wav_hash = str(record.get("wav_sha256", ""))
-            transcript_hash = str(record.get("transcript_sha256", ""))
+            wav = _safe_reference_path(
+                root, reference_id, record.get("audio_path"), _REFERENCE_AUDIO_SUFFIX
+            )
+            transcript = _safe_reference_path(
+                root, reference_id, record.get("lab_path"), ".lab"
+            )
+            wav_hash = str(record.get("audio_sha256", ""))
+            transcript_hash = str(record.get("lab_sha256", ""))
             if (
-                wav.is_symlink()
-                or transcript.is_symlink()
-                or not wav.is_file()
-                or not transcript.is_file()
+                wav is None
+                or transcript is None
+                or not _reference_files_are_exact(root, reference_id, wav, transcript)
                 or len(wav_hash) != 64
                 or len(transcript_hash) != 64
                 or any(character not in "0123456789abcdef" for character in wav_hash)
                 or any(character not in "0123456789abcdef" for character in transcript_hash)
                 or _file_sha256(wav) != wav_hash
                 or _file_sha256(transcript) != transcript_hash
+                or transcript.stem != wav.stem
+                or not transcript.read_text(encoding="utf-8").strip()
             ):
+                return {}
+            try:
+                with wave.open(str(wav), "rb") as wav_file:
+                    if wav_file.getnchannels() < 1 or wav_file.getframerate() < 1:
+                        return {}
+            except (OSError, UnicodeError, wave.Error):
                 return {}
             seen.add(reference_id)
             catalog[language].append(reference_id)

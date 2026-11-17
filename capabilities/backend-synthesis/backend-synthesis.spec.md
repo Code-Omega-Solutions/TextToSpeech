@@ -235,8 +235,13 @@ oversized output and native failures SHALL not become success-shaped fallbacks.
 
 An enabled managed Fish service SHALL require a private, reviewed local argv
 launcher and at least two overall request permits. Its launcher SHALL require
-an exact local approval manifest for immutable source/model/codec revisions,
-per-file model hashes, codec hash, and applicable terms before exec. It SHALL
+an exact local approval manifest for the actual clean source checkout revision
+and deterministic source-tree digest, every runtime model file, the codec file,
+immutable artifact revisions, per-file hashes, and applicable terms before
+exec. The reference approval SHALL bind each advertised ID to exactly
+`references/<id>/<stem>.wav` and its matching `.lab` under the Fish source
+tree, reject symlinks and extra Fish-consumed files, and record provenance,
+consent, and intended use. It SHALL
 lazily create one
 low-priority owned process session, admit one neural request, and leave native
 admission independent of waiting neural requests. Defaults SHALL be a 16 GiB

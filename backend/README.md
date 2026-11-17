@@ -197,8 +197,8 @@ success if the native prerequisites or overall host capacity are unavailable.
 With Fish disabled the flag works without a model installation. With Fish
 enabled it additionally requires a reviewed `TTS_FISH_WORKER_COMMAND`: a JSON
 argv list whose executable is an absolute POSIX path, and the launcher must
-require an approval manifest with immutable artifact revisions, per-file model
-hashes, codec hash, and exact terms before exec. There is deliberately no
+require an approval manifest with an exact clean source-checkout revision/tree,
+every model file, every codec file, and exact terms before exec. There is deliberately no
 bundled approved manifest. Do not put credentials in argv. A private operator
 launcher must use pre-reviewed local artifacts, the configured authenticated
 loopback MessagePack/WAV interface, and must not daemonize or move model
@@ -210,8 +210,9 @@ denies worker launch.
 | Setting | Default | Meaning |
 | --- | --- | --- |
 | `TTS_FISH_OPPORTUNISTIC` | `false` | Explicit opt-in; strict behavior otherwise unchanged |
-| `FISH_ARTIFACT_MANIFEST` | unset | Operator-only exact artifact/terms manifest path |
-| `FISH_REFERENCE_MANIFEST` | unset | Operator-only four-way WAV/transcript/consent manifest path |
+| `TTS_FISH_ARTIFACT_MANIFEST` | unset | Operator-only exact source/artifact/terms manifest path |
+| `TTS_FISH_REFERENCE_MANIFEST` | unset | Operator-only four-way WAV/transcript/consent manifest path |
+| `TTS_FISH_REFERENCE_ROOT` | unset | Fish source checkout containing exact `references/<id>` files |
 | `TTS_FISH_ARTIFACTS_APPROVED` | `false` | Exact approval manifest gate; keep false until terms and hashes are reviewed |
 | `TTS_FISH_REFERENCES_APPROVED` | `false` | Four-way consented reference gate; keep false until WAV/transcript evidence is complete |
 | `TTS_FISH_WORKER_COMMAND` | unset | Operator-only local argv; no shell expansion |

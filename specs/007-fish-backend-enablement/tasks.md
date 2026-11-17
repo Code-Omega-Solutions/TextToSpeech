@@ -36,7 +36,7 @@ fallback, terminate only owned processes and preserve strict default behavior.
 - [x] T007 [US3] Write failing lifecycle tests in backend/tests/test_fish_process.py for admission, busy requests, loading/active/idle pressure, probe failure, cancellation, cooldown, idle expiry, verified cleanup and shutdown; implement backend/app/fish_process.py with one neural permit, 0.25-second monitor, low-priority owned process session, 30-second idle/cooldown and offline child environment.
 - [x] T008 [US3] Write failing fallback tests in backend/tests/test_engines.py for German/English, disabled/legacy/busy engine, ignored voice, shared deadline, cancellation, size errors and explicit native dispatch; integrate backend/app/services.py, backend/app/routers.py and shutdown cleanup in backend/app/main.py.
 - [x] T009 [US3] Add API-level fallback/authentication/invalid-input checks in backend/tests/test_api.py and run focused backend tests.
-- [ ] T010 [US3] After T004/T006 and separate rollout approval, follow specs/007-fish-backend-enablement/quickstart.md on the isolated native prototype; measure real memory, deadline and all four voices, verify existing services and rollback without modifying production.
+- [ ] T010 [US3] After T004/T006 and separate rollout approval, follow specs/007-fish-backend-enablement/quickstart.md on the isolated native prototype; measure real memory, deadline and all four voices, verify existing services and rollback without modifying production. Iteration 8 verified target discovery, stale-definition removal, managed recreation, native fallback, UI isolation/persistence, and production preservation, but exact Fish approvals, live neural lifecycle, and four outputs remain open.
 
 ## Phase 6: Documentation and Integration
 
@@ -49,11 +49,12 @@ authoritative artifact-term acceptance remain open. The repository launcher
 now fails closed without that manifest. T005 has no approved bilingual identity
 or cloning consent, so no reference IDs are advertised. T006 has a tested
 MessagePack/WAV adapter and lifecycle boundary, but qualified reference
-approval and actual Fish output remain open. T010 has historical admission
-denial and language-preserving native fallback evidence, yet neural success,
-full native qualification, stale unmanaged startup cleanup, and the four
-consented voices remain unverified. Keep these four tasks open; the feature is
-not complete.
+approval and actual Fish output remain open. T010 has historical admission denial and language-preserving native fallback
+evidence. Iteration 8 additionally verified the authorized native deployment,
+stale unmanaged startup cleanup, managed prototype/UI recreation, rollback
+evidence, UI isolation/persistence, and production before/after checks. Neural
+success, full native lifecycle qualification, and the four consented voices
+remain unverified. Keep these four tasks open; the feature is not complete.
 
 ## Dependencies and Execution Order
 

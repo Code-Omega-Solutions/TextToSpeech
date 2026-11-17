@@ -1,7 +1,7 @@
 {
   "workflow": "companion",
   "specName": "UI Endpoint Configuration",
-  "branch": "main",
+  "branch": "feat/ui-endpoint-configuration",
   "currentStep": "implement",
   "status": "completed",
   "history": [
@@ -525,7 +525,7 @@
     },
     "specify": {
       "summary": "Implemented operator endpoint tab, durable proxy routing, legacy discovery handling, and documentation.",
-      "last_action": "Focused frontend unit, build, browser, and repository integrity checks passed; mandatory hook blocked by missing uv."
+      "last_action": "Iteration 3 correction: mandatory Git Bash hook passed with 155 backend, 6 unit, 58 browser, and 13 integrity tests; Docker suite passed 6 tests and built-container Chromium smoke passed."
     }
   },
   "approach": "Add operator-authorized server-side endpoint persistence, then scope frontend health, discovery, and speech state to the saved endpoint revision.",
@@ -535,7 +535,8 @@
       "status": "DONE",
       "did": "Defined endpoint path, startup fallback, and operator policy",
       "files": [
-        "backend/app/config.py"
+        "frontend/config/upstream.js",
+        "frontend/runtime/api-handler.js"
       ]
     },
     "T002": {
@@ -702,6 +703,19 @@
       "files": [
         "checks/run_companion_validation.sh"
       ]
-    }
+    },
+    "correction_notes": [
+      {
+        "at": "2026-11-17T05:30:55+01:00",
+        "iteration": 3,
+        "note": "Additive correction: prior summaries overstated baseline evidence. Iteration 3 adds shipped-runtime MIME coverage, revision isolation, operator-token separation, and feature-specific E2E/Docker assertions.",
+        "verification": {
+          "hook": "C:\\Program Files\\Git\\bin\\bash.exe checks/run_companion_validation.sh: PASS (155 backend, 6 unit, 58 browser, 13 integrity; 2 fidelity skipped)",
+          "docker": "npm --prefix frontend run test:docker: PASS (6 tests)",
+          "browser": "Chromium against built image: PASS (HTML executed, text/html MIME)",
+          "build": "npm --prefix frontend run build: PASS"
+        }
+      }
+    ]
   }
 }

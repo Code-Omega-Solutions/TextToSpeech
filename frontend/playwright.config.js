@@ -20,6 +20,10 @@ export default defineConfig({
     command: "npm run preview",
     url: "http://127.0.0.1:5173",
     reuseExistingServer: false,
-    env: { TTS_UPSTREAM_URL: "http://127.0.0.1:9" },
+    env: {
+      TTS_UPSTREAM_URL: "http://127.0.0.1:9",
+      TTS_API_KEY: "synthetic-browser-backend-key",
+      TTS_OPERATOR_TOKEN: "synthetic-browser-operator-token",
+    },
   },
 });

@@ -154,19 +154,24 @@ speedInput.addEventListener("input", () => {
 });
 
 async function checkService() {
+  const revision = endpointRevision;
   try {
     const response = await fetch("/api/healthz", { cache: "no-store" });
+    if (revision !== endpointRevision) return;
     if (!response.ok) throw new Error("Service unavailable");
     serviceStatus.dataset.state = "online";
     serviceStatus.lastChild.textContent = " SERVICE CONNECTED";
   } catch {
+    if (revision !== endpointRevision) return;
     serviceStatus.dataset.state = "offline";
     serviceStatus.lastChild.textContent = " SERVICE UNAVAILABLE";
   }
 }
 
 function normalizeCatalog(catalog) {
-  if (!Array.isArray(catalog?.engines)) return [];
+  if (!catalog || typeof catalog !== "object" || !Array.isArray(catalog.engines)) {
+    throw new Error("The speech service returned an invalid catalog.");
+  }
   return catalog.engines.flatMap((engine) => {
     if (
       !engine ||
@@ -340,6 +345,7 @@ form.addEventListener("submit", async (event) => {
   statusMessage.textContent = "";
   clearAudio();
   generateButton.disabled = true;
+  const speechRevision = endpointRevision;
   generateButton.firstElementChild.textContent = "Generating…";
 
   const request = {
@@ -370,6 +376,7 @@ form.addEventListener("submit", async (event) => {
       throw new Error(message);
     }
     const audio = await response.blob();
+    if (speechRevision !== endpointRevision) return;
     if (audio.size === 0)
       throw new Error("The service returned an empty audio file.");
 
@@ -388,6 +395,7 @@ form.addEventListener("submit", async (event) => {
         "Audio is ready, but your browser blocked automatic playback. Select play to listen.";
     }
   } catch (error) {
+    if (speechRevision !== endpointRevision) return;
     statusMessage.textContent =
       error instanceof TypeError
         ? "Could not reach the speech service. Check the service connection and try again."
@@ -395,6 +403,7 @@ form.addEventListener("submit", async (event) => {
     serviceStatus.dataset.state = "offline";
     serviceStatus.lastChild.textContent = " SERVICE UNAVAILABLE";
   } finally {
+    if (speechRevision !== endpointRevision) return;
     generateButton.disabled = false;
     generateButton.firstElementChild.textContent = "Generate speech";
   }

@@ -3,27 +3,27 @@
 ## Phase 1: Setup
 
 **Wave 1 — independent (different files):**
-- [x] **T001** [P] [US1] Define endpoint configuration file path, startup precedence, and operator policy · `backend/app/config.py`
+- [x] **T001** [P] [US1] Define endpoint configuration file path, startup precedence, and operator policy · `frontend/config/upstream.js`, `frontend/runtime/api-handler.js`
 - [x] **T002** [P] [US3] Add synthetic persistence and mount instructions · `frontend/README.md`, `frontend/compose.yaml`
 
 ## Phase 2: Foundational
 
 **Wave 1 — independent (different files):**
-- [x] **T003** [P] [US1] Add validated endpoint and atomic JSON persistence models · `backend/app/config.py`
-- [x] **T004** [P] [US2] Add explicit capability outcome model and endpoint revision isolation · `backend/app/routers.py`
+- [x] **T003** [P] [US1] Add validated endpoint and atomic JSON persistence models · `frontend/config/upstream.js`
+- [x] **T004** [P] [US2] Add explicit capability outcome model and endpoint revision isolation · `frontend/app.js`
 - [x] **T005** [P] [US1] Add configuration tab structure and accessible status identifiers · `frontend/index.html`
 - [x] **T006** [P] [US1] Add configuration tab layout and responsive styles · `frontend/styles.css`
 
 **⟶ Wait for Wave 1 to finish, then:**
-- [x] **T007** [US1] Wire authorized GET/PUT configuration routes into the application boundary · `backend/app/routers.py`, `backend/app/main.py`
+- [x] **T007** [US1] Wire authorized GET/PUT configuration routes into the application boundary · `frontend/runtime/api-handler.js`, `frontend/vite.config.js`
 
 ## Phase 3: User Story 1 — Choose the intended speech service
 
-Files: `frontend/app.js`, `backend/tests/test_config.py`, `backend/tests/test_api.py`, `frontend/tests/config.test.js`
+Files: `frontend/app.js`, `frontend/tests/config.test.js`, `frontend/tests/e2e/engine-discovery.spec.js`
 
 ### Tests
 
-- [x] **T008** [US1] Test valid, invalid, unauthorized, failed, and atomic endpoint saves first · `backend/tests/test_config.py`, `backend/tests/test_api.py`
+- [x] **T008** [US1] Test valid, invalid, unauthorized, failed, and atomic endpoint saves first · `frontend/tests/config.test.js`
 - [x] **T009** [US1] Test keyboard save, active-versus-unsaved state, and post-save routing first · `frontend/tests/config.test.js`
 
 ### Implementation
@@ -39,21 +39,21 @@ Checkpoint: The operator can save a permitted endpoint and subsequent checks and
 
 ## Phase 4: User Story 2 — Use only supported speech options
 
-Files: `frontend/app.js`, `backend/app/routers.py`, `frontend/tests/e2e/engine-discovery.spec.js`, `backend/tests/test_speech_contract.py`
+Files: `frontend/app.js`, `frontend/runtime/api-handler.js`, `frontend/tests/e2e/engine-discovery.spec.js`
 
 ### Tests
 
-- [x] **T013** [US2] Test supported, unsupported, authentication, network, invalid, and empty discovery outcomes first · `backend/tests/test_api.py`, `frontend/tests/e2e/engine-discovery.spec.js`
-- [x] **T014** [US2] Test legacy speech with omitted model/voice and existing default backend contract first · `backend/tests/test_speech_contract.py`
+- [x] **T013** [US2] Test supported, unsupported, authentication, network, invalid, and empty discovery outcomes first · `frontend/tests/e2e/engine-discovery.spec.js`
+- [x] **T014** [US2] Test legacy speech with omitted model/voice and existing default backend contract first · `frontend/tests/e2e/engine-discovery.spec.js`
 
 ### Implementation
 
 **Wave 1 — independent (different files):**
-- [x] **T015** [P] [US2] Return discovery state without leaking credentials or stale catalogs · `backend/app/routers.py`
+- [x] **T015** [P] [US2] Return discovery state without leaking credentials or stale catalogs · `frontend/app.js`, `frontend/runtime/api-handler.js`
 - [x] **T016** [P] [US2] Render selectors only for supported engine and language voice choices · `frontend/app.js`
 
 **⟶ Wait for Wave 1 to finish, then:**
-- [x] **T017** [US2] Preserve legacy speech defaults while rejecting failed discovery as legacy mode · `frontend/app.js`, `backend/app/routers.py`
+- [x] **T017** [US2] Preserve legacy speech defaults while rejecting failed discovery as legacy mode · `frontend/app.js`
 
 Checkpoint: Discovery-enabled services show only supported choices and compatible legacy services remain usable.
 
@@ -63,7 +63,7 @@ Files: `backend/tests/test_config.py`, `frontend/README.md`, `frontend/compose.y
 
 ### Tests
 
-- [x] **T018** [US3] Test reload, restart, replacement storage, corrupt file, and unwritable file behavior first · `backend/tests/test_config.py`
+- [x] **T018** [US3] Test reload, restart, replacement storage, corrupt file, and unwritable file behavior first · `frontend/tests/config.test.js`, `frontend/tests/docker.test.js`
 
 ### Implementation
 

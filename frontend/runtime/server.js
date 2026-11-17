@@ -6,7 +6,13 @@ import { fileURLToPath } from "node:url";
 import { validateUpstream } from "../config/upstream.js";
 import { createApiHandler } from "./api-handler.js";
 
-const root = "/usr/share/nginx/html/";
+const root = process.env.STATIC_ROOT || "/usr/share/nginx/html/";
+const contentTypes = {
+  ".html": "text/html; charset=utf-8",
+  ".js": "text/javascript; charset=utf-8",
+  ".css": "text/css; charset=utf-8",
+  ".svg": "image/svg+xml",
+};
 const env = process.env;
 validateUpstream(env.TTS_UPSTREAM_URL);
 const api = createApiHandler(env);
@@ -19,6 +25,9 @@ createServer(async (request, response) => {
   const pathname = normalize(new URL(request.url, "http://localhost").pathname);
   const file = pathname === "/" ? join(root, "index.html") : join(root, pathname);
   if (!file.startsWith(root) || !existsSync(file) || !statSync(file).isFile()) return response.writeHead(404).end();
-  response.writeHead(200);
+  const extension = file.slice(file.lastIndexOf("."));
+  response.writeHead(200, {
+    "Content-Type": contentTypes[extension] || "application/octet-stream",
+  });
   createReadStream(file).pipe(response);
 }).listen(Number(env.PORT || 8080), "0.0.0.0");

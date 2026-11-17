@@ -12,7 +12,7 @@ const json = (res, status, value) => {
   res.end(JSON.stringify(value));
 };
 const auth = (req, env) => {
-  const expected = env.TTS_OPERATOR_TOKEN || env.TTS_API_KEY;
+  const expected = env.TTS_OPERATOR_TOKEN;
   return Boolean(expected && req.headers.authorization?.replace(/^Bearer\s+/i, "") === expected);
 };
 const body = async (req) => {

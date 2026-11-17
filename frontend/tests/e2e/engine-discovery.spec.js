@@ -128,6 +128,54 @@ test("an empty available catalog explains why submission is disabled", async ({
   ).toBeDisabled();
 });
 
+test("invalid catalog shape is distinct from an empty catalog", async ({ page }) => {
+  await open(page, { json: { engines: "not-an-array" } });
+  await expect(page.locator("#discovery-status")).toHaveText(
+    "The speech service returned an invalid catalog.",
+  );
+});
+
+test("legacy discovery omits selectors and submits backend defaults", async ({ page }) => {
+  let speechPayload;
+  await page.route(`**${catalogPath}`, (route) => route.fulfill({ status: 404 }));
+  await page.route(`**${speechPath}`, async (route) => {
+    speechPayload = route.request().postDataJSON();
+    await route.fulfill({ contentType: "audio/wav", body: audio });
+  });
+  await page.route("**/api/healthz", (route) => route.fulfill({ json: { status: "ok" } }));
+  await page.addInitScript(() => { HTMLMediaElement.prototype.play = async function () {}; });
+  await page.goto("/");
+  await expect(page.locator("#discovery-status")).toContainText("does not support discovery");
+  await expect(page.locator("#engine")).toBeHidden();
+  await page.getByRole("textbox", { name: "YOUR TEXT" }).fill("legacy");
+  await page.getByRole("button", { name: "Generate speech" }).click();
+  await expect.poll(() => speechPayload).toEqual({ input: "legacy", response_format: "mp3", speed: 1 });
+});
+
+test("late old discovery cannot replace the saved endpoint catalog", async ({ page }) => {
+  let releaseOld;
+  await page.route(`**${catalogPath}`, async (route) => {
+    if (!releaseOld) {
+      await new Promise((resolve) => { releaseOld = resolve; });
+      await route.fulfill({ json: { engines: [{ id: "old", available: true, languages: ["en-US"], voices: { "en-US": ["old"] } }] } });
+    } else {
+      await route.fulfill({ json: { engines: [{ id: "new", available: true, languages: ["en-US"], voices: { "en-US": ["new"] } }] } });
+    }
+  });
+  await page.route("**/api/healthz", (route) => route.fulfill({ json: { status: "ok" } }));
+  await page.goto("/");
+  await page.getByRole("button", { name: "Configuration" }).click();
+  await page.locator("#operator-token").fill("operator");
+  await page.locator("#endpoint-input").fill("http://service-b");
+  await page.route("**/api/configuration", (route) =>
+    route.fulfill({ json: { origin: "http://service-b" } }),
+  );
+  await page.locator("#endpoint-save").click();
+  releaseOld?.();
+  await expect(page.locator("#discovery-status")).toContainText("Speech options are ready.");
+  await expect(page.locator("#engine")).toHaveValue("new");
+});
+
 test("submits selected engine and voice and preserves audio playback and download", async ({
   page,
 }) => {

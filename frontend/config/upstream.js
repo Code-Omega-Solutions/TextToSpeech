@@ -58,9 +58,9 @@ export function saveConfiguredUpstream(value, env = process.env) {
   const origin = validateUpstream(value);
   const path = endpointConfigPath(env);
   const directory = dirname(path);
-  mkdirSync(directory, { recursive: true, mode: 0o700 });
   const temporary = `${path}.${randomBytes(8).toString("hex")}.tmp`;
   try {
+    mkdirSync(directory, { recursive: true, mode: 0o700 });
     writeFileSync(temporary, `${JSON.stringify({ origin })}\n`, {
       encoding: "utf8",
       mode: 0o600,

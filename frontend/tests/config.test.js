@@ -132,6 +132,24 @@ test("endpoint configuration persists atomically and rejects unsafe origins", as
   }
 });
 
+test("corrupt and unwritable configuration storage fails without replacing the saved value", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "speech-endpoint-failure-"));
+  const path = join(directory, "endpoint.json");
+  const env = { TTS_UPSTREAM_URL: "http://localhost:8000", TTS_ENDPOINT_CONFIG_FILE: path };
+  try {
+    await writeFile(path, "{not-json");
+    assert.throws(() => loadConfiguredUpstream(env), /corrupt or unreadable/);
+    await writeFile(path, JSON.stringify({ origin: "http://localhost:8000" }));
+    const blockingDirectory = join(directory, "blocked");
+    await writeFile(blockingDirectory, "not-a-directory");
+    const blockedEnv = { ...env, TTS_ENDPOINT_CONFIG_FILE: join(blockingDirectory, "endpoint.json") };
+    assert.throws(() => saveConfiguredUpstream("http://localhost:8001", blockedEnv), /could not be saved/);
+    assert.equal(loadConfiguredUpstream(env), "http://localhost:8000");
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
 test("configuration API enforces operator authorization and destination policy", async () => {
   const directory = await mkdtemp(join(tmpdir(), "speech-api-"));
   const env = {
@@ -147,6 +165,10 @@ test("configuration API enforces operator authorization and destination policy",
   const url = `http://127.0.0.1:${server.address().port}/api/configuration`;
   try {
     assert.equal((await fetch(url)).status, 401);
+    assert.equal(
+      (await fetch(url, { headers: { Authorization: "Bearer synthetic-backend-token" } })).status,
+      401,
+    );
     const headers = {
       Authorization: "Bearer synthetic-operator-token",
       "Content-Type": "application/json",

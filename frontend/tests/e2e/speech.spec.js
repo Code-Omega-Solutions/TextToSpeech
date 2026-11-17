@@ -65,6 +65,20 @@ async function mockAudio(page) {
   );
 }
 
+test("keyboard tabs show exactly one panel at a time", async ({ page }) => {
+  await open(page);
+  await expect(page.locator("#speech-panel")).toBeVisible();
+  await expect(page.locator("#configuration-panel")).toBeHidden();
+  await page.getByRole("button", { name: "Configuration" }).focus();
+  await page.keyboard.press("Enter");
+  await expect(page.locator("#configuration-panel")).toBeVisible();
+  await expect(page.locator("#speech-panel")).toBeHidden();
+  await page.getByRole("button", { name: "Speech" }).focus();
+  await page.keyboard.press("Enter");
+  await expect(page.locator("#speech-panel")).toBeVisible();
+  await expect(page.locator("#configuration-panel")).toBeHidden();
+});
+
 async function clipboard(page, text, reject = false) {
   await page.evaluate(
     ({ text, reject }) => {

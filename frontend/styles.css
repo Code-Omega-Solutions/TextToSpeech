@@ -39,6 +39,15 @@ h1 em { color: #778e26; font-family: Georgia, serif; font-weight: 400; }
 .intro-copy { max-width: 405px; margin: 18px 0 0; color: var(--muted); font-size: 14px; line-height: 1.7; }
 
 .studio-card { padding: 28px; border: 1px solid #e9ece8; border-radius: 15px; background: var(--surface); box-shadow: 0 17px 50px rgb(30 48 38 / 5%); }
+.tabs { display: flex; gap: 18px; margin: -4px 0 24px; border-bottom: 1px solid var(--line); }
+.tab { padding: 8px 0 12px; border: 0; border-bottom: 2px solid transparent; color: var(--muted); background: transparent; cursor: pointer; font: inherit; font-size: 13px; }
+.tab.active { border-color: #79932e; color: var(--ink); font-weight: 700; }
+.configuration-panel { display: grid; gap: 12px; }
+.configuration-panel[hidden] { display: none; }
+.configuration-panel label { color: #59675e; font-size: 12px; font-weight: 700; }
+.configuration-panel input { height: 43px; padding: 0 12px; border: 1px solid var(--line); border-radius: 8px; font: inherit; }
+.unsaved { margin: 0; color: #9c6a28; font-size: 12px; font-weight: 700; }
+.configuration-panel .generate-button { margin-top: 6px; }
 .field-heading, .speed-heading { display: flex; align-items: center; justify-content: space-between; }
 .field-actions { display: flex; align-items: center; gap: 12px; }
 .field-heading label, .option label, .speed-heading label { color: #59675e; }

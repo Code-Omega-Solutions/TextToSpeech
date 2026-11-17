@@ -29,6 +29,22 @@
     </section>
 
     <section class="studio-card" aria-label="Speech generator">
+      <nav class="tabs" aria-label="Studio sections">
+        <button id="speech-tab" class="tab active" type="button" aria-controls="speech-panel">Speech</button>
+        <button id="configuration-tab" class="tab" type="button" aria-controls="configuration-panel">Configuration</button>
+      </nav>
+      <section id="configuration-panel" class="configuration-panel" hidden aria-labelledby="configuration-tab">
+        <p class="eyebrow">AUTHORIZED OPERATOR</p>
+        <p id="active-endpoint">Active endpoint: loading…</p>
+        <label for="endpoint-input">Speech-service endpoint</label>
+        <input id="endpoint-input" type="url" autocomplete="off" spellcheck="false">
+        <label for="operator-token">Operator token</label>
+        <input id="operator-token" type="password" autocomplete="current-password">
+        <p id="unsaved-endpoint" class="unsaved" role="status" hidden>Unsaved endpoint changes</p>
+        <button id="endpoint-save" class="generate-button" type="button"><span>Save endpoint</span><span aria-hidden="true">↗</span></button>
+        <p id="configuration-status" class="status" role="status" aria-live="polite"></p>
+      </section>
+      <section id="speech-panel" aria-labelledby="speech-tab">
       <form id="speech-form">
         <div class="field-heading">
           <label for="speech-text">YOUR TEXT</label>
@@ -95,6 +111,7 @@
         <audio id="audio-player" controls preload="none"></audio>
       </section>
       <p id="status" class="status" role="status" aria-live="polite"></p>
+      </section>
     </section>
 
     <footer class="page-footer">

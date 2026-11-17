@@ -65,6 +65,20 @@ async function mockAudio(page) {
   );
 }
 
+test("keyboard tabs show exactly one panel at a time", async ({ page }) => {
+  await open(page);
+  await expect(page.locator("#speech-panel")).toBeVisible();
+  await expect(page.locator("#configuration-panel")).toBeHidden();
+  await page.getByRole("button", { name: "Configuration" }).focus();
+  await page.keyboard.press("Enter");
+  await expect(page.locator("#configuration-panel")).toBeVisible();
+  await expect(page.locator("#speech-panel")).toBeHidden();
+  await page.getByRole("button", { name: "Speech" }).focus();
+  await page.keyboard.press("Enter");
+  await expect(page.locator("#speech-panel")).toBeVisible();
+  await expect(page.locator("#configuration-panel")).toBeHidden();
+});
+
 async function clipboard(page, text, reject = false) {
   await page.evaluate(
     ({ text, reject }) => {
@@ -258,6 +272,59 @@ test("shows loading and prevents duplicate submission until completion", async (
     page.getByRole("button", { name: "Generate speech" }),
   ).toBeEnabled();
   await expect(page.locator("#result")).toBeVisible();
+});
+
+test("stale speech completion cannot unlock or publish over a newer request", async ({
+  page,
+}) => {
+  let releaseOld;
+  const oldResponse = new Promise((resolve) => {
+    releaseOld = resolve;
+  });
+  let releaseNew;
+  const newResponse = new Promise((resolve) => {
+    releaseNew = resolve;
+  });
+  const oldAudio = Buffer.from("old-audio");
+  const newAudio = Buffer.from("new-audio");
+  let speechRequests = 0;
+  await page.route(`**${speechPath}`, async (route) => {
+    speechRequests += 1;
+    if (speechRequests === 1) {
+      await oldResponse;
+      return route.fulfill({ contentType: "audio/wav", body: oldAudio });
+    }
+    await newResponse;
+    return route.fulfill({ contentType: "audio/wav", body: newAudio });
+  });
+  await page.route("**/api/configuration", (route) => {
+    if (route.request().method() === "PUT") {
+      return route.fulfill({ json: { origin: "http://service-b" } });
+    }
+    return route.fulfill({ json: { origin: "http://service-a" } });
+  });
+  await open(page);
+  await generate(page, "old request");
+  await expect(page.getByRole("button", { name: "Generating" })).toBeDisabled();
+
+  await page.getByRole("button", { name: "Configuration" }).click();
+  await page.locator("#operator-token").fill("operator");
+  await page.locator("#endpoint-input").fill("http://service-b");
+  await page.getByRole("button", { name: "Save endpoint" }).click();
+  await expect(page.locator("#configuration-status")).toContainText("Endpoint saved.");
+  await page.getByRole("button", { name: "Speech" }).click();
+  await expect(page.locator("#discovery-status")).toHaveText("Speech options are ready.");
+  await expect(page.getByRole("button", { name: "Generate speech" })).toBeEnabled();
+
+  await generate(page, "new request");
+  await expect.poll(() => speechRequests).toBe(2);
+  await expect(page.getByRole("button", { name: "Generating" })).toBeDisabled();
+  releaseOld();
+  await expect(page.getByRole("button", { name: "Generating" })).toBeDisabled();
+  await expect(page.locator("#result")).toBeHidden();
+  releaseNew();
+  await expect(page.locator("#result")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Generate speech" })).toBeEnabled();
 });
 
 test("revokes old audio when regenerating, clearing and pasting", async ({

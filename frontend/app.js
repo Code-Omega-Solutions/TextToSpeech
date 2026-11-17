@@ -15,10 +15,112 @@ const result = document.querySelector("#result");
 const audioPlayer = document.querySelector("#audio-player");
 const downloadLink = document.querySelector("#download");
 const serviceStatus = document.querySelector("#service-status");
+const speechTab = document.querySelector("#speech-tab");
+const configurationTab = document.querySelector("#configuration-tab");
+const speechPanel = document.querySelector("#speech-panel");
+const configurationPanel = document.querySelector("#configuration-panel");
+const endpointInput = document.querySelector("#endpoint-input");
+const activeEndpoint = document.querySelector("#active-endpoint");
+const endpointSave = document.querySelector("#endpoint-save");
+const configurationStatus = document.querySelector("#configuration-status");
+const operatorToken = document.querySelector("#operator-token");
+const unsavedEndpoint = document.querySelector("#unsaved-endpoint");
 
 const supportedLanguages = new Set(["de-DE", "en-US", "en-GB"]);
 let availableEngines = [];
 let audioUrl;
+let endpointRevision = 0;
+let activeOrigin = "";
+let endpointEditVersion = 0;
+let speechRequestSequence = 0;
+let currentSpeechRequest = 0;
+let currentSpeechRevision = 0;
+
+function isNetworkError(error) {
+  return error instanceof TypeError || error?.message === "Failed to fetch";
+}
+
+function updateUnsaved() {
+  unsavedEndpoint.hidden = endpointInput.value === activeOrigin;
+  endpointSave.disabled = unsavedEndpoint.hidden || !operatorToken.value;
+}
+
+endpointInput.addEventListener("input", () => {
+  endpointEditVersion += 1;
+  updateUnsaved();
+});
+operatorToken.addEventListener("input", updateUnsaved);
+operatorToken.addEventListener("change", () => {
+  loadConfiguration()
+    .then(() => loadEngineCatalog())
+    .catch((error) => {
+      configurationStatus.textContent = error.message;
+    });
+});
+
+function showTab(tab) {
+  const configuration = tab === "configuration";
+  speechTab.classList.toggle("active", !configuration);
+  configurationTab.classList.toggle("active", configuration);
+  speechPanel.hidden = configuration;
+  configurationPanel.hidden = !configuration;
+}
+
+speechTab.addEventListener("click", () => showTab("speech"));
+configurationTab.addEventListener("click", () => showTab("configuration"));
+
+async function loadConfiguration() {
+  const editVersion = endpointEditVersion;
+  const response = await fetch("/api/configuration", {
+    cache: "no-store",
+    headers: operatorToken.value ? { Authorization: `Bearer ${operatorToken.value}` } : {},
+  });
+  if (!response.ok) throw new Error("The active endpoint could not be loaded.");
+  const data = await response.json();
+  activeOrigin = data.origin;
+  if (editVersion === endpointEditVersion) endpointInput.value = activeOrigin;
+  activeEndpoint.textContent = `Active endpoint: ${activeOrigin}`;
+  updateUnsaved();
+}
+
+endpointSave.addEventListener("click", async () => {
+  configurationStatus.textContent = "";
+  endpointSave.disabled = true;
+  const revision = ++endpointRevision;
+  const editVersion = endpointEditVersion;
+  try {
+    const response = await fetch("/api/configuration", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        ...(operatorToken.value
+          ? { Authorization: `Bearer ${operatorToken.value}` }
+          : {}),
+      },
+      body: JSON.stringify({ origin: endpointInput.value }),
+      cache: "no-store",
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.detail || "The endpoint was not saved.");
+    if (revision !== endpointRevision) return;
+    activeOrigin = data.origin;
+    if (editVersion === endpointEditVersion) endpointInput.value = activeOrigin;
+    activeEndpoint.textContent = `Active endpoint: ${activeOrigin}`;
+    updateUnsaved();
+    configurationStatus.textContent = "Endpoint saved. Speech options refreshed.";
+    availableEngines = [];
+    clearAudio();
+    await Promise.all([checkService(), loadEngineCatalog()]);
+    if (currentSpeechRequest && currentSpeechRevision < endpointRevision) {
+      generateButton.disabled = false;
+      generateButton.firstElementChild.textContent = "Generate speech";
+    }
+  } catch (error) {
+    configurationStatus.textContent = error.message;
+  } finally {
+    updateUnsaved();
+  }
+});
 
 function clearAudio() {
   audioPlayer.pause();
@@ -69,19 +171,24 @@ speedInput.addEventListener("input", () => {
 });
 
 async function checkService() {
+  const revision = endpointRevision;
   try {
     const response = await fetch("/api/healthz", { cache: "no-store" });
+    if (revision !== endpointRevision) return;
     if (!response.ok) throw new Error("Service unavailable");
     serviceStatus.dataset.state = "online";
     serviceStatus.lastChild.textContent = " SERVICE CONNECTED";
   } catch {
+    if (revision !== endpointRevision) return;
     serviceStatus.dataset.state = "offline";
     serviceStatus.lastChild.textContent = " SERVICE UNAVAILABLE";
   }
 }
 
 function normalizeCatalog(catalog) {
-  if (!Array.isArray(catalog?.engines)) return [];
+  if (!catalog || typeof catalog !== "object" || !Array.isArray(catalog.engines)) {
+    throw new Error("The speech service returned an invalid catalog.");
+  }
   return catalog.engines.flatMap((engine) => {
     if (
       !engine ||
@@ -151,6 +258,8 @@ function renderVoices(engine, preferredVoice = voiceSelect.value) {
 }
 
 function renderEngines(preferredEngine = engineSelect.value) {
+  engineSelect.hidden = false;
+  voiceSelect.hidden = false;
   const language = languageSelect.value;
   const engines = availableEngines.filter(
     (engine) => !language || engine.languages.includes(language),
@@ -182,12 +291,38 @@ function renderEngines(preferredEngine = engineSelect.value) {
 }
 
 async function loadEngineCatalog() {
+  const revision = endpointRevision;
   try {
     const response = await fetch("/api/v1/audio/engines", {
       cache: "no-store",
     });
-    if (!response.ok) throw new Error("Catalog unavailable");
-    availableEngines = normalizeCatalog(await response.json());
+    if (response.status === 404 || response.status === 501) {
+      if (revision !== endpointRevision) return;
+      availableEngines = [];
+      engineSelect.hidden = true;
+      voiceSelect.hidden = true;
+      generateButton.disabled = false;
+      discoveryStatus.textContent = "This service does not support discovery. Service defaults will be used.";
+      return;
+    }
+    if (!response.ok) {
+      const message =
+        response.status === 401 || response.status === 403
+          ? "Discovery authorization failed."
+          : response.status >= 500
+            ? "Speech options are unavailable. Check the service connection and try again."
+            : "The speech service returned an invalid discovery response.";
+      throw new Error(message);
+    }
+    let catalog;
+    try {
+      catalog = await response.json();
+    } catch {
+      throw new Error("The speech service returned a malformed catalog.");
+    }
+    const normalized = normalizeCatalog(catalog);
+    if (revision !== endpointRevision) return;
+    availableEngines = normalized;
     if (availableEngines.length === 0) {
       renderEngines("");
       return;
@@ -198,15 +333,17 @@ async function loadEngineCatalog() {
           ? "macos-say"
           : availableEngines[0].id),
     );
-  } catch {
+  } catch (error) {
+    if (revision !== endpointRevision) return;
     availableEngines = [];
     setOptions(engineSelect, [], "");
     setOptions(voiceSelect, [], "");
     engineSelect.disabled = true;
     voiceSelect.disabled = true;
     generateButton.disabled = true;
-    discoveryStatus.textContent =
-      "Speech options are unavailable. Check the service connection and try again.";
+    discoveryStatus.textContent = isNetworkError(error)
+      ? "Could not reach the speech service. Check the service connection and try again."
+      : error.message;
   }
 }
 
@@ -223,18 +360,22 @@ form.addEventListener("submit", async (event) => {
   const selectedEngine = availableEngines.find(
     (engine) => engine.id === engineSelect.value,
   );
-  if (!selectedEngine || generateButton.disabled) return;
+  if ((!selectedEngine && availableEngines.length > 0) || generateButton.disabled) return;
   statusMessage.textContent = "";
   clearAudio();
   generateButton.disabled = true;
+  const speechRevision = endpointRevision;
+  const speechRequest = ++speechRequestSequence;
+  currentSpeechRequest = speechRequest;
+  currentSpeechRevision = speechRevision;
   generateButton.firstElementChild.textContent = "Generating…";
 
   const request = {
     input: textInput.value,
     response_format: document.querySelector("#format").value,
     speed: Number(speedInput.value),
-    model: selectedEngine.id,
   };
+  if (selectedEngine) request.model = selectedEngine.id;
   const language = languageSelect.value;
   if (language) request.language = language;
   if (voiceSelect.value) request.voice = voiceSelect.value;
@@ -257,6 +398,7 @@ form.addEventListener("submit", async (event) => {
       throw new Error(message);
     }
     const audio = await response.blob();
+    if (speechRevision !== endpointRevision) return;
     if (audio.size === 0)
       throw new Error("The service returned an empty audio file.");
 
@@ -275,17 +417,27 @@ form.addEventListener("submit", async (event) => {
         "Audio is ready, but your browser blocked automatic playback. Select play to listen.";
     }
   } catch (error) {
+    if (speechRevision !== endpointRevision) return;
     statusMessage.textContent =
-      error instanceof TypeError
+      isNetworkError(error)
         ? "Could not reach the speech service. Check the service connection and try again."
         : error.message;
     serviceStatus.dataset.state = "offline";
     serviceStatus.lastChild.textContent = " SERVICE UNAVAILABLE";
   } finally {
-    generateButton.disabled = false;
-    generateButton.firstElementChild.textContent = "Generate speech";
+    if (currentSpeechRequest === speechRequest) {
+      currentSpeechRequest = 0;
+      currentSpeechRevision = 0;
+      generateButton.disabled = false;
+      generateButton.firstElementChild.textContent = "Generate speech";
+    }
   }
 });
 
 checkService();
-loadEngineCatalog();
+loadConfiguration()
+  .then(() => loadEngineCatalog())
+  .catch((error) => {
+    configurationStatus.textContent = error.message;
+    loadEngineCatalog();
+  });

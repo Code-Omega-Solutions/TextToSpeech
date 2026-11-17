@@ -48,6 +48,12 @@ review. Its remote deployment is planned in parallel and remains gated on host
 runtime prerequisites, a separately approved port, and service approval; the
 existing healthy service is not replaced.
 
+The [UI endpoint configuration feature](006-ui-endpoint-configuration/ui-endpoint-configuration.spec.md)
+proposes a configuration tab, capability-aware engine and voice controls, legacy
+speech compatibility, and documented file-backed container persistence. It is
+pending specification review and does not establish deployed routing or
+authorize changes to a live service.
+
 Two additional draft feature specifications separate the proposed
 [local speech prototype](002-local-speech-prototype/spec.md) from the
 [publishable voice-cloning interface](003-voice-cloning-ui/spec.md). Their

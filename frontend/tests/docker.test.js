@@ -198,6 +198,8 @@ test(
         "--env",
         `TTS_UPSTREAM_URL=http://host.docker.internal:${upstreamPort}`,
         "--env",
+        "TTS_OPERATOR_TOKEN=synthetic-operator-token",
+        "--env",
         "TTS_API_KEY_FILE=/run/secrets/tts_api_key",
         "--mount",
         `type=bind,src=${secretPath},dst=/run/secrets/tts_api_key,readonly`,
@@ -220,6 +222,12 @@ test(
             response.headers.get("x-content-type-options"),
             "nosniff",
           );
+          assert.equal(response.headers.get("content-type"), "text/html; charset=utf-8");
+          const head = await fetch(url, { method: "HEAD" });
+          assert.equal(head.status, 200);
+          assert.equal(await head.text(), "");
+          const post = await fetch(url, { method: "POST", body: "unexpected" });
+          assert.equal(post.status, 405);
           assert.equal(response.headers.get("x-frame-options"), "DENY");
           assert.equal(response.headers.get("referrer-policy"), "no-referrer");
           assert.match(
@@ -233,6 +241,12 @@ test(
           for (const asset of assets) {
             const assetResponse = await fetch(`${url}${asset}`);
             assert.equal(assetResponse.status, 200, asset);
+            const expectedType = asset.endsWith(".js")
+              ? "text/javascript; charset=utf-8"
+              : asset.endsWith(".css")
+                ? "text/css; charset=utf-8"
+                : "image/svg+xml";
+            assert.equal(assetResponse.headers.get("content-type"), expectedType);
             assert.ok(
               !(await assetResponse.text()).includes(secret),
               `secret leaked in ${asset}`,
@@ -367,6 +381,8 @@ test(
               "--env",
               "TTS_UPSTREAM_URL=http://speech.example",
               "--env",
+              "TTS_OPERATOR_TOKEN=synthetic-operator-token",
+              "--env",
               "TTS_API_KEY_FILE=/run/secrets/missing",
               image,
             ],
@@ -378,6 +394,22 @@ test(
             missingCredential.stderr,
             /readable regular TTS_API_KEY_FILE/,
           );
+
+          const missingOperator = spawnSync(
+            "docker",
+            [
+              "run",
+              "--rm",
+              "--env",
+              "TTS_UPSTREAM_URL=http://speech.example",
+              "--env",
+              "TTS_API_KEY_FILE=/run/secrets/missing",
+              image,
+            ],
+            { encoding: "utf8", timeout: 30_000 },
+          );
+          assert.equal(missingOperator.status, 1);
+          assert.match(missingOperator.stderr, /TTS_OPERATOR_TOKEN is required/);
 
           for (const upstream of [
             undefined,
@@ -391,6 +423,8 @@ test(
             const args = [
               "run",
               "--rm",
+              "--env",
+              "TTS_OPERATOR_TOKEN=synthetic-operator-token",
               ...(upstream ? ["--env", `TTS_UPSTREAM_URL=${upstream}`] : []),
               image,
             ];

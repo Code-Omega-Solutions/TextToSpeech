@@ -12,6 +12,7 @@ case "${OSTYPE:-}" in
       tests/test_engines.py \
       tests/test_fish_speech.py \
       tests/test_fish_worker_launcher.py \
+      tests/test_fish_deployment_template.py \
       tests/test_engine_catalog.py \
       tests/test_voices.py \
       tests/test_vibevoice_startup.py \

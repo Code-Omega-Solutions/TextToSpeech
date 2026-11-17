@@ -196,6 +196,43 @@ These inputs block artifact installation, launcher/reference integration and
 native evaluation, not the model-independent policy in [plan.md](plan.md).
 The local design and task list deliberately leave those gated tasks open.
 
+## Iteration 9 authoritative and deployment evidence
+
+The public, tagged Fish 1.5.0 README and inference guide were re-reviewed
+through their GitHub sources. They document the source/model license
+distinction, multilingual/reference-audio workflow, checkpoint layout, and
+Firefly decoder path. The authoritative S2-Pro artifact page remained
+unreadable with HTTP 403 from this environment. No alternate credentials,
+mirror, scraping workaround, or access-control bypass was used.
+
+The authorized target's local Fish source and checkpoint locations were
+inspected without copying them into this repository. The source checkout is not
+clean, and the local codec's runtime presence does not supply an immutable
+codec revision or accepted terms. Therefore no exact approval manifest can
+legitimately bind the clean source tree, every model file, the codec file, and
+their applicable terms. The managed launcher and prototype configuration remain
+fail-closed; no repository-managed Fish worker was enabled and no artifact was
+downloaded.
+
+Public reference research was also pursued without downloading or scraping
+voice material. Thorsten-Voice documents an explicit German TTS contribution
+and publishes a CC0 dataset, making it a strong German-male provenance lead.
+It does not provide the requested two bilingual speakers or four exact
+Fish-consumed WAV/`.lab` pairs. Other public recording datasets and Fish
+community listings do not establish cloning consent, bilingual identity, or
+exportable local references. No celebrity or community clone is approved.
+The four-way reference manifest consequently remains absent.
+
+The same authorized session identified one stale prototype launch definition
+with the prototype port and automatic startup enabled. It was disabled by its
+exact label, booted out with a bounded 10-second unload wait, and quarantined
+under a non-`.plist` name. The persisted disabled state and absence of the
+loadable file were verified. Protected managed backend/UI definitions were
+recreated and restored with the same bounded wait; production health,
+authenticated speech, and launchd process identity were preserved. This closes
+the stale-startup/runbook defect only. It does not establish native neural
+qualification, four Fish outputs, or managed neural lifecycle evidence.
+
 ## Iteration 7 approval and deployment evidence
 
 The exact artifact gate was rechecked against authoritative public sources.

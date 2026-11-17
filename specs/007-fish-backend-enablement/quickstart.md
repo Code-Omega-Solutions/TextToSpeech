@@ -31,10 +31,10 @@ Tracked diff whitespace checks passed; the new feature artifacts were checked
 for private host/address details. No dependency manifest or lockfile changed.
 No native macOS/model benchmark or listening qualification was run, because exact
 runtime/codec/checkpoint and bilingual-reference approval remain open. No model
-was downloaded, no runtime launcher was installed, and nothing was deployed.
-The authorized read-only SSH probe for the newly designated target could not
-connect under strict host-key checking, so target OS, roles, free ports, and
-native fallback remain unverified. Production was not contacted or restarted.
+was downloaded and no repository-managed Fish worker was enabled. Iteration 9 used the existing
+strict, key-authenticated SSH path for sanitized target inspection and a
+prototype-only service operation; production was contacted only for
+authenticated before/after health and speech checks and was not restarted.
 The server-side proxy and Fish configuration reuse the protected backend bearer
 credential rather than requiring an additional operator or Fish secret.
 
@@ -173,15 +173,61 @@ therefore exposes the qualified engine boundary without promising an
 unqualified voice identity. The production engine-discovery 404 is expected
 for that legacy service and the UI correctly falls back to service defaults.
 
-## Iteration 8 sanitized deployment record
+## Iteration 9 sanitized deployment record
+
+The authorized strict-SSH session reached the designated Apple Silicon macOS
+target without changing host-key trust. Read-only discovery found one exact
+stale user launch-agent definition for the prototype port with both
+`RunAtLoad` and `KeepAlive` enabled; the repository-managed prototype label was
+excluded from this identity check. Production, prototype, Fish-loopback, and UI
+listeners were present on their distinct ports.
+
+Before the change, production health, readiness, and authenticated speech were
+HTTP 200, and the managed prototype speech and UI root were HTTP 200. The
+identified stale label was disabled by its exact `gui/<uid>/<label>` identity,
+booted out, and given a bounded 10-second unload wait (40 × 250 ms). Its exact
+plist was then moved to a non-`.plist` quarantine name. The persisted
+`launchctl print-disabled` record reported `=> disabled`, the original loadable
+file was absent, and no wildcard process termination or production operation
+was used. This combination prevents a future launch-agent scan from loading
+the stale definition; no machine reboot was performed.
+
+Protected copies of the managed prototype and UI definitions were captured.
+Both labels were recreated from those copies, with the same bounded unload wait
+before each bootstrap, and then restored from the managed definitions. The
+recreation and rollback checks returned prototype authenticated speech and UI
+HTTP 200. Production health, readiness, and authenticated speech remained
+HTTP 200; its launchd process identity was unchanged. Final listener counts
+remained one each on the production, prototype, and UI ports. The stale file
+remains quarantined and disabled.
+
+This deployment evidence does **not** close the Fish gates. The managed
+prototype stayed fail-closed with `TTS_FISH_ENABLED=false` and no approved
+artifact or reference manifest. The tagged Fish source and inference
+documentation are publicly readable, but the authoritative exact checkpoint
+metadata remains HTTP 403 from this environment, and codec-specific terms for
+the installed local file are not accepted as reviewed approval. The local
+source checkout is not clean, so its tree cannot bind an approval manifest.
+No model or codec was downloaded, no restriction was bypassed, and no managed
+neural worker was enabled.
+
+Public voice research also remains incomplete: Thorsten-Voice provides strong
+German male TTS-contribution and CC0 dataset provenance, but not the requested
+four exact bilingual male/female WAV/`.lab` pairs. Other public recording leads
+do not establish cloning consent, bilingual identity, or local Fish-reference
+exportability. No celebrity or community clone is advertised, no reference
+manifest was created, and no Fish output or subjective listening acceptance is
+claimed. T004, T005, T006, and T010 therefore remain open.
+
+## Iteration 8 historical deployment record (superseded)
 
 The authorized deployment probe confirmed an Apple Silicon macOS target with
 production, prototype, and UI listeners on distinct ports. Authenticated
 production health, readiness, and speech were HTTP 200 before the operation.
 The prototype-only stale startup definition owning the prototype port was
-identified by its exact label and disabled; no wildcard launchctl or process
-termination was used. Protected copies of the managed prototype and UI
-definitions were taken before recreation.
+identified by its exact label, but iteration 8 only unloaded it and did not
+quarantine its loadable plist. That record therefore did not establish future
+startup safety; iteration 9 above corrects it.
 
 Only the managed prototype and UI were recreated from the reviewed source and
 configuration. A first placeholder-template bootstrap was rejected and the

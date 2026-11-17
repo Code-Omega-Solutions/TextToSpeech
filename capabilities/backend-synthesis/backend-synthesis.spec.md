@@ -328,6 +328,19 @@ native fallback, or hard unified-memory isolation. The exact artifact, public
 reference-consent, and managed-lifecycle gates remain tracked in feature 007's
 research and quickstart.
 
+### Iteration 9 prototype-only deployment evidence
+
+The authorized native target was inspected with strict SSH and the exact stale
+prototype launch definition was disabled, booted out with a bounded unload
+wait, and quarantined under a non-`.plist` name. The persisted disabled state
+and absence of the loadable definition were verified. Protected managed
+prototype/UI definitions were recreated and restored with the same bounded
+wait, while production health, authenticated speech, and process identity
+remained unchanged. This establishes safe prototype service recreation only;
+it does not qualify Fish artifacts, references, neural output, or managed
+neural lifecycle behavior. The checked-in template therefore remains
+fail-closed.
+
 ## Uncovered
 
 - Root reuse and attribution terms are defined separately in the

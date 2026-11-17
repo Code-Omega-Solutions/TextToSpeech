@@ -1,7 +1,7 @@
 {
   "goal_id": "ui-endpoint-configuration",
   "status": "inspecting",
-  "iteration": 5,
+  "iteration": 6,
   "builder_model": "GPT:5.6-Luna",
   "inspector_model": "GPT:5.6-Sol",
   "initial_sha": "e63512c4023e0bc93986d7b127f3d1947bc52967",
@@ -42,6 +42,12 @@
       "verdict": "FAIL",
       "summary": "Product races and production suites pass, but T009 overclaims keyboard editing and lifecycle test counts are inaccurate.",
       "at": "2026-11-17T06:30:17.0483300+01:00"
+    },
+    {
+      "iteration": 6,
+      "verdict": "FAIL",
+      "summary": "Keyboard edit evidence is present but production verification duplicates the endpoint and fails; lifecycle PASS evidence is not reproducible.",
+      "at": "2026-11-17T06:33:30.809+01:00"
     }
   ]
 }

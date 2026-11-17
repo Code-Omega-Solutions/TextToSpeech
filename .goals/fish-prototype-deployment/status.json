@@ -36,6 +36,12 @@
       "verdict": "FAIL",
       "summary": "Live Fish audio, authentication, production preservation, and browser behavior work, but artifact/reference permissions, managed native fallback/lifecycle, persistent UI deployment, and tracked private-identity sanitization remain incomplete.",
       "at": "2026-11-17T15:53:56+01:00"
+    },
+    {
+      "iteration": 6,
+      "verdict": "FAIL",
+      "summary": "Persistent UI, secure fallback, recreation, production preservation, and privacy pass, but artifact terms, consented Fish voices, live managed lifecycle qualification, and deterministic prototype startup remain incomplete.",
+      "at": "2026-11-17T18:00:00+01:00"
     }
   ]
 }

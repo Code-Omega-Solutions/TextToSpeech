@@ -35,9 +35,11 @@
       </nav>
       <section id="configuration-panel" class="configuration-panel" hidden aria-labelledby="configuration-tab">
         <p class="eyebrow">OPERATOR-MANAGED</p>
+        <label for="target">SPEECH SERVICE</label>
+        <select id="target" aria-describedby="configuration-status" disabled></select>
         <p id="configuration-status" class="status" role="status" aria-live="polite">
-          The speech service is selected by the authorized server operator.
-          Browser users do not enter or receive backend credentials.
+          Choose an approved service. Browser users do not enter or receive backend credentials.
+          Destinations remain server-side.
         </p>
       </section>
       <section id="speech-panel" aria-labelledby="speech-tab">

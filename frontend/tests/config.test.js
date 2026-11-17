@@ -7,6 +7,7 @@ import { once } from "node:events";
 import { test } from "node:test";
 import {
   apiProxy,
+  loadApprovedTargets,
   loadConfiguredUpstream,
   readProxyCredential,
   saveConfiguredUpstream,
@@ -132,6 +133,23 @@ test("endpoint configuration persists atomically and rejects unsafe origins", as
   }
 });
 
+test("browser targets expose opaque approved choices without origins", () => {
+  const env = {
+    TTS_UPSTREAM_URL: "http://localhost:8000",
+    TTS_PROTOTYPE_UPSTREAM_URL: "http://localhost:8001",
+    TTS_ALLOWED_UPSTREAMS: "http://localhost:8000,http://localhost:8001",
+  };
+  assert.deepEqual(Object.keys(loadApprovedTargets(env)), ["production", "prototype"]);
+  assert.deepEqual(loadApprovedTargets(env).prototype, {
+    label: "Prototype",
+    origin: "http://localhost:8001",
+  });
+  assert.throws(() => loadApprovedTargets({
+    ...env,
+    TTS_PROTOTYPE_UPSTREAM_URL: "http://attacker.example",
+  }), /operator-approved/);
+});
+
 test("corrupt and unwritable configuration storage fails without replacing the saved value", async () => {
   const directory = await mkdtemp(join(tmpdir(), "speech-endpoint-failure-"));
   const path = join(directory, "endpoint.json");
@@ -184,10 +202,8 @@ test("configuration API enforces operator authorization and destination policy",
       headers,
       body: JSON.stringify({ origin: "http://localhost:8001" }),
     });
-    assert.deepEqual(await saved.json(), { origin: "http://localhost:8001" });
-    assert.deepEqual(await (await fetch(url, { headers })).json(), {
-      origin: "http://localhost:8001",
-    });
+    assert.deepEqual(await saved.json(), { saved: true });
+    assert.deepEqual(await (await fetch(url, { headers })).json(), { configured: true });
     server.close();
     const restarted = createServer((request, response) =>
       createApiHandler(env)(request, response),
@@ -196,7 +212,7 @@ test("configuration API enforces operator authorization and destination policy",
     await once(restarted, "listening");
     assert.deepEqual(
       await (await fetch(`http://127.0.0.1:${restarted.address().port}/api/configuration`, { headers })).json(),
-      { origin: "http://localhost:8001" },
+      { configured: true },
     );
     restarted.close();
   } finally {

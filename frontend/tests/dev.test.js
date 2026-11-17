@@ -99,6 +99,12 @@ test("development serving preserves API paths, method restrictions and static 40
       !html.includes(secret),
       "Backend credentials must not be injected into HTML",
     );
+    const targets = await fetch(`${url}/api/targets`);
+    assert.equal(targets.status, 200);
+    const targetPayload = await targets.json();
+    assert.deepEqual(targetPayload.targets, [{ id: "production", label: "Production" }]);
+    assert.ok(!JSON.stringify(targetPayload).includes(upstream));
+    assert.equal((await fetch(`${url}/api/configuration`)).status, 401);
     for (const path of ["/healthz", "/readyz"]) {
       const response = await fetch(`${url}/api${path}?test=1`);
       assert.equal(response.status, 200);

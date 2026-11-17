@@ -1,7 +1,7 @@
 {
   "goal_id": "fish-prototype-deployment",
-  "status": "inspecting",
-  "iteration": 2,
+  "status": "building",
+  "iteration": 3,
   "builder_model": "GPT:5.6-Luna",
   "inspector_model": "GPT:5.6-Sol",
   "initial_sha": "0ea0c854aae28bea3123aef9ab46ef94c7c9e6d6",

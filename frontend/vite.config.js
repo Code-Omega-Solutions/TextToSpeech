@@ -1,13 +1,6 @@
 import { fileURLToPath } from "node:url";
 import { defineConfig, loadEnv } from "vite";
-import {
-  apiProxy,
-  MAX_PROXY_BODY_BYTES,
-  readProxyCredential,
-  loadConfiguredUpstream,
-  saveConfiguredUpstream,
-  validateUpstream,
-} from "./config/upstream.js";
+import { apiProxy, MAX_PROXY_BODY_BYTES, readProxyCredential, validateUpstream } from "./config/upstream.js";
 import { createApiHandler } from "./runtime/api-handler.js";
 
 const root = fileURLToPath(new URL(".", import.meta.url));
@@ -27,42 +20,6 @@ function restrictApi(server, env) {
       response.writeHead(status, { "Content-Type": "application/json" });
       response.end(JSON.stringify({ detail }));
     };
-    if (path === "/api/configuration") {
-      if (request.method === "GET") {
-        try {
-          response.writeHead(200, { "Content-Type": "application/json" });
-          response.end(JSON.stringify({ origin: loadConfiguredUpstream(env) }));
-        } catch (error) {
-          reject(503, error.message);
-        }
-        return;
-      }
-      if (request.method !== "PUT") {
-        response.writeHead(403).end("Configuration requires GET or PUT.");
-        return;
-      }
-      const chunks = [];
-      let size = 0;
-      request.on("data", (chunk) => {
-        size += chunk.length;
-        if (size <= 4096) chunks.push(chunk);
-      });
-      request.on("end", () => {
-        if (size > 4096) {
-          reject(413, "Configuration request is too large.");
-          return;
-        }
-        try {
-          const payload = JSON.parse(Buffer.concat(chunks).toString("utf8"));
-          const origin = saveConfiguredUpstream(payload.origin, env);
-          response.writeHead(200, { "Content-Type": "application/json" });
-          response.end(JSON.stringify({ origin }));
-        } catch (error) {
-          reject(400, error.message);
-        }
-      });
-      return;
-    }
     if (path === "/api/v1/audio/speech" && request.method !== "POST") {
       response.writeHead(403).end("Speech generation requires POST.");
     } else if (path === "/api/v1/audio/engines" && request.method !== "GET") {
@@ -76,6 +33,8 @@ function restrictApi(server, env) {
       path.startsWith("/api/") &&
       ![
         "/api/configuration",
+        "/api/targets",
+        "/api/target",
         "/api/healthz",
         "/api/readyz",
         "/api/v1/audio/engines",

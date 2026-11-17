@@ -19,6 +19,7 @@ const speechTab = document.querySelector("#speech-tab");
 const configurationTab = document.querySelector("#configuration-tab");
 const speechPanel = document.querySelector("#speech-panel");
 const configurationPanel = document.querySelector("#configuration-panel");
+const targetSelect = document.querySelector("#target");
 
 const supportedLanguages = new Set(["de-DE", "en-US", "en-GB"]);
 let availableEngines = [];
@@ -27,6 +28,39 @@ let endpointRevision = 0;
 let speechRequestSequence = 0;
 let currentSpeechRequest = 0;
 let currentSpeechRevision = 0;
+
+async function loadTargets() {
+  const response = await fetch("/api/targets", { cache: "no-store" });
+  if (!response.ok) throw new Error("Approved speech services are unavailable.");
+  const payload = await response.json();
+  targetSelect.replaceChildren(...payload.targets.map(({ id, label }) => {
+    const option = document.createElement("option");
+    option.value = id;
+    option.textContent = label;
+    return option;
+  }));
+  targetSelect.value = payload.selected;
+  targetSelect.disabled = payload.targets.length < 2;
+}
+
+targetSelect.addEventListener("change", async () => {
+  targetSelect.disabled = true;
+  try {
+    const response = await fetch("/api/target", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: targetSelect.value }),
+    });
+    if (!response.ok) throw new Error("That speech service is unavailable.");
+    endpointRevision += 1;
+    clearAudio();
+    await Promise.all([checkService(), loadEngineCatalog()]);
+  } catch (error) {
+    statusMessage.textContent = error.message;
+  } finally {
+    targetSelect.disabled = false;
+  }
+});
 
 function isNetworkError(error) {
   return error instanceof TypeError || error?.message === "Failed to fetch";
@@ -356,4 +390,5 @@ form.addEventListener("submit", async (event) => {
 });
 
 checkService();
+loadTargets().catch((error) => { statusMessage.textContent = error.message; });
 loadEngineCatalog();

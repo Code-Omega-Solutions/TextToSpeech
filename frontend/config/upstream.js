@@ -19,6 +19,7 @@ const originPattern =
 export const MAX_PROXY_BODY_BYTES = 32 * 1024;
 export const DEFAULT_ENDPOINT_CONFIG_FILE =
   "/var/lib/private-speech-studio/endpoint.json";
+export const DEFAULT_TARGET_IDS = ["production", "prototype"];
 
 export function validateUpstream(value) {
   if (!value) {
@@ -32,6 +33,40 @@ export function validateUpstream(value) {
     );
   }
   return value;
+}
+
+function approvedOrigins(env = process.env) {
+  return (env.TTS_ALLOWED_UPSTREAMS || env.TTS_UPSTREAM_URL)
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .map(validateUpstream);
+}
+
+export function loadApprovedTargets(env = process.env) {
+  const production = env.TTS_TARGET_PRODUCTION_URL || env.TTS_UPSTREAM_URL;
+  const configured = env.TTS_TARGETS_JSON;
+  let targets = { production: { label: "Production", origin: production } };
+  if (env.TTS_PROTOTYPE_UPSTREAM_URL) {
+    targets.prototype = { label: "Prototype", origin: env.TTS_PROTOTYPE_UPSTREAM_URL };
+  }
+  if (configured !== undefined) {
+    let parsed;
+    try { parsed = JSON.parse(configured); } catch { throw new Error("TTS_TARGETS_JSON must be valid JSON."); }
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      throw new Error("TTS_TARGETS_JSON must be an object.");
+    }
+    targets = parsed;
+  }
+  const allowed = new Set(approvedOrigins(env));
+  return Object.fromEntries(Object.entries(targets).map(([id, value]) => {
+    if (!/^[a-z0-9][a-z0-9_-]{0,31}$/.test(id) || !value || typeof value !== "object") {
+      throw new Error("TTS_TARGETS_JSON contains an invalid target.");
+    }
+    const origin = validateUpstream(value.origin);
+    if (!allowed.has(origin)) throw new Error("Every target must be operator-approved.");
+    return [id, { label: typeof value.label === "string" && value.label.trim() ? value.label.trim() : id, origin }];
+  }));
 }
 
 export function endpointConfigPath(env = process.env) {

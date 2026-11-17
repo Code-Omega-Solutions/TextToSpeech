@@ -89,6 +89,7 @@ test("production container switches real services, isolates late work, and retai
       "--publish", `127.0.0.1:${port}:8080`,
       "--env", `TTS_UPSTREAM_URL=${aOrigin}`,
       "--env", `TTS_ALLOWED_UPSTREAMS=${aOrigin},${bOrigin}`,
+      "--env", `TTS_TARGETS_JSON=${JSON.stringify({ production: { label: "Production", origin: aOrigin }, prototype: { label: "Prototype", origin: bOrigin } })}`,
       "--env", "TTS_API_KEY_FILE=/run/secrets/tts_api_key",
       "--mount", `type=bind,src=${secretPath},dst=/run/secrets/tts_api_key,readonly`,
       "--mount", `type=volume,src=${volume},dst=/var/lib/private-speech-studio`,
@@ -106,21 +107,18 @@ test("production container switches real services, isolates late work, and retai
 
     await page.locator("#speech-text").fill("old speech");
     await page.getByRole("button", { name: "Generate speech" }).click();
-    const changeEndpoint = await fetch(`${url}/api/configuration`, {
-      method: "PUT",
-      headers: {
-        Authorization: "Bearer synthetic-production-secret",
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ origin: bOrigin }),
-    });
-    assert.equal(changeEndpoint.status, 200);
+    await page.getByRole("button", { name: "Configuration" }).click();
+    await expect(page.locator("#target")).toHaveValue("production");
+    await page.locator("#target").selectOption("prototype");
     await page.reload();
     await expectText(page, "#discovery-status", "Speech options are ready.");
     await delay(2600);
     await expect(page.locator("#service-status")).toHaveText(" SERVICE CONNECTED");
     await expect(page.locator("#result")).toBeHidden();
     await waitForEnabled(page.locator("#generate"));
+    await page.getByRole("button", { name: "Configuration" }).click();
+    await expect(page.locator("#target")).toHaveValue("prototype");
+    await page.getByRole("button", { name: "Speech" }).click();
     await page.locator("#speech-text").fill("new speech");
     await page.getByRole("button", { name: "Generate speech" }).click();
     await expect.poll(() => b.requests.filter((request) => request === "/v1/audio/speech").length).toBeGreaterThan(0);
@@ -128,6 +126,15 @@ test("production container switches real services, isolates late work, and retai
     await expect(page.locator("#result")).toContainText("Ready to listen.");
     assert.ok(a.requests.includes("/v1/audio/speech"));
     assert.ok(b.requests.includes("/v1/audio/speech"));
+    const configure = await fetch(`${url}/api/configuration`, {
+      method: "PUT",
+      headers: {
+        Authorization: "Bearer synthetic-production-secret",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ origin: bOrigin }),
+    });
+    assert.deepEqual(await configure.json(), { saved: true });
     await browser.close();
     browser = undefined;
 
@@ -141,6 +148,9 @@ test("production container switches real services, isolates late work, and retai
     await freshPage.goto(url);
     await expect(freshPage.locator("#operator-token")).toHaveCount(0);
     await expectText(freshPage, "#discovery-status", "Speech options are ready.");
+    await freshPage.getByRole("button", { name: "Configuration" }).click();
+    await freshPage.locator("#target").selectOption("prototype");
+    await freshPage.getByRole("button", { name: "Speech" }).click();
     await freshPage.locator("#speech-text").fill("persisted routing");
     await freshPage.getByRole("button", { name: "Generate speech" }).click();
     await expect.poll(() => b.requests.filter((request) => request === "/v1/audio/speech").length).toBeGreaterThan(1);
@@ -149,7 +159,7 @@ test("production container switches real services, isolates late work, and retai
     const persisted = await fetch(`${url}/api/configuration`, {
       headers: { Authorization: "Bearer synthetic-production-secret" },
     });
-    assert.deepEqual(await persisted.json(), { origin: bOrigin });
+    assert.deepEqual(await persisted.json(), { configured: true });
     assert.equal(
       docker("run", "--rm", "--volumes-from", container, "--entrypoint", "stat", image, "-c", "%a", "/var/lib/private-speech-studio/endpoint.json"),
       "600",

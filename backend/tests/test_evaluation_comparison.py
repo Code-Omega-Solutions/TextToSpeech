@@ -1,5 +1,6 @@
 import io
 import json
+import os
 import subprocess
 import sys
 from datetime import datetime, timezone
@@ -302,9 +303,11 @@ def test_approved_adapter_runs_without_shell_and_writes_private_audio(tmp_path, 
     }
     audio = tmp_path / "private-results" / candidate_results[0]["audio_path"]
     assert audio.read_bytes() == b"RIFF-candidate"
-    assert audio.stat().st_mode & 0o077 == 0
+    if os.name != "nt":
+        assert audio.stat().st_mode & 0o077 == 0
 
 
+@pytest.mark.skipif(os.name != "posix", reason="requires POSIX process-group controls")
 def test_timeout_stops_run_and_preserves_incomplete_reasons(tmp_path, monkeypatch):
     from evaluation.vibevoice.runner import run_evaluation
 
@@ -443,6 +446,7 @@ def test_unverified_preflight_capacity_blocks_all_generation(tmp_path):
     assert all(result["status"] == "blocked" for result in report["results"])
 
 
+@pytest.mark.skipif(os.name != "posix", reason="requires POSIX process-group controls")
 def test_adapter_cancellation_terminates_process_and_records_stopped_run(tmp_path, monkeypatch):
     from evaluation.vibevoice.runner import run_evaluation
 

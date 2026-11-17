@@ -1,5 +1,6 @@
 import io
 import json
+import os
 import threading
 import wave
 from pathlib import Path
@@ -258,6 +259,7 @@ def test_worker_denies_concurrent_admission(settings_factory):
     assert processes == []
 
 
+@pytest.mark.skipif(os.name != "posix", reason="uses POSIX output paths")
 def test_worker_protocol_returns_only_safe_error_reasons():
     request = {
         "request_id": "a" * 32,
@@ -283,6 +285,7 @@ def test_worker_protocol_returns_only_safe_error_reasons():
     assert b"/private/model/path" not in output.getvalue()
 
 
+@pytest.mark.skipif(os.name != "posix", reason="uses POSIX output paths")
 def test_worker_protocol_accepts_german_research_request():
     request = {
         "request_id": "a" * 32,

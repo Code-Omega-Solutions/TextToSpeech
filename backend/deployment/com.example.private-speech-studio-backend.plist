@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.example.private-speech-studio-prototype</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>&lt;BACKEND_PYTHON&gt;</string>
+    <string>-m</string>
+    <string>app.main</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>&lt;BACKEND_ROOT&gt;</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PYTHONPATH</key>
+    <string>&lt;BACKEND_ROOT&gt;</string>
+    <key>PATH</key>
+    <string>&lt;PATH&gt;</string>
+    <key>TTS_FFMPEG_PATH</key>
+    <string>&lt;FFMPEG_PATH&gt;</string>
+    <key>TTS_SAY_PATH</key>
+    <string>&lt;SAY_PATH&gt;</string>
+    <key>TTS_HOST</key>
+    <string>127.0.0.1</string>
+    <key>TTS_PORT</key>
+    <string>8001</string>
+    <key>TTS_API_KEY_FILE</key>
+    <string>&lt;API_KEY_FILE&gt;</string>
+    <key>TTS_DEFAULT_BACKEND</key>
+    <string>macos-say</string>
+    <key>TTS_FISH_ENABLED</key>
+    <string>true</string>
+    <key>TTS_FISH_OPPORTUNISTIC</key>
+    <string>true</string>
+    <key>TTS_FISH_SERVER_URL</key>
+    <string>http://127.0.0.1:8002</string>
+    <key>TTS_FISH_WORKER_COMMAND</key>
+    <string>["&lt;BACKEND_PYTHON&gt;","-m","deployment.fish_worker_launcher"]</string>
+    <key>TTS_FISH_WORKER_PEAK_MEMORY_BYTES</key>
+    <string>17179869184</string>
+    <key>TTS_FISH_MEMORY_RESERVE_BYTES</key>
+    <string>12884901888</string>
+    <key>FISH_SOURCE_ROOT</key>
+    <string>&lt;FISH_SOURCE_ROOT&gt;</string>
+    <key>FISH_CHECKPOINT_ROOT</key>
+    <string>&lt;FISH_CHECKPOINT_ROOT&gt;</string>
+    <key>FISH_WORKER_HOST</key>
+    <string>127.0.0.1</string>
+    <key>FISH_WORKER_PORT</key>
+    <string>8002</string>
+  </dict>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+</dict>
+</plist>

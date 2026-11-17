@@ -578,7 +578,7 @@ def _run_adapter(
                 shell=False,
                 cwd=None,
                 env=environment,
-                start_new_session=(os.name == "posix"),
+                start_new_session=True,
             )
         except OSError as exc:
             raise RuntimeError(f"adapter could not start ({type(exc).__name__})") from exc
@@ -763,7 +763,10 @@ def _write_audio(output_root: Path, audio: bytes) -> str:
         if audio_directory.is_symlink() or not audio_directory.is_dir():
             raise PermissionError("audio output directory must be a real directory")
         info = audio_directory.stat()
-        if info.st_uid != os.getuid() or info.st_mode & 0o077:
+        owner_uid = os.getuid() if hasattr(os, "getuid") else info.st_uid
+        if info.st_uid != owner_uid or (
+            os.name != "nt" and info.st_mode & 0o077
+        ):
             raise PermissionError("audio output directory must be user-owned and owner-only")
     else:
         audio_directory.mkdir(mode=0o700)

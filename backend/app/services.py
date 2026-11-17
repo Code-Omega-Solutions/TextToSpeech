@@ -194,7 +194,7 @@ class SpeechService:
                         "fish-speech", ("de-DE", "en-US"), FISH_REFERENCE_VOICES
                     ),
                     enabled=lambda: settings.fish_enabled,
-                    ready=self.fish_speech.is_available,
+                    ready=self._fish_engine_ready,
                     synthesize=self._synthesize_fish,
                 ),
             )
@@ -208,6 +208,14 @@ class SpeechService:
 
     def close(self) -> None:
         self.fish_process.close()
+
+    def _fish_engine_ready(self) -> bool:
+        # A reviewed managed launcher is lazy: discovery must advertise the
+        # configured engine without starting a neural worker. External Fish
+        # services still require their authenticated health probe.
+        if self.settings.fish_worker_command is not None:
+            return self.settings.fish_enabled
+        return self.fish_speech.is_available()
 
     def synthesize(
         self,
@@ -237,11 +245,19 @@ class SpeechService:
         cancel_event: threading.Event | None = None,
         backend: str | None = None,
         voice: str | None = None,
+        deadline: float | None = None,
     ) -> SynthesisResult:
         selected_backend = backend or self.settings.default_backend
         if self.settings.fish_opportunistic and selected_backend in {"fish-speech", "vibevoice"}:
             return self._synthesize_opportunistic(
-                text, language, speed, response_format, cancel_event, selected_backend, voice
+                text,
+                language,
+                speed,
+                response_format,
+                cancel_event,
+                selected_backend,
+                voice,
+                deadline=deadline,
             )
         if selected_backend == "vibevoice":
             raise SynthesisUnavailable
@@ -261,8 +277,10 @@ class SpeechService:
         cancel_event: threading.Event | None,
         selected_backend: str,
         voice: str | None,
+        *,
+        deadline: float | None = None,
     ) -> SynthesisResult:
-        deadline = time.monotonic() + self.settings.request_timeout_seconds
+        deadline = deadline or time.monotonic() + self.settings.request_timeout_seconds
         if cancel_event is not None and cancel_event.is_set():
             raise SynthesisFailure
         reason = "fish_unavailable"

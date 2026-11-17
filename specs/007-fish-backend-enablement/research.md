@@ -196,6 +196,56 @@ These inputs block artifact installation, launcher/reference integration and
 native evaluation, not the model-independent policy in [plan.md](plan.md).
 The local design and task list deliberately leave those gated tasks open.
 
+## Iteration 6 deployment evidence
+
+The sanitized deployment record below supersedes the earlier "not deployed"
+notes while preserving the unresolved approval gates. The designated target
+was reached with the required non-interactive, key-authenticated SSH policy;
+host identity, private paths, credentials, raw inventories, and audio files
+remain out of this repository.
+
+- The target is Apple Silicon macOS. Production remains on port 8000, the
+  repository-managed prototype backend is on loopback port 8001, and the Fish
+  worker contract is loopback-only on port 8002. The persistent UI is on its
+  approved service boundary at port 5173. Production was not restarted,
+  replaced, reconfigured, or terminated.
+- The authorized local Fish source and checkpoint remain pinned to the
+  previously recorded source/model revisions and SHA-256 values above. The
+  deployed Python runtime reports 3.12.15. The local codec reports FFmpeg
+  9.0.2; its build has neither non-free components nor the `--enable-gpl`
+  configuration flag. FFmpeg's own license output includes component notices,
+  and the authoritative [FFmpeg legal page](https://ffmpeg.org/legal.html)
+  was consulted. This is sufficient for private, non-redistributed use only;
+  a redistributable codec manifest is not claimed.
+- The repository-managed launcher is active and runs one offline worker
+  through the existing local Fish environment. Its admission policy requires
+  the 12 GiB reserve plus the 16 GiB worker budget, rejects startup when the
+  sampled available memory cannot satisfy both, and never adopts or terminates
+  the pre-existing worker on port 8002. A Fish-selected request returned
+  native `macos-say` audio with `X-Speech-Fallback: true`; the external worker
+  listener identity was unchanged. This is live evidence of safe denial and
+  language-preserving fallback, not evidence that neural admission fits.
+- The UI is now a persistent dependency-free service with a launch-agent
+  boundary. Browser verification selected the opaque `Prototype` target,
+  generated playable native audio, and received HTTP 401 for an unauthorized
+  operator configuration request. An unapproved target returned HTTP 403.
+  Browser data exposed only `Production` and `Prototype`; origins and
+  credentials stayed server-side. The production backend does not expose
+  engine discovery, so its expected 404 is treated as service-default
+  behavior; the prototype catalog is available.
+- Prototype-only launch-agent recreation was exercised for both backend and UI.
+  A protected rollback copy of both launch configurations was created before
+  recreation. After recreation, the UI root, prototype readiness, prototype
+  authenticated speech, production health, and production authenticated speech
+  all returned HTTP 200. No production service was touched.
+
+No reference voice is advertised by the deployed catalog. The exact
+recording, transcript, provenance, and cloning-consent evidence for the
+requested male/female German/English matrix is still absent, so the four-way
+reference criterion remains blocked. No public listing or dataset license is
+being treated as cloning consent. Subjective listening acceptance is likewise
+pending operator review.
+
 ## Iteration 1 deployment gate
 
 The newly designated deployment target was inspected with the existing

@@ -285,15 +285,28 @@ def _read_credential_file(path: str) -> str:
     if not path:
         raise ValueError("Credential file is unavailable or not protected")
     try:
-        fd = os.open(path, os.O_RDONLY | os.O_NONBLOCK | os.O_NOFOLLOW)
+        fd = os.open(
+            path,
+            os.O_RDONLY
+            | getattr(os, "O_NONBLOCK", 0)
+            | getattr(os, "O_NOFOLLOW", 0),
+        )
         with os.fdopen(fd, "rb") as credential_file:
             info = os.fstat(credential_file.fileno())
-            if not stat.S_ISREG(info.st_mode) or info.st_uid != os.geteuid() or info.st_mode & 0o077:
+            owner_uid = (
+                os.geteuid() if hasattr(os, "geteuid") else info.st_uid
+            )
+            permissions_unverifiable = os.name == "nt"
+            if (
+                not stat.S_ISREG(info.st_mode)
+                or info.st_uid != owner_uid
+                or (not permissions_unverifiable and info.st_mode & 0o077)
+            ):
                 raise ValueError("Credential file is unavailable or not protected")
             contents = credential_file.read(4097)
         if len(contents) > 4096:
             raise ValueError("Credential file is invalid")
-        credential = contents.decode("utf-8").removesuffix("\n")
+        credential = contents.decode("utf-8").removesuffix("\r\n").removesuffix("\n")
         if not credential.strip() or "\n" in credential or "\r" in credential:
             raise ValueError("Credential file is invalid")
         return credential

@@ -1,4 +1,5 @@
 import json
+import os
 import subprocess
 from pathlib import Path
 
@@ -83,6 +84,7 @@ def test_existing_unmanaged_destination_is_not_modified(monkeypatch, tmp_path):
     assert existing.read_text(encoding="utf-8") == "existing installation"
 
 
+@pytest.mark.skipif(os.name != "posix", reason="requires POSIX advisory locking")
 def test_lock_contention_prevents_changes(monkeypatch, tmp_path):
     destination = tmp_path / "environment"
     plan = _install_plan(monkeypatch, destination)
@@ -117,6 +119,7 @@ def test_failed_install_removes_only_new_environment_and_preserves_credential(mo
     assert "synthetic-secret-marker" not in json.dumps(outcome)
 
 
+@pytest.mark.skipif(os.name != "posix", reason="requires POSIX environment layout")
 def test_success_is_verified_and_repeat_run_is_a_noop(monkeypatch, tmp_path):
     destination = tmp_path / "environment"
     plan = _install_plan(monkeypatch, destination)

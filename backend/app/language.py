@@ -1,14 +1,27 @@
 from collections.abc import Callable
 
-import langid
+try:
+    import langid
+except ImportError:  # pragma: no cover - exercised by minimal target runtimes
+    langid = None
 
 from app.config import Settings
 from app.models import SpeechRequest
 
 
 def detect_language(text: str) -> str:
+    if langid is None:
+        return _fallback_language(text)
     detected, _score = langid.classify(text)
     return _resolve_detected_language(detected)
+
+
+def _fallback_language(text: str) -> str:
+    """Keep native fallback usable when the optional classifier is absent."""
+
+    german_markers = {"der", "die", "das", "und", "nicht", "ist", "ich"}
+    words = {word.casefold().strip(".,!?;:") for word in text.split()}
+    return "de-DE" if words & german_markers else "en-US"
 
 
 def _resolve_detected_language(detected: str) -> str:

@@ -1,3 +1,5 @@
+import os
+
 import pytest
 from pydantic import ValidationError
 
@@ -191,6 +193,10 @@ def test_credential_sources_must_not_conflict(monkeypatch, tmp_path):
 
 
 @pytest.mark.parametrize("mode", [0o640, 0o644, 0o666])
+@pytest.mark.skipif(
+    os.name == "nt",
+    reason="Windows ACLs do not expose POSIX permission bits to pathlib.chmod",
+)
 def test_credential_file_requires_private_permissions(monkeypatch, tmp_path, mode):
     credential = tmp_path / "credential"
     credential.write_text("file-key", encoding="utf-8")
@@ -219,6 +225,10 @@ def test_missing_credential_file_is_rejected(monkeypatch, tmp_path):
         Settings.from_env()
 
 
+@pytest.mark.skipif(
+    os.name == "nt",
+    reason="This runner does not grant the Windows symlink privilege",
+)
 def test_credential_symlink_is_rejected(monkeypatch, tmp_path):
     credential = tmp_path / "credential"
     credential.write_text("file-key", encoding="utf-8")

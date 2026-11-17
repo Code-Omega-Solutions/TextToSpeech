@@ -40,9 +40,10 @@ credential rather than requiring an additional operator or Fish secret.
 
 ## Gated native evaluation
 
-Do not install or activate a runtime from this guide. First review exact
-checkpoint/codec/runtime terms, the authenticated local launcher, reference
-provenance and resource budget. Keep credentials and local paths out of git.
+Do not install or activate a runtime from this guide without separately
+reviewing exact checkpoint/codec/runtime terms and reference permissions.
+The iteration-6 deployment is a private, non-redistributed prototype using
+authorized local artifacts; credentials and local paths stay out of git.
 
 After separate rollout approval:
 
@@ -97,14 +98,10 @@ with 401. Browser assets and resource URLs contained no backend origin or
 credential. A proxy content-type forwarding defect found during this check was
 fixed and covered by the frontend unit suite.
 
-The external Fish worker is not the repository-managed `FishProcess` worker.
-Pausing only that owned prototype worker caused a bounded 504 rather than
-native fallback; resuming it restored readiness and Fish speech. Opportunistic
-fallback, native admission, idle unloading, cooldown, cancellation, pressure
-handling, and hard unified-memory isolation therefore remain unqualified. Do
-not enable opportunistic mode without a reviewed local worker command and real
-resource evidence. This leaves T004, T005, T006, and T010 open as appropriate
-to the unresolved artifact/reference/managed-lifecycle gates.
+That historical external worker is not used as the current managed worker.
+The iteration-6 launch configuration uses the repository-managed launcher and
+keeps that pre-existing listener outside its ownership boundary. The remaining
+artifact, reference, and full native-qualification gates are still open.
 
 ### Prototype rollback
 
@@ -115,3 +112,38 @@ reload the production launch agent. Iteration 5 exercised prototype-only
 recreation and restoration; readiness and Fish speech returned HTTP 200.
 Never record the host identity, credential, private paths, raw inventories, or
 generated audio in this repository.
+
+## Iteration 6 current deployment record
+
+The designated Apple Silicon target now runs the repository-managed prototype
+backend and a persistent dependency-free UI service. Production remains on its
+pre-existing port and was not restarted or replaced. The prototype backend and
+UI use distinct service ports; Fish is loopback-only. Both launch agents were
+recreated in a prototype-only operation from protected configuration backups.
+
+Live checks after recreation:
+
+- prototype readiness: HTTP 200;
+- prototype authenticated native speech: HTTP 200;
+- production health and authenticated speech: HTTP 200;
+- UI root: HTTP 200;
+- opaque target discovery: HTTP 200 with only `Production` and `Prototype`;
+- unapproved target selection: HTTP 403;
+- unauthorized operator configuration: HTTP 401;
+- Fish-selected prototype speech: HTTP 200 with actual backend `macos-say` and
+  fallback `true`.
+
+The Fish-selected request is the important live lifecycle result: the manager
+refused neural admission because the 12 GiB reserve plus 16 GiB worker budget
+could not be satisfied by the sampled host headroom, then produced
+language-preserving native audio within the request boundary. No artificial
+memory pressure was generated and no external worker was terminated. Idle
+unload, cooldown, cancellation, deadline, and owned cleanup remain covered by
+the focused tests; a neural success benchmark and four consented reference
+voices remain unqualified.
+
+The prototype catalog advertises no reference IDs until exact recording,
+transcript, provenance, and cloning-consent evidence is supplied. The UI
+therefore exposes the qualified engine boundary without promising an
+unqualified voice identity. The production engine-discovery 404 is expected
+for that legacy service and the UI correctly falls back to service defaults.

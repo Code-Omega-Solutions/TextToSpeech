@@ -335,17 +335,21 @@ def atomic_write_json(path: str | Path, data: Mapping[str, Any]) -> None:
     encoded = json.dumps(data, ensure_ascii=False, indent=2, allow_nan=False).encode("utf-8")
     descriptor, temporary_name = tempfile.mkstemp(prefix=".report-", suffix=".tmp", dir=target.parent)
     try:
-        os.fchmod(descriptor, 0o600)
+        if hasattr(os, "fchmod"):
+            os.fchmod(descriptor, 0o600)
+        else:
+            os.chmod(temporary_name, 0o600)
         with os.fdopen(descriptor, "wb") as stream:
             stream.write(encoded)
             stream.flush()
             os.fsync(stream.fileno())
         os.replace(temporary_name, target)
-        directory_descriptor = os.open(target.parent, os.O_RDONLY)
-        try:
-            os.fsync(directory_descriptor)
-        finally:
-            os.close(directory_descriptor)
+        if os.name != "nt":
+            directory_descriptor = os.open(target.parent, os.O_RDONLY)
+            try:
+                os.fsync(directory_descriptor)
+            finally:
+                os.close(directory_descriptor)
     except BaseException:
         try:
             os.close(descriptor)
@@ -491,7 +495,10 @@ def _require_private_directory(directory: Path) -> None:
         raise FileNotFoundError(f"private directory does not exist: {resolved}") from exc
     if stat.S_ISLNK(info.st_mode) or not stat.S_ISDIR(info.st_mode):
         raise PermissionError("output directory must be a real directory")
-    if info.st_uid != os.getuid() or stat.S_IMODE(info.st_mode) & 0o077:
+    owner_uid = os.getuid() if hasattr(os, "getuid") else info.st_uid
+    if info.st_uid != owner_uid or (
+        os.name != "nt" and stat.S_IMODE(info.st_mode) & 0o077
+    ):
         raise PermissionError("output directory must be user-owned and owner-only")
 
 
@@ -502,5 +509,8 @@ def _require_private_file(path: Path) -> None:
         raise FileNotFoundError(f"report or audio file does not exist: {path}") from exc
     if stat.S_ISLNK(info.st_mode) or not stat.S_ISREG(info.st_mode):
         raise PermissionError("report and audio files must be regular files")
-    if info.st_uid != os.getuid() or stat.S_IMODE(info.st_mode) & 0o077:
+    owner_uid = os.getuid() if hasattr(os, "getuid") else info.st_uid
+    if info.st_uid != owner_uid or (
+        os.name != "nt" and stat.S_IMODE(info.st_mode) & 0o077
+    ):
         raise PermissionError("report and audio files must be user-owned and owner-only")

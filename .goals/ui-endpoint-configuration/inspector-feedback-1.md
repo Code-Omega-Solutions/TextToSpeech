@@ -65,7 +65,7 @@
 - Details:
   - First run reproduced Builder's `uv: command not found`.
   - The known Windows executable
-    `C:\Users\pgfelle0\.local\bin\uv.exe` was verified as uv 0.12.0. WSL exposes
+    `<local-tool-path>` was verified as uv 0.12.0. WSL exposes
     it at `/mnt/c/.../uv.exe` but cannot execute the Windows binary
     (`Exec format error`), so the known executable was not ignored.
   - After installing transient Linux uv 0.13.8 and Node 24.14.0, backend tests

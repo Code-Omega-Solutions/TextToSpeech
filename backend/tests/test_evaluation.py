@@ -1,3 +1,5 @@
+import os
+
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -142,6 +144,10 @@ def test_report_validation_rejects_credentials_and_unsafe_output(report_data, tm
         save_report(report_data, tmp_path / "private-report")
 
 
+@pytest.mark.skipif(
+    os.name == "nt",
+    reason="Windows does not expose POSIX permission bits",
+)
 def test_report_persistence_is_atomic_and_owner_only(tmp_path, report_data, monkeypatch):
     import evaluation.vibevoice.report as report_module
 
@@ -161,6 +167,10 @@ def test_report_persistence_is_atomic_and_owner_only(tmp_path, report_data, monk
     assert list(report_path.parent.glob("*.tmp")) == []
 
 
+@pytest.mark.skipif(
+    os.name == "nt",
+    reason="Windows does not expose POSIX permission bits",
+)
 def test_existing_unsafe_output_directory_is_rejected(tmp_path, report_data):
     from evaluation.vibevoice.report import save_report
 

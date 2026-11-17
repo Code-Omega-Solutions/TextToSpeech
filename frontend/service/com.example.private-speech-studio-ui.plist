@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.example.private-speech-studio-ui</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/bin/python3</string>
+    <string>-m</string>
+    <string>runtime.server</string>
+  </array>
+  <key>WorkingDirectory</key>
+  <string>&lt;FRONTEND_ROOT&gt;</string>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PYTHONPATH</key>
+    <string>&lt;FRONTEND_ROOT&gt;</string>
+    <key>TTS_UI_ROOT</key>
+    <string>&lt;FRONTEND_ROOT&gt;/dist</string>
+    <key>TTS_UI_HOST</key>
+    <string>0.0.0.0</string>
+    <key>TTS_UI_PORT</key>
+    <string>5173</string>
+    <key>TTS_UPSTREAM_URL</key>
+    <string>&lt;PRODUCTION_ORIGIN&gt;</string>
+    <key>TTS_TARGET_PRODUCTION_URL</key>
+    <string>&lt;PRODUCTION_ORIGIN&gt;</string>
+    <key>TTS_PROTOTYPE_UPSTREAM_URL</key>
+    <string>&lt;PROTOTYPE_ORIGIN&gt;</string>
+    <key>TTS_ALLOWED_UPSTREAMS</key>
+    <string>&lt;PRODUCTION_ORIGIN&gt;,&lt;PROTOTYPE_ORIGIN&gt;</string>
+    <key>TTS_API_KEY_FILE</key>
+    <string>&lt;API_KEY_FILE&gt;</string>
+    <key>TTS_ENDPOINT_CONFIG_FILE</key>
+    <string>&lt;UI_STATE_DIR&gt;/endpoint.json</string>
+  </dict>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+</dict>
+</plist>

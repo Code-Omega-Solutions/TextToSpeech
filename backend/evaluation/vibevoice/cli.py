@@ -136,7 +136,10 @@ def _load_manifest(path: Path) -> dict[str, Any]:
     information = resolved.stat()
     if not stat.S_ISREG(information.st_mode):
         raise ValueError("manifest must be a regular file")
-    if information.st_uid != os.geteuid() or information.st_mode & 0o077:
+    owner_uid = os.geteuid() if hasattr(os, "geteuid") else information.st_uid
+    if information.st_uid != owner_uid or (
+        os.name != "nt" and information.st_mode & 0o077
+    ):
         raise PermissionError("manifest must be owner-only and owned by the current user")
     try:
         manifest = json.loads(resolved.read_text(encoding="utf-8"))

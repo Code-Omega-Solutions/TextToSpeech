@@ -13,10 +13,10 @@ import msgpack
 from app.config import Settings
 
 
-FISH_REFERENCE_VOICES: dict[str, tuple[str, ...]] = {
-    "de-DE": ("public-male-thorsten", "public-female-slr83"),
-    "en-US": ("public-male-thorsten", "public-female-slr83"),
-}
+# No reference is advertised until the exact recording, transcript,
+# provenance, and cloning consent are present in an authorized local manifest.
+# Fish may still be screened without a reference, using its own default timbre.
+FISH_REFERENCE_VOICES: dict[str, tuple[str, ...]] = {}
 
 
 class FishSpeechError(RuntimeError):

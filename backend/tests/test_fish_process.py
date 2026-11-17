@@ -26,6 +26,7 @@ class Process:
 
 @pytest.fixture
 def worker(settings_factory, monkeypatch):
+    monkeypatch.setattr(fish_process.os, "name", "posix")
     settings = settings_factory(
         fish_enabled=True, fish_opportunistic=True,
         fish_worker_command=("/approved/launcher",),

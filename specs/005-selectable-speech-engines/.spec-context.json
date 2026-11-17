@@ -349,7 +349,7 @@
   ],
   "telemetryInstanceId": "d006b589-41ee-4e93-84f7-1e3016c3810f",
   "unattended": true,
-  "request": "The indented use is for a private home automation system and private AI harness (open WebUI). As this is for private use we'll use voices (weights) provided by the community - or do not have any license restrictions.\n\nThe hardware will be glados.ehrendingen (192.168.0.231); verify if ssh key authentification works. Else set it up together with me.\n\nThe architecture of the backend system should support different tts engines - as we currently use VibeVoice in R&D mode - but can not keep this. As we do not know if Fish will meet our expectations the best way forward is to have an architecture that allows to select unti we finished our evaluation.\n\nCan you create a a spec for a prototype and implement and deploy it to glados (English and German); none breaking API contract?",
+  "request": "The intended use is a private home automation system and private AI harness. Use only community-provided voices or weights whose applicable terms are reviewed and permitted for that use.\n\nThe designated hardware is supplied out-of-band; verify existing key authentication without recording its identity. The architecture must support selectable speech engines while Fish is evaluated and must preserve the existing API contract.\n\nCreate, implement, and deploy an isolated English/German prototype without changing production.",
   "expectations": [
     "No breaking endpoint, request, response, header, authentication, or resource-limit changes",
     "No VibeVoice worker or model assets deployed in the prototype",

@@ -93,16 +93,23 @@ def build_router(settings: Settings, speech_service: SpeechService) -> APIRouter
                 raise SynthesisCapacityExceeded
             cancel_event = threading.Event()
             try:
+                synthesis_arguments = (
+                    payload.input,
+                    selected_language,
+                    payload.speed,
+                    payload.response_format,
+                    cancel_event,
+                    selected_backend,
+                    payload.voice,
+                )
+                if settings.fish_opportunistic:
+                    synthesis_arguments += (
+                        started + settings.request_timeout_seconds,
+                    )
                 synthesis = asyncio.create_task(
                     run_in_threadpool(
                         speech_service.synthesize_reserved,
-                        payload.input,
-                        selected_language,
-                        payload.speed,
-                        payload.response_format,
-                        cancel_event,
-                        selected_backend,
-                        payload.voice,
+                        *synthesis_arguments,
                     )
                 )
                 try:

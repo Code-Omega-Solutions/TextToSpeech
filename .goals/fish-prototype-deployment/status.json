@@ -1,6 +1,6 @@
 {
   "goal_id": "fish-prototype-deployment",
-  "status": "building",
+  "status": "inspecting",
   "iteration": 4,
   "builder_model": "GPT:5.6-Luna",
   "inspector_model": "GPT:5.6-Sol",
@@ -24,6 +24,12 @@
       "verdict": "FAIL",
       "summary": "Opaque target routing works locally, but privileged endpoint persistence no longer affects fallback traffic; live Fish deployment and exact artifact/reference approvals remain blocked.",
       "at": "2026-11-17T13:25:57+01:00"
+    },
+    {
+      "iteration": 4,
+      "verdict": "BLOCKED",
+      "summary": "The persisted fallback regression is fixed and all local gates pass; authorized target access, exact Fish artifact/reference approvals, native qualification and live deployment remain blocked.",
+      "at": "2026-11-17T13:43:00+01:00"
     }
   ]
 }

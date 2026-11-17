@@ -32,12 +32,23 @@ const body = async (req) => {
   return Buffer.concat(chunks);
 };
 const cookieValue = (req) => (req.headers.cookie || "").match(/(?:^|;\s*)tts_target=([^;]+)/)?.[1];
-const selectedTarget = (req, targets) => targets[cookieValue(req)] || targets.production || Object.values(targets)[0];
 export function createApiHandler(env = process.env) {
   const sessions = new Map();
   const targetFor = (req) => {
     const targets = loadApprovedTargets(env);
-    return { targets, target: targets[sessions.get(cookieValue(req))] || selectedTarget(req, targets) };
+    const session = cookieValue(req);
+    const selectedId = sessions.get(session);
+    if (selectedId && targets[selectedId]) {
+      return { targets, target: targets[selectedId] };
+    }
+
+    // Unselected clients follow the protected persisted configuration. The
+    // configured origin must still correspond to an operator-approved target;
+    // explicit opaque session choices never mutate this fallback.
+    const configured = loadConfiguredUpstream(env);
+    const target = Object.values(targets).find(({ origin }) => origin === configured);
+    if (!target) throw new Error("The configured speech service is not an approved target.");
+    return { targets, target };
   };
   return async (req, res) => {
     const url = new URL(req.url, "http://localhost");

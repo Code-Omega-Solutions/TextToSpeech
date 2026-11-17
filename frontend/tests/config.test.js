@@ -220,3 +220,89 @@ test("configuration API enforces operator authorization and destination policy",
     await rm(directory, { recursive: true, force: true });
   }
 });
+
+test("persisted configuration routes unselected clients while opaque selections stay isolated", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "speech-routing-"));
+  const calls = [];
+  const upstreams = [];
+  const makeUpstream = (name) => {
+    const upstream = createServer((request, response) => {
+      calls.push(name);
+      response.writeHead(200, { "Content-Type": "application/json" });
+      response.end(JSON.stringify({ engine: name }));
+    });
+    upstream.listen(0, "127.0.0.1");
+    upstreams.push(upstream);
+    return upstream;
+  };
+  const production = makeUpstream("production");
+  const prototype = makeUpstream("prototype");
+  await Promise.all(upstreams.map((server) => once(server, "listening")));
+  const productionOrigin = `http://127.0.0.1:${production.address().port}`;
+  const prototypeOrigin = `http://127.0.0.1:${prototype.address().port}`;
+  const env = {
+    TTS_UPSTREAM_URL: productionOrigin,
+    TTS_ALLOWED_UPSTREAMS: `${productionOrigin},${prototypeOrigin}`,
+    TTS_TARGETS_JSON: JSON.stringify({
+      production: { label: "Production", origin: productionOrigin },
+      prototype: { label: "Prototype", origin: prototypeOrigin },
+    }),
+    TTS_API_KEY: "synthetic-backend-token",
+    TTS_ENDPOINT_CONFIG_FILE: join(directory, "endpoint.json"),
+  };
+  const startApi = async () => {
+    const api = createApiHandler(env);
+    const server = createServer((request, response) => api(request, response));
+    server.listen(0, "127.0.0.1");
+    await once(server, "listening");
+    return server;
+  };
+  const request = (server, path, options = {}) =>
+    fetch(`http://127.0.0.1:${server.address().port}${path}`, options);
+  const authHeaders = {
+    Authorization: "Bearer synthetic-backend-token",
+    "Content-Type": "application/json",
+  };
+  let server;
+  try {
+    server = await startApi();
+    assert.deepEqual(await (await request(server, "/api/healthz")).json(), { engine: "production" });
+    const selection = await request(server, "/api/target", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: "prototype" }),
+    });
+    assert.equal(selection.status, 204);
+    const sessionCookie = selection.headers.get("set-cookie").split(";", 1)[0];
+    const selected = await request(server, "/api/healthz", { headers: { Cookie: sessionCookie } });
+    assert.deepEqual(await selected.json(), { engine: "prototype" });
+    assert.equal((await request(server, "/api/configuration", {
+      method: "PUT",
+      headers: authHeaders,
+      body: JSON.stringify({ origin: prototypeOrigin }),
+    })).status, 200);
+    assert.equal(loadConfiguredUpstream(env), prototypeOrigin);
+    assert.deepEqual(await (await request(server, "/api/healthz")).json(), { engine: "prototype" });
+    assert.deepEqual(await (await request(server, "/api/healthz", {
+      headers: { Cookie: "tts_target=unknown-session" },
+    })).json(), { engine: "prototype" });
+    assert.equal((await request(server, "/api/configuration", {
+      method: "PUT",
+      headers: { Authorization: "Bearer wrong-token", "Content-Type": "application/json" },
+      body: JSON.stringify({ origin: productionOrigin }),
+    })).status, 401);
+    assert.equal((await request(server, "/api/configuration", {
+      method: "PUT",
+      headers: authHeaders,
+      body: JSON.stringify({ origin: "http://attacker.example" }),
+    })).status, 403);
+    server.close();
+    server = await startApi();
+    assert.deepEqual(await (await request(server, "/api/healthz")).json(), { engine: "prototype" });
+    assert.deepEqual(calls, ["production", "prototype", "prototype", "prototype", "prototype"]);
+  } finally {
+    server?.close();
+    await Promise.all(upstreams.map((upstream) => new Promise((resolve) => upstream.close(resolve))));
+    await rm(directory, { recursive: true, force: true });
+  }
+});

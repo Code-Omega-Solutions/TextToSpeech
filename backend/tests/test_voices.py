@@ -31,6 +31,14 @@ def test_localized_german_label_matches_say_voice_identifier(settings):
     assert resolve_voice("de-DE", settings, {"Anna"}) == "Anna"
 
 
+def test_requested_available_voice_overrides_configured_default(settings):
+    assert resolve_voice("en-US", settings, {"Anna", "Samantha"}, "Anna") == "Anna"
+
+
+def test_unknown_requested_voice_preserves_configured_default(settings):
+    assert resolve_voice("en-US", settings, {"Anna", "Samantha"}, "alloy") == "Samantha"
+
+
 def test_voice_is_unavailable_if_identifier_is_missing(settings):
     with pytest.raises(LookupError):
         resolve_voice("en-GB", settings, {"Anna", "Samantha"})

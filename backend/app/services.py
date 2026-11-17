@@ -10,14 +10,22 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from app.config import Settings
+from app.engines import EngineDescriptor, EngineRegistration, EngineRegistry
+from app.fish_speech import (
+    FishSpeechAudioTooLarge,
+    FishSpeechEngine,
+    FishSpeechError,
+    FishSpeechTimeout,
+)
 from app.voices import (
     VoiceInventoryError,
     VoiceInventoryTimeout,
     available_voices,
+    configured_voices,
+    required_voices,
     resolve_voice,
+    voice_available,
 )
-from app.vibevoice import VibeVoiceError, VibeVoiceWorker
-
 _SENTENCE_PAUSE_SECONDS = 0.4
 _PARAGRAPH_PAUSE_SECONDS = 1.2
 _MAX_SPEECH_SEGMENTS = 100
@@ -158,10 +166,34 @@ class SpeechService:
     def __init__(self, settings: Settings):
         self.settings = settings
         self._permits = threading.BoundedSemaphore(settings.max_concurrent_synthesis)
-        self.vibevoice_worker = VibeVoiceWorker(settings)
-
-    def close(self) -> None:
-        self.vibevoice_worker.stop()
+        self.fish_speech = FishSpeechEngine(settings)
+        self.engine_registry = EngineRegistry(
+            (
+                EngineRegistration(
+                    descriptor=EngineDescriptor(
+                        "macos-say",
+                        ("de-DE", "en-US", "en-GB"),
+                        {
+                            "de-DE": (settings.voice_de_de,),
+                            "en-US": (settings.voice_en_us,),
+                            "en-GB": (settings.voice_en_gb,),
+                        },
+                    ),
+                    enabled=lambda: True,
+                    ready=self._macos_engine_ready,
+                    synthesize=self._synthesize_macos_engine,
+                    voice_catalog=self._macos_voice_catalog,
+                ),
+                EngineRegistration(
+                    descriptor=EngineDescriptor(
+                        "fish-speech", ("de-DE", "en-US"), {}
+                    ),
+                    enabled=lambda: settings.fish_enabled,
+                    ready=self.fish_speech.is_available,
+                    synthesize=self._synthesize_fish,
+                ),
+            )
+        )
 
     def try_acquire(self) -> bool:
         return self._permits.acquire(blocking=False)
@@ -199,87 +231,113 @@ class SpeechService:
         voice: str | None = None,
     ) -> SynthesisResult:
         selected_backend = backend or self.settings.default_backend
-        if selected_backend == "macos-say":
-            return self._synthesize_macos(
-                text, language, speed, response_format, cancel_event
-            )
-        if selected_backend != "vibevoice":
+        if selected_backend == "vibevoice":
             raise SynthesisUnavailable
-        if not self.settings.vibevoice_enabled or not self.settings.vibevoice_research_only:
-            if language.startswith("de-"):
-                fallback = self._synthesize_macos(
-                    text, language, speed, response_format, cancel_event
-                )
-                return SynthesisResult(
-                    fallback.audio,
-                    fallback.media_type,
-                    fallback.filename,
-                    actual_backend="macos-say",
-                    fallback=True,
-                    failure_reason="research_only_disabled",
-                )
+        engine = self.engine_registry.resolve(selected_backend)
+        if engine is None or not engine.enabled():
             raise SynthesisUnavailable
-        try:
-            return self._synthesize_vibevoice(
-                text, language, speed, response_format, voice, cancel_event
-            )
-        except (
-            VibeVoiceError,
-            SynthesisUnavailable,
-            SynthesisTimeout,
-            SynthesisFailure,
-            AudioTooLarge,
-        ) as exc:
-            if cancel_event is not None and cancel_event.is_set():
-                raise SynthesisFailure from exc
-            fallback = self._synthesize_macos(
-                text, language, speed, response_format, cancel_event
-            )
-            return SynthesisResult(
-                fallback.audio,
-                fallback.media_type,
-                fallback.filename,
-                actual_backend="macos-say",
-                fallback=True,
-                failure_reason="vibevoice_unavailable",
-            )
+        return engine.synthesize(
+            text, language, speed, response_format, cancel_event, voice
+        )
 
-    def _synthesize_vibevoice(
+    def _synthesize_macos_engine(
         self,
         text: str,
         language: str,
         speed: float,
         response_format: str,
-        voice: str | None,
         cancel_event: threading.Event | None,
+        voice: str | None,
     ) -> SynthesisResult:
-        if language.startswith("de-"):
-            selected_voice = voice or "de-Spk1_woman"
-            if selected_voice not in {"de-Spk1_woman", "de-Spk0_man"}:
-                raise SynthesisUnavailable
-        elif language.startswith("en-"):
-            selected_voice = voice or "en-Carter_man"
-            if selected_voice != "en-Carter_man":
-                raise SynthesisUnavailable
-        else:
-            raise SynthesisUnavailable
-
-        wav_audio = self.vibevoice_worker.synthesize(
-            text, language, selected_voice, cancel_event
+        return self._synthesize_macos(
+            text, language, speed, response_format, cancel_event, voice
         )
+
+    def _macos_engine_ready(self) -> bool:
+        if shutil.which(self.settings.say_path) is None or shutil.which(self.settings.ffmpeg_path) is None:
+            return False
+        try:
+            if not {"libmp3lame", "pcm_s16le"}.issubset(
+                available_codecs(self.settings.ffmpeg_path, timeout=2)
+            ):
+                return False
+            voices = available_voices(self.settings.say_path, timeout=2)
+        except (SynthesisUnavailable, VoiceInventoryError, VoiceInventoryTimeout):
+            return False
+        needed = required_voices(self.settings)
+        return all(voice_available(needed[locale], voices) for locale in ("de-DE", "en-US"))
+
+    def _macos_voice_catalog(self) -> dict[str, tuple[str, ...]]:
+        try:
+            available = available_voices(self.settings.say_path, timeout=2)
+        except (VoiceInventoryError, VoiceInventoryTimeout):
+            return {}
+        return {
+            language: (configured.split(maxsplit=1)[0],)
+            for language, configured in configured_voices(self.settings).items()
+            if voice_available(configured, available)
+        }
+
+    def _synthesize_fish(
+        self,
+        text: str,
+        _language: str,
+        speed: float,
+        response_format: str,
+        cancel_event: threading.Event | None,
+        voice: str | None,
+    ) -> SynthesisResult:
+        deadline = time.monotonic() + self.settings.request_timeout_seconds
+        try:
+            wav_audio = self.fish_speech.synthesize_wav(
+                text,
+                voice,
+                cancel_event,
+                timeout_seconds=min(
+                    self.settings.fish_request_timeout_seconds,
+                    self._remaining(deadline),
+                ),
+            )
+        except FishSpeechAudioTooLarge as exc:
+            raise AudioTooLarge from exc
+        except FishSpeechTimeout as exc:
+            raise SynthesisTimeout from exc
+        except FishSpeechError as exc:
+            if cancel_event is not None and cancel_event.is_set():
+                raise SynthesisFailure from exc
+            raise SynthesisUnavailable from None
+        return self._transcode_wav(
+            wav_audio,
+            speed,
+            response_format,
+            cancel_event,
+            actual_backend="fish-speech",
+            deadline=deadline,
+        )
+
+    def _transcode_wav(
+        self,
+        wav_audio: bytes,
+        speed: float,
+        response_format: str,
+        cancel_event: threading.Event | None,
+        *,
+        actual_backend: str,
+        deadline: float | None = None,
+    ) -> SynthesisResult:
         if response_format == "wav" and speed == 1:
             if len(wav_audio) > min(
                 self.settings.max_output_bytes, self.settings.max_temp_bytes
             ):
                 raise AudioTooLarge
             return SynthesisResult(
-                wav_audio, "audio/wav", "speech.wav", actual_backend="vibevoice"
+                wav_audio, "audio/wav", "speech.wav", actual_backend=actual_backend
             )
 
         if shutil.which(self.settings.ffmpeg_path) is None:
             raise SynthesisUnavailable
-        deadline = time.monotonic() + self.settings.request_timeout_seconds
-        with tempfile.TemporaryDirectory(prefix="vibevoice-audio-") as temp_dir:
+        deadline = deadline or time.monotonic() + self.settings.request_timeout_seconds
+        with tempfile.TemporaryDirectory(prefix=f"{actual_backend}-audio-") as temp_dir:
             directory = Path(temp_dir)
             input_path = directory / "input.wav"
             output_path = directory / f"speech.{response_format}"
@@ -332,10 +390,10 @@ class SpeechService:
 
         if response_format == "mp3":
             return SynthesisResult(
-                audio, "audio/mpeg", "speech.mp3", actual_backend="vibevoice"
+                audio, "audio/mpeg", "speech.mp3", actual_backend=actual_backend
             )
         return SynthesisResult(
-            audio, "audio/wav", "speech.wav", actual_backend="vibevoice"
+            audio, "audio/wav", "speech.wav", actual_backend=actual_backend
         )
 
     def _synthesize_macos(
@@ -345,6 +403,7 @@ class SpeechService:
         speed: float,
         response_format: str,
         cancel_event: threading.Event | None = None,
+        requested_voice: str | None = None,
     ) -> SynthesisResult:
         settings = self.settings
         deadline = time.monotonic() + settings.request_timeout_seconds
@@ -352,7 +411,7 @@ class SpeechService:
 
         try:
             voices = available_voices(settings.say_path, timeout=self._remaining(deadline))
-            voice = resolve_voice(language, settings, voices)
+            voice = resolve_voice(language, settings, voices, requested_voice)
         except VoiceInventoryTimeout as exc:
             raise SynthesisTimeout from exc
         except (VoiceInventoryError, LookupError) as exc:

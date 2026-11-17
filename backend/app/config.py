@@ -3,7 +3,9 @@ from __future__ import annotations
 import os
 import stat
 from dataclasses import dataclass, field
+from ipaddress import ip_address
 from typing import Literal
+from urllib.parse import urlsplit
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -27,7 +29,11 @@ class _SettingsValues(BaseModel):
     max_temp_bytes: int = Field(default=268_435_456, ge=1, le=1_073_741_824)
     say_path: str = "/usr/bin/say"
     ffmpeg_path: str = "ffmpeg"
-    default_backend: Literal["macos-say", "vibevoice"] = "macos-say"
+    default_backend: Literal["macos-say", "fish-speech"] = "macos-say"
+    fish_enabled: bool = False
+    fish_server_url: str | None = None
+    fish_api_key: str | None = Field(default=None, repr=False)
+    fish_request_timeout_seconds: int = Field(default=30, ge=1, le=180)
     vibevoice_enabled: bool = False
     vibevoice_research_only: bool = False
     vibevoice_qualified: bool = False
@@ -53,12 +59,57 @@ class _SettingsValues(BaseModel):
                 raise ValueError("VibeVoice requires measured worker and memory reserve budgets")
         return self
 
+    @model_validator(mode="after")
+    def fish_requires_loopback_service_and_credential(self) -> _SettingsValues:
+        if self.default_backend == "fish-speech" and not self.fish_enabled:
+            raise ValueError("TTS_DEFAULT_BACKEND=fish-speech requires TTS_FISH_ENABLED=true")
+        if self.fish_enabled and (self.fish_server_url is None or self.fish_api_key is None):
+            raise ValueError("Fish Speech requires a loopback service URL and API key")
+        return self
+
     @field_validator("api_key")
     @classmethod
     def api_key_must_not_be_blank(cls, value: str | None) -> str | None:
         if value is not None and not value.strip():
             raise ValueError("TTS_API_KEY must not be blank")
         return value
+
+    @field_validator("fish_api_key")
+    @classmethod
+    def fish_api_key_must_not_be_blank(cls, value: str | None) -> str | None:
+        if value is not None and (not value.strip() or "\n" in value or "\r" in value):
+            raise ValueError("TTS_FISH_API_KEY must be a nonempty single-line credential")
+        return value
+
+    @field_validator("fish_server_url")
+    @classmethod
+    def fish_server_must_be_loopback_origin(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        try:
+            parsed = urlsplit(value)
+            hostname = parsed.hostname
+            port = parsed.port
+            loopback = hostname == "localhost"
+            if hostname is not None and not loopback:
+                loopback = ip_address(hostname).is_loopback
+        except ValueError:
+            loopback = False
+            parsed = None
+            port = None
+        if (
+            parsed is None
+            or parsed.scheme not in {"http", "https"}
+            or not loopback
+            or parsed.username is not None
+            or parsed.password is not None
+            or parsed.path not in {"", "/"}
+            or parsed.query
+            or parsed.fragment
+            or port is not None and not 1 <= port <= 65535
+        ):
+            raise ValueError("TTS_FISH_SERVER_URL must be an HTTP(S) loopback origin")
+        return value.rstrip("/")
 
     @model_validator(mode="after")
     def enabled_auth_requires_key(self) -> _SettingsValues:
@@ -106,7 +157,11 @@ class Settings:
     max_temp_bytes: int
     say_path: str
     ffmpeg_path: str
-    default_backend: Literal["macos-say", "vibevoice"]
+    default_backend: Literal["macos-say", "fish-speech"]
+    fish_enabled: bool
+    fish_server_url: str | None
+    fish_api_key: str | None = field(repr=False)
+    fish_request_timeout_seconds: int
     vibevoice_enabled: bool
     vibevoice_research_only: bool
     vibevoice_qualified: bool
@@ -137,6 +192,10 @@ class Settings:
             "TTS_SAY_PATH": "say_path",
             "TTS_FFMPEG_PATH": "ffmpeg_path",
             "TTS_DEFAULT_BACKEND": "default_backend",
+            "TTS_FISH_ENABLED": "fish_enabled",
+            "TTS_FISH_SERVER_URL": "fish_server_url",
+            "TTS_FISH_API_KEY": "fish_api_key",
+            "TTS_FISH_REQUEST_TIMEOUT_SECONDS": "fish_request_timeout_seconds",
             "TTS_VIBEVOICE_ENABLED": "vibevoice_enabled",
             "TTS_VIBEVOICE_RESEARCH_ONLY": "vibevoice_research_only",
             "TTS_VIBEVOICE_QUALIFIED": "vibevoice_qualified",
@@ -156,6 +215,10 @@ class Settings:
             if "TTS_API_KEY" in os.environ:
                 raise ValueError("TTS_API_KEY and TTS_API_KEY_FILE cannot both be set")
             values["api_key"] = _read_credential_file(os.environ["TTS_API_KEY_FILE"])
+        if "TTS_FISH_API_KEY_FILE" in os.environ:
+            if "TTS_FISH_API_KEY" in os.environ:
+                raise ValueError("TTS_FISH_API_KEY and TTS_FISH_API_KEY_FILE cannot both be set")
+            values["fish_api_key"] = _read_credential_file(os.environ["TTS_FISH_API_KEY_FILE"])
         parsed = _SettingsValues.model_validate(values)
         return cls(**parsed.model_dump())
 

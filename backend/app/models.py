@@ -18,7 +18,7 @@ class SpeechRequest(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True, extra="forbid")
 
     input: str = Field(min_length=1, max_length=5000)
-    model: Literal["macos-say", "vibevoice"] | None = None
+    model: Literal["macos-say", "fish-speech", "vibevoice"] | None = None
     language: str | None = None
     voice: str | None = Field(default=None, max_length=128)
     response_format: Literal["mp3", "wav"] = "mp3"

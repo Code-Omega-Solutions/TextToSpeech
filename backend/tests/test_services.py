@@ -8,6 +8,7 @@ from pathlib import Path
 
 import pytest
 
+from app.fish_speech import FishSpeechError
 from app.services import (
     AudioTooLarge,
     SpeechService,
@@ -16,10 +17,10 @@ from app.services import (
     SynthesisFailure,
     SynthesisResult,
     SynthesisTimeout,
+    SynthesisUnavailable,
     _speech_segments,
     available_codecs,
 )
-from app.vibevoice import VibeVoiceError
 
 
 _wav_buffer = io.BytesIO()
@@ -127,6 +128,17 @@ def test_say_rate_is_scaled_from_speed(monkeypatch, settings_factory):
 
     monkeypatch.setattr("app.services.subprocess.Popen", fake_popen)
     service.synthesize("secret speech text", "en-US", 1.5, "mp3")
+
+
+def test_macos_engine_uses_requested_available_voice(monkeypatch, settings_factory):
+    settings = settings_factory(voice_en_us="Samantha")
+    service = prepare_service(monkeypatch, settings, expected_voice="Anna")
+
+    result = service.synthesize_reserved(
+        "secret speech text", "en-US", 1, "mp3", backend="macos-say", voice="Anna"
+    )
+
+    assert result.actual_backend == "macos-say"
 
 
 def test_speech_segments_add_sentence_and_paragraph_pauses():
@@ -390,32 +402,30 @@ def test_synthesis_permit_is_nonblocking(monkeypatch, settings_factory):
         assert future.result(timeout=2).audio == b"ok"
 
 
-def test_vibevoice_wav_is_returned_with_actual_backend(settings_factory):
+def test_fish_wav_is_returned_with_actual_backend(settings_factory, monkeypatch):
     settings = settings_factory(
-        vibevoice_enabled=True,
-        vibevoice_qualified=True,
-        vibevoice_worker_peak_memory_bytes=100,
-        higher_priority_memory_reserve_bytes=50,
+        fish_enabled=True,
+        fish_server_url="http://127.0.0.1:8080",
+        fish_api_key="unit-test-fish-key",
     )
     service = SpeechService(settings)
-    service.vibevoice_worker = type("Worker", (), {"synthesize": lambda *_args: _TEST_WAV})()
+    monkeypatch.setattr(service.fish_speech, "synthesize_wav", lambda *_args, **_kwargs: _TEST_WAV)
     result = service.synthesize_reserved(
-        "hello", "en-US", 1, "wav", backend="vibevoice", voice="en-Carter_man"
+        "hello", "en-US", 1, "wav", backend="fish-speech"
     )
     assert result.audio == _TEST_WAV
     assert result.media_type == "audio/wav"
-    assert result.actual_backend == "vibevoice"
+    assert result.actual_backend == "fish-speech"
 
 
-def test_vibevoice_mp3_uses_existing_encoder_path(monkeypatch, settings_factory):
+def test_fish_mp3_uses_existing_encoder_path(monkeypatch, settings_factory):
     settings = settings_factory(
-        vibevoice_enabled=True,
-        vibevoice_qualified=True,
-        vibevoice_worker_peak_memory_bytes=100,
-        higher_priority_memory_reserve_bytes=50,
+        fish_enabled=True,
+        fish_server_url="http://127.0.0.1:8080",
+        fish_api_key="unit-test-fish-key",
     )
     service = SpeechService(settings)
-    service.vibevoice_worker = type("Worker", (), {"synthesize": lambda *_args: _TEST_WAV})()
+    monkeypatch.setattr(service.fish_speech, "synthesize_wav", lambda *_args, **_kwargs: _TEST_WAV)
     monkeypatch.setattr("app.services.shutil.which", lambda _path: "/fake/ffmpeg")
 
     def encode(arguments, *_args, **_kwargs):
@@ -425,22 +435,21 @@ def test_vibevoice_mp3_uses_existing_encoder_path(monkeypatch, settings_factory)
 
     monkeypatch.setattr(service, "_run", encode)
     result = service.synthesize_reserved(
-        "hello", "en-US", 1, "mp3", backend="vibevoice", voice="en-Carter_man"
+        "hello", "en-US", 1, "mp3", backend="fish-speech"
     )
     assert result.audio == b"encoded mp3"
     assert result.media_type == "audio/mpeg"
-    assert result.actual_backend == "vibevoice"
+    assert result.actual_backend == "fish-speech"
 
 
-def test_vibevoice_speed_uses_existing_ffmpeg_tempo_control(monkeypatch, settings_factory):
+def test_fish_speed_uses_existing_ffmpeg_tempo_control(monkeypatch, settings_factory):
     settings = settings_factory(
-        vibevoice_enabled=True,
-        vibevoice_qualified=True,
-        vibevoice_worker_peak_memory_bytes=100,
-        higher_priority_memory_reserve_bytes=50,
+        fish_enabled=True,
+        fish_server_url="http://127.0.0.1:8080",
+        fish_api_key="unit-test-fish-key",
     )
     service = SpeechService(settings)
-    service.vibevoice_worker = type("Worker", (), {"synthesize": lambda *_args: _TEST_WAV})()
+    monkeypatch.setattr(service.fish_speech, "synthesize_wav", lambda *_args, **_kwargs: _TEST_WAV)
     monkeypatch.setattr("app.services.shutil.which", lambda _path: "/fake/ffmpeg")
 
     def encode(arguments, *_args, **_kwargs):
@@ -449,73 +458,50 @@ def test_vibevoice_speed_uses_existing_ffmpeg_tempo_control(monkeypatch, setting
 
     monkeypatch.setattr(service, "_run", encode)
     result = service.synthesize_reserved(
-        "hello", "en-US", 1.5, "mp3", backend="vibevoice", voice="en-Carter_man"
+        "hello", "en-US", 1.5, "mp3", backend="fish-speech"
     )
     assert result.audio == b"encoded mp3"
 
 
-def test_vibevoice_failure_discards_partial_output_before_one_fallback(settings_factory):
+def test_fish_failure_does_not_silently_fall_back(settings_factory, monkeypatch):
     settings = settings_factory(
-        vibevoice_enabled=True,
-        vibevoice_qualified=True,
-        vibevoice_worker_peak_memory_bytes=100,
-        higher_priority_memory_reserve_bytes=50,
+        fish_enabled=True,
+        fish_server_url="http://127.0.0.1:8080",
+        fish_api_key="unit-test-fish-key",
+    )
+    service = SpeechService(settings)
+    monkeypatch.setattr(
+        service.fish_speech,
+        "synthesize_wav",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(FishSpeechError("fixture failure")),
+    )
+    monkeypatch.setattr(
+        service,
+        "_synthesize_macos",
+        lambda *_args, **_kwargs: pytest.fail("Fish failure silently fell back to macOS"),
+    )
+    with pytest.raises(SynthesisUnavailable):
+        service.synthesize_reserved("hello", "en-US", 1, "wav", backend="fish-speech")
+
+
+def test_fish_german_reference_is_passed_to_upstream(settings_factory, monkeypatch):
+    settings = settings_factory(
+        fish_enabled=True,
+        fish_server_url="http://127.0.0.1:8080",
+        fish_api_key="unit-test-fish-key",
     )
     service = SpeechService(settings)
     calls = []
 
-    class FailedWorker:
-        def synthesize(self, *_args):
-            calls.append("vibevoice")
-            raise VibeVoiceError("safe worker failure")
+    def synthesize(text, voice, _cancel_event=None, **_kwargs):
+        calls.append((text, voice))
+        return _TEST_WAV
 
-    service.vibevoice_worker = FailedWorker()
-    macos_result = SynthesisResult(b"complete macos audio", "audio/wav", "speech.wav")
-
-    def macos(*_args, **_kwargs):
-        calls.append("macos-say")
-        return macos_result
-
-    service._synthesize_macos = macos
+    monkeypatch.setattr(service.fish_speech, "synthesize_wav", synthesize)
     result = service.synthesize_reserved(
-        "hello", "en-US", 1, "wav", backend="vibevoice", voice="en-Carter_man"
+        "hallo", "de-DE", 1, "wav", backend="fish-speech", voice="de-speaker"
     )
-    assert result.audio == b"complete macos audio"
-    assert result.actual_backend == "macos-say"
-    assert result.fallback is True
-    assert calls == ["vibevoice", "macos-say"]
-
-
-def test_german_vibevoice_request_uses_worker_only_in_research_mode(settings_factory):
-    settings = settings_factory(
-        vibevoice_enabled=True,
-        vibevoice_research_only=True,
-        vibevoice_qualified=True,
-        vibevoice_worker_peak_memory_bytes=100,
-        higher_priority_memory_reserve_bytes=50,
-    )
-    service = SpeechService(settings)
-    calls = []
-
-    class Worker:
-        def synthesize(self, *_args):
-            calls.append("vibevoice")
-            return _TEST_WAV
-
-    service.vibevoice_worker = Worker()
-
-    def say(*_args, **_kwargs):
-        calls.append("macos-say")
-        return SynthesisResult(
-            b"complete German audio", "audio/wav", "speech.wav", actual_backend="macos-say"
-        )
-
-    service._synthesize_macos = say
-    result = service.synthesize_reserved(
-        "hallo", "de-DE", 1, "wav", backend="vibevoice", voice="de-Spk1_woman"
-    )
-
     assert result.audio == _TEST_WAV
-    assert result.actual_backend == "vibevoice"
+    assert result.actual_backend == "fish-speech"
     assert result.fallback is False
-    assert calls == ["vibevoice"]
+    assert calls == [("hallo", "de-speaker")]

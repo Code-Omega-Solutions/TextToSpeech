@@ -12,19 +12,17 @@ from app.services import SynthesisFailure, SynthesisResult
     [
         ("macos-say", "mp3", "en-US", None, "audio/mpeg"),
         ("macos-say", "wav", "de-DE", None, "audio/wav"),
-        ("vibevoice", "mp3", "en-US", "en-Carter_man", "audio/mpeg"),
-        ("vibevoice", "wav", "de-DE", "de-Spk0_man", "audio/wav"),
-        ("vibevoice", "wav", "de-DE", "de-Spk0_man", "audio/wav"),
+        ("fish-speech", "mp3", "en-US", "english-reference", "audio/mpeg"),
+        ("fish-speech", "wav", "de-DE", "german-reference", "audio/wav"),
     ],
 )
 def test_backends_preserve_binary_audio_contract(
     settings_factory, monkeypatch, backend, response_format, language, voice, media_type
 ):
     settings = settings_factory(
-        vibevoice_enabled=True,
-        vibevoice_qualified=True,
-        vibevoice_worker_peak_memory_bytes=100,
-        higher_priority_memory_reserve_bytes=50,
+        fish_enabled=True,
+        fish_server_url="http://127.0.0.1:8080",
+        fish_api_key="unit-test-fish-key",
     )
     app = create_app(settings)
     audio = b"complete audio payload"

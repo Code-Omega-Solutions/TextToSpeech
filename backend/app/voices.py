@@ -59,7 +59,15 @@ def voice_available(configured_name: str, available: set[str]) -> bool:
     return identifier in available
 
 
-def resolve_voice(language: str, settings: Settings, available: set[str]) -> str:
+def resolve_voice(
+    language: str,
+    settings: Settings,
+    available: set[str],
+    requested_voice: str | None = None,
+) -> str:
+    if requested_voice is not None and voice_available(requested_voice, available):
+        return requested_voice.split(maxsplit=1)[0]
+
     voice = configured_voices(settings)[language]
     if voice in available:
         return voice

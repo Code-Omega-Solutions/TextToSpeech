@@ -41,6 +41,13 @@ rights, voice, and authorized-machine evidence. Completing its documentary
 checks does not approve model downloads, installation, host inspection,
 synthesis, service integration, production use, or redistribution.
 
+The [selectable speech engines prototype](005-selectable-speech-engines/spec.md)
+adds an engine registry and authenticated discovery contract while preserving
+the existing speech API. Fish remains disabled pending exact artifact and voice
+review. Its remote deployment is planned in parallel and remains gated on host
+runtime prerequisites, a separately approved port, and service approval; the
+existing healthy service is not replaced.
+
 Two additional draft feature specifications separate the proposed
 [local speech prototype](002-local-speech-prototype/spec.md) from the
 [publishable voice-cloning interface](003-voice-cloning-ui/spec.md). Their

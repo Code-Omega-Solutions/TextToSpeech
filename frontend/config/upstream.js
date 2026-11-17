@@ -6,15 +6,20 @@ import {
   readSync,
 } from "node:fs";
 
-const originPattern = /^https?:\/\/([A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*|[0-9]{1,3}(\.[0-9]{1,3}){3})(:[0-9]{1,5})?$/;
+const originPattern =
+  /^https?:\/\/([A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*|[0-9]{1,3}(\.[0-9]{1,3}){3})(:[0-9]{1,5})?$/;
 export const MAX_PROXY_BODY_BYTES = 32 * 1024;
 
 export function validateUpstream(value) {
   if (!value) {
-    throw new Error("TTS_UPSTREAM_URL is required; configure the authorized speech service origin.");
+    throw new Error(
+      "TTS_UPSTREAM_URL is required; configure the authorized speech service origin.",
+    );
   }
   if (value !== value.trim() || !originPattern.test(value)) {
-    throw new Error("TTS_UPSTREAM_URL must be an HTTP(S) origin with no path, credentials, query, or fragment.");
+    throw new Error(
+      "TTS_UPSTREAM_URL must be an HTTP(S) origin with no path, credentials, query, or fragment.",
+    );
   }
   return value;
 }
@@ -32,7 +37,9 @@ export function readProxyCredential(env) {
     return environmentCredential;
   }
   if (!credentialPath) {
-    throw new Error("TTS_API_KEY or TTS_API_KEY_FILE is required for server-side proxy authorization.");
+    throw new Error(
+      "TTS_API_KEY or TTS_API_KEY_FILE is required for server-side proxy authorization.",
+    );
   }
 
   let descriptor;
@@ -43,10 +50,10 @@ export function readProxyCredential(env) {
     );
     const info = fstatSync(descriptor);
     if (
-      !info.isFile()
-      || (typeof process.getuid === "function" && info.uid !== process.getuid())
-      || (info.mode & 0o077) !== 0
-      || info.size > 4096
+      !info.isFile() ||
+      (typeof process.getuid === "function" && info.uid !== process.getuid()) ||
+      (info.mode & 0o077) !== 0 ||
+      info.size > 4096
     ) {
       throw new Error();
     }
@@ -76,7 +83,7 @@ export function apiProxy(upstream, credential) {
   return Object.fromEntries(
     [
       ["/healthz", 10_000],
-      ["/readyz", 15_000],
+      ["/(?:readyz|v1/audio/engines)", 15_000],
       ["/v1/audio/speech", 75_000],
     ].map(([path, timeout]) => [
       `^/api${path}(?:\\?.*)?$`,
@@ -94,7 +101,10 @@ export function apiProxy(upstream, credential) {
             proxyRequest.setHeader("Authorization", `Bearer ${credential}`);
             if (Buffer.isBuffer(request.proxyBody)) {
               proxyRequest.removeHeader("transfer-encoding");
-              proxyRequest.setHeader("Content-Length", String(request.proxyBody.length));
+              proxyRequest.setHeader(
+                "Content-Length",
+                String(request.proxyBody.length),
+              );
               proxyRequest.end(request.proxyBody);
             }
           });

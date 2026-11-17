@@ -44,26 +44,72 @@ SHALL not disclose credential values or credential-file paths.
 - **WHEN** `TTS_AUTH_ENABLED` is false and no credential is configured
 - **THEN** a valid speech request can proceed without an Authorization header.
 
+### Speech engines are selected explicitly and discovered
+<!-- touches: backend/app/config.py, backend/app/models.py, backend/app/engines.py, backend/app/fish_speech.py, backend/app/services.py, backend/app/routers.py, backend/tests/test_config.py, backend/tests/test_models.py, backend/tests/test_engines.py, backend/tests/test_fish_speech.py, backend/tests/test_engine_catalog.py -->
+
+The serving application SHALL use a fixed registry of configured speech
+engines. The `model` field SHALL select an enabled engine; omitting it SHALL
+select the configured default. A request using legacy `vibevoice` SHALL return
+503 without synthesis or fallback. An unknown, disabled, or unavailable engine
+SHALL return a safe unavailable response and SHALL NOT silently select another
+engine. Authenticated `GET /v1/audio/engines` SHALL list public engine IDs,
+availability, supported English/German locales, and public voice IDs without
+private paths or credentials. Fish Speech SHALL remain disabled unless a
+loopback service origin and server-side credential are configured.
+
+#### Scenario: an enabled engine is selected
+
+- **WHEN** an authenticated request selects an enabled engine or omits `model`
+- **THEN** the selected engine or configured default handles the request and
+  response metadata identifies the engine that produced the audio.
+
+#### Scenario: an unavailable engine is selected
+
+- **WHEN** a request selects an unknown, disabled, or unavailable engine,
+  including legacy `vibevoice`
+- **THEN** it returns a safe 503 without reaching synthesis or silently
+  substituting another engine.
+
+#### Scenario: engine discovery is requested
+
+- **WHEN** an unauthenticated caller requests the engine catalog
+- **THEN** the service returns 401.
+- **WHEN** an authenticated caller requests the engine catalog
+- **THEN** the service returns configured public engine, availability,
+  supported-language, and voice metadata without private configuration.
+
+#### Scenario: Fish service is not configured
+
+- **WHEN** Fish is disabled or its loopback endpoint or credential is absent
+- **THEN** Fish reports unavailable and the macOS speech path remains usable.
+
+#### Scenario: discovery does not leak runtime configuration
+
+- **WHEN** the engine catalog is returned
+- **THEN** it contains no credentials, filesystem paths, remote origins, or
+  private host details.
+
 #### Scenario: a configured backend is overridden by the request
 
 - **WHEN** an authenticated request selects an enabled backend
 - **THEN** the service dispatches that backend and returns the backend that actually produced the audio.
 
-#### Scenario: VibeVoice is disabled or not qualified
+#### Scenario: legacy VibeVoice selection is retired
 
-- **WHEN** a request explicitly selects VibeVoice while it is disabled, or the operator has not supplied its qualification flag and measured memory budgets
-- **THEN** the request is rejected before synthesis admission and the existing macOS backend remains available.
+- **WHEN** a request explicitly selects the legacy `vibevoice` identifier
+- **THEN** it receives a safe 503 before synthesis admission, without fallback, while the configured default engine remains available to other requests.
 
 ### Speech requests are validated against the supported contract
 <!-- touches: backend/app/models.py, backend/app/routers.py, backend/tests/test_models.py, backend/tests/test_api.py -->
 
 The speech route SHALL accept `POST /v1/audio/speech` with trimmed nonempty
 `input` up to 5,000 UTF-16 code units, optional `model` selecting `macos-say`
-or the optional `vibevoice` backend,
+`fish-speech`, or the legacy `vibevoice` identifier,
 optional language (`de`, `de-DE`, `en`, `en-US`, or `en-GB`), optional bounded
 `voice` hint, `response_format` of `mp3` or `wav`, and finite speed from 0.5
 through 2.0. The backend default is `macos-say` unless an operator explicitly
-configures an enabled, qualified VibeVoice deployment. MP3 and speed 1.0 remain
+configures an enabled `fish-speech` deployment. Legacy `vibevoice` requests
+return a safe 503 and are not routed to another engine. MP3 and speed 1.0 remain
 the request defaults. Unknown fields and
 invalid values are rejected with a safe 422 response. The backend SHALL enforce
 a 32 KiB encoded request-body limit while streaming, independent of
@@ -99,55 +145,47 @@ Unexpected detector failures remain errors.
 - **WHEN** automatic detection does not identify German or English
 - **THEN** the service selects `en-US` for synthesis.
 
-### Synthesis uses configured voices and bounded worker processes
-<!-- touches: backend/app/services.py, backend/app/voices.py, backend/app/models.py, backend/app/config.py, backend/app/vibevoice.py, backend/vibevoice_worker/worker.py, backend/tests/test_services.py, backend/tests/test_models.py, backend/tests/test_config.py, backend/tests/test_api.py, backend/tests/test_vibevoice.py, backend/tests/test_vibevoice_memory.py, backend/tests/test_voices.py -->
+### Synthesis uses configured bounded speech engines
+<!-- touches: backend/app/services.py, backend/app/voices.py, backend/app/models.py, backend/app/config.py, backend/app/engines.py, backend/app/fish_speech.py, backend/tests/test_services.py, backend/tests/test_models.py, backend/tests/test_config.py, backend/tests/test_api.py, backend/tests/test_engines.py, backend/tests/test_fish_speech.py, backend/tests/test_engine_catalog.py, backend/tests/test_voices.py -->
 
-The service SHALL use configured macOS voices, scale the configured base
-words-per-minute rate by request speed, and use ffmpeg to produce mono 44.1 kHz
-PCM WAV or 128 kbps MP3. The optional VibeVoice path SHALL use one persistent
-isolated worker, local offline assets, the reviewed English Carter and German
-Spk1/Spk0 presets, and only its speech decoder. It SHALL be available only in
-explicit private research-only mode; this does not establish production
-support. When disabled or outside research mode, German requests SHALL use the
-configured macOS voice and report macOS speech as the actual backend.
+The service SHALL use configured macOS voices and honor an explicitly selected
+installed public voice; an unrecognized legacy voice hint SHALL retain the
+configured default. It SHALL scale the configured base words-per-minute rate
+by request speed and use ffmpeg to produce mono 44.1 kHz
+PCM WAV or 128 kbps MP3. Fish Speech SHALL run as an optional separately
+managed loopback service. Its adapter SHALL use bounded MessagePack requests,
+the configured server-side bearer key, a finite timeout, response-size limits,
+and validated WAV output. Fish WAV output SHALL use the existing bounded
+conversion path for requested MP3/WAV format and speed. Fish SHALL remain
+unavailable until configured and approved; it SHALL NOT download weights or
+voice assets at startup. Fish failures SHALL return a safe unavailable or
+bounded failure response and SHALL NOT silently fall back to another engine.
+The serving application SHALL NOT construct or start the VibeVoice worker;
+private VibeVoice evaluation tooling remains separate.
 
-Before loading, available memory SHALL cover the measured worker peak plus the
-higher-priority reserve. While the worker is resident, its own resident memory
-SHALL be excluded from the external-pressure measurement. If external available
-memory falls below the reserve, the service SHALL terminate the worker, discard
-partial audio, and use macOS speech at most once. It SHALL NOT reload the worker
-while the reserve remains unmet. An unavailable or untrustworthy probe SHALL
-deny admission or terminate the worker. Both paths SHALL preserve request,
-output, timeout, and temporary-disk bounds without an unbounded queue.
+Serving engines SHALL preserve request, output, timeout, temporary-storage,
+concurrency, cancellation, and private-data logging bounds. A response SHALL
+identify the engine that generated it and any explicitly configured fallback.
 
-A blank VibeVoice voice field SHALL be treated as omitted. After automatic
-language detection, the service SHALL select Carter for English or Spk1 for
-German unless the caller explicitly selects the supported German Spk0 preset.
+#### Scenario: a selected macOS voice is honored
 
-#### Scenario: a VibeVoice worker is admitted and later yields
+- **WHEN** a caller selects an installed public macOS voice for the resolved locale
+- **THEN** the service uses that voice, while an unrecognized legacy hint keeps the configured default.
 
-- **WHEN** external memory pressure reduces available capacity below the configured reserve during generation
-- **THEN** the worker terminates, partial audio is discarded, the request falls back to macOS speech, and the worker does not reload while pressure remains.
+#### Scenario: Fish audio is converted within existing bounds
 
-#### Scenario: the worker's own memory does not trigger a false yield
+- **WHEN** Fish returns valid bounded WAV audio for an MP3, WAV, or speed-adjusted request
+- **THEN** the existing conversion path returns the requested format within configured output, time, and temporary-storage limits.
 
-- **WHEN** the resident worker uses memory but external available capacity remains above the reserve
-- **THEN** the worker remains available for the next admitted request.
+#### Scenario: the Fish service fails
 
-#### Scenario: research mode is not explicitly enabled
+- **WHEN** the loopback Fish service is unavailable, times out, is cancelled, exceeds limits, or returns invalid audio
+- **THEN** partial audio is discarded and no unconfigured fallback engine is used.
 
-- **WHEN** the operator enables VibeVoice without the research-only acknowledgment
-- **THEN** configuration rejects startup rather than enabling the worker for routine service.
+#### Scenario: a legacy VibeVoice request arrives
 
-#### Scenario: OpenAI-compatible request leaves the voice blank
-
-- **WHEN** a private research request omits a voice and language detection resolves English or German
-- **THEN** the service selects Carter or Spk1 respectively; an explicit German Spk0 selection is preserved.
-
-#### Scenario: VibeVoice cannot produce a complete response
-
-- **WHEN** worker startup, generation, memory admission, or output validation fails
-- **THEN** partial worker audio is discarded and macOS speech is attempted at most once when available.
+- **WHEN** a request selects `vibevoice` after the serving worker is retired
+- **THEN** the route returns the safe unavailable response before synthesis admission and does not construct or invoke the worker.
 
 #### Scenario: synthesis prerequisites or capacity are unavailable
 
@@ -165,14 +203,17 @@ German unless the caller explicitly selects the supported German Spk0 preset.
 - **THEN** the service returns the requested audio format with the configured rate and preserved sentence and paragraph pauses.
 
 ### Health and readiness report distinct service states
-<!-- touches: backend/app/routers.py, backend/app/voices.py, backend/tests/test_api.py, backend/tests/test_voices.py -->
+<!-- touches: backend/app/routers.py, backend/app/voices.py, backend/app/engines.py, backend/tests/test_api.py, backend/tests/test_voices.py, backend/tests/test_vibevoice_startup.py -->
 
 `GET /healthz` SHALL report process liveness without probing executables.
 `GET /readyz` SHALL report readiness only when `say`, ffmpeg's required MP3 and
 WAV encoders, and the configured German and US English voices are available.
-Optional VibeVoice assets and worker residency SHALL NOT affect readiness. UK
-English is optional for readiness. `X-VibeVoice-Status` SHALL report the
-optional worker state without exposing private paths.
+Optional Fish availability SHALL be reported separately and SHALL NOT change
+readiness of the macOS baseline. UK English is optional for baseline readiness.
+`X-Fish-Speech-Status` SHALL report whether the configured Fish service is
+disabled, available, or unavailable without exposing private paths.
+`X-VibeVoice-Status` remains `disabled` for response compatibility; serving
+readiness SHALL NOT construct or probe a VibeVoice worker.
 
 #### Scenario: a readiness prerequisite is unavailable
 

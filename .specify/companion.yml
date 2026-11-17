@@ -1,0 +1,8 @@
+commands:
+  implement:
+    hooks:
+      after:
+        implement-exec:
+          - type: command
+            run: bash checks/run_companion_validation.sh
+            owns: validation

@@ -10,7 +10,8 @@ import {
 const root = fileURLToPath(new URL(".", import.meta.url));
 
 const headers = {
-  "Content-Security-Policy": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; media-src 'self' blob:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'",
+  "Content-Security-Policy":
+    "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; media-src 'self' blob:; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'",
   "X-Content-Type-Options": "nosniff",
   "Referrer-Policy": "no-referrer",
   "X-Frame-Options": "DENY",
@@ -25,14 +26,22 @@ function restrictApi(server) {
     };
     if (path === "/api/v1/audio/speech" && request.method !== "POST") {
       response.writeHead(403).end("Speech generation requires POST.");
+    } else if (path === "/api/v1/audio/engines" && request.method !== "GET") {
+      response.writeHead(403).end("Engine discovery requires GET.");
     } else if (
-      ["/api/healthz", "/api/readyz"].includes(path)
-      && request.method !== "GET"
+      ["/api/healthz", "/api/readyz"].includes(path) &&
+      request.method !== "GET"
     ) {
       response.writeHead(403).end("Health routes require GET.");
-    } else if (path.startsWith("/api/") && ![
-      "/api/healthz", "/api/readyz", "/api/v1/audio/speech",
-    ].includes(path)) {
+    } else if (
+      path.startsWith("/api/") &&
+      ![
+        "/api/healthz",
+        "/api/readyz",
+        "/api/v1/audio/engines",
+        "/api/v1/audio/speech",
+      ].includes(path)
+    ) {
       response.writeHead(404).end("Unknown API endpoint.");
     } else if (path === "/api/v1/audio/speech") {
       const contentLength = request.headers["content-length"];
@@ -81,23 +90,32 @@ function restrictApi(server) {
 
 export default defineConfig(({ command, mode, isPreview }) => {
   const env = loadEnv(mode, root, "TTS_");
-  const proxy = command === "serve" || isPreview
-    ? apiProxy(
-      validateUpstream(env.TTS_UPSTREAM_URL),
-      readProxyCredential(env),
-    )
-    : undefined;
+  const proxy =
+    command === "serve" || isPreview
+      ? apiProxy(
+          validateUpstream(env.TTS_UPSTREAM_URL),
+          readProxyCredential(env),
+        )
+      : undefined;
 
   return {
     root,
     appType: "mpa",
     build: { cssMinify: false },
-    plugins: [{
-      name: "speech-api-boundary",
-      configureServer: restrictApi,
-      configurePreviewServer: restrictApi,
-    }],
+    plugins: [
+      {
+        name: "speech-api-boundary",
+        configureServer: restrictApi,
+        configurePreviewServer: restrictApi,
+      },
+    ],
     server: { host: "127.0.0.1", port: 5173, strictPort: true, proxy },
-    preview: { host: "127.0.0.1", port: 5173, strictPort: true, proxy, headers },
+    preview: {
+      host: "127.0.0.1",
+      port: 5173,
+      strictPort: true,
+      proxy,
+      headers,
+    },
   };
 });

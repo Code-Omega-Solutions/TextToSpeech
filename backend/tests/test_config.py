@@ -50,6 +50,9 @@ def test_defaults_and_environment_values(settings):
     assert settings.voice_en_gb == "Daniel"
     assert settings.max_output_bytes == 26_214_400
     assert settings.default_backend == "macos-say"
+    assert settings.fish_enabled is False
+    assert settings.fish_server_url is None
+    assert settings.fish_api_key is None
     assert settings.vibevoice_enabled is False
     assert settings.vibevoice_qualified is False
     assert settings.vibevoice_research_only is False
@@ -96,16 +99,46 @@ def test_vibevoice_can_be_enabled_with_explicit_memory_budgets(monkeypatch):
     assert settings.higher_priority_memory_reserve_bytes == 4_294_967_296
 
 
-@pytest.mark.parametrize("backend", ["", "other", "VibeVoice"])
+@pytest.mark.parametrize("backend", ["", "other", "VibeVoice", "vibevoice"])
 def test_invalid_default_backend_is_rejected(monkeypatch, backend):
     monkeypatch.setenv("TTS_DEFAULT_BACKEND", backend)
     with pytest.raises(ValidationError):
         Settings.from_env()
 
 
-def test_vibevoice_default_requires_it_to_be_enabled(monkeypatch):
+def test_vibevoice_cannot_be_selected_as_serving_default(monkeypatch):
     monkeypatch.setenv("TTS_DEFAULT_BACKEND", "vibevoice")
-    monkeypatch.setenv("TTS_VIBEVOICE_ENABLED", "false")
+    monkeypatch.setenv("TTS_VIBEVOICE_ENABLED", "true")
+    monkeypatch.setenv("TTS_VIBEVOICE_RESEARCH_ONLY", "true")
+    monkeypatch.setenv("TTS_VIBEVOICE_QUALIFIED", "true")
+    monkeypatch.setenv("TTS_VIBEVOICE_WORKER_PEAK_MEMORY_BYTES", "8589934592")
+    monkeypatch.setenv("TTS_HIGHER_PRIORITY_MEMORY_RESERVE_BYTES", "4294967296")
+    with pytest.raises(ValidationError):
+        Settings.from_env()
+
+
+def test_fish_engine_requires_loopback_service_and_credential(monkeypatch):
+    monkeypatch.setenv("TTS_FISH_ENABLED", "true")
+    monkeypatch.setenv("TTS_FISH_SERVER_URL", "http://127.0.0.1:8080")
+    monkeypatch.setenv("TTS_FISH_API_KEY", "fish-test-key")
+    settings = Settings.from_env()
+    assert settings.fish_enabled is True
+    assert settings.fish_server_url == "http://127.0.0.1:8080"
+    assert settings.fish_api_key == "fish-test-key"
+
+
+@pytest.mark.parametrize("url", ["http://192.168.1.20:8080", "https://example.com", "http://127.0.0.1:8080/path"])
+def test_fish_engine_rejects_non_loopback_or_non_origin_url(monkeypatch, url):
+    monkeypatch.setenv("TTS_FISH_ENABLED", "true")
+    monkeypatch.setenv("TTS_FISH_SERVER_URL", url)
+    monkeypatch.setenv("TTS_FISH_API_KEY", "fish-test-key")
+    with pytest.raises(ValidationError):
+        Settings.from_env()
+
+
+def test_fish_default_requires_enabled_engine(monkeypatch):
+    monkeypatch.setenv("TTS_DEFAULT_BACKEND", "fish-speech")
+    monkeypatch.setenv("TTS_FISH_ENABLED", "false")
     with pytest.raises(ValidationError):
         Settings.from_env()
 

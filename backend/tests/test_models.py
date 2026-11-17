@@ -52,6 +52,7 @@ def test_invalid_language_is_rejected():
 def test_model_and_format_values_are_restricted():
     assert SpeechRequest(input="hello").model is None
     assert SpeechRequest(input="hello", model="macos-say").model == "macos-say"
+    assert SpeechRequest(input="hello", model="fish-speech").model == "fish-speech"
     assert SpeechRequest(input="hello", model="vibevoice").model == "vibevoice"
     assert SpeechRequest(input="hello").response_format == "mp3"
     assert SpeechRequest(input="hello", response_format="wav").response_format == "wav"

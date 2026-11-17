@@ -44,13 +44,18 @@ repository or relicensed here.
 
 ## Backend lockfile
 
-The [backend uv lockfile](./backend/uv.lock) contains 32 third-party package
-records across 31 package names (the remaining lock record is the project
+The [backend uv lockfile](./backend/uv.lock) contains 37 third-party package
+records across 36 package names (the remaining lock record is the project
 itself; NumPy has platform-specific variants). The lockfile is the pinned
 package/version/source inventory, not a bundle of every package's license
 text. The reviewed licenses are permissive or copyleft-with-conditions,
 including MIT, BSD variants, Apache-2.0, PSF-2.0, Zlib, CC0-1.0, and MPL-2.0
-(`certifi`). `langid==1.1.6` is reported as generic BSD by
+(`certifi`). The new locked packages are `msgpack==1.2.4` (Apache-2.0),
+`httpx2==2.16.2` (BSD-3-Clause), `httpcore2==2.16.2` (BSD-3-Clause),
+`httpx2-jsfetch==1.0` (BSD-3-Clause), and `truststore==0.10.5` (MIT), based
+on the exact PyPI release metadata. PyPI metadata is not a substitute for
+reviewing the installed artifacts' license texts and notices before
+redistribution. `langid==1.1.6` is reported as generic BSD by
 [PyPI](https://pypi.org/project/langid/1.1.6/); the upstream repository's
 [license text](https://github.com/saffsd/langid.py/blob/master/LICENSE) has the
 two BSD redistribution conditions. The exact release tag was not independently

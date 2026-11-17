@@ -113,11 +113,13 @@ inputs use language detection. An unsupported detection falls back to `en-US`.
 Explicit supported languages bypass detection; unsupported explicit languages
 remain invalid.
 
-For Open WebUI's OpenAI-compatible TTS engine, set the model to `vibevoice` and
-leave the voice field blank to use the detected-language default. Open WebUI
-does not send a language field. Detection runs when text has at least
+For Open WebUI's OpenAI-compatible TTS engine, select `macos-say` or an enabled
+`fish-speech` engine in the existing model field. Open WebUI does not send a
+language field. Detection runs when text has at least
 `TTS_MIN_DETECTION_CHARS` alphabetic characters (default `20`); shorter text
-uses `TTS_DEFAULT_LANGUAGE` (default `en-US`).
+uses `TTS_DEFAULT_LANGUAGE` (default `en-US`). An authenticated
+`GET /v1/audio/engines` response lists configured engines, supported languages,
+and public voice identifiers for clients that support discovery.
 
 German (`de-DE`) and US English (`en-US`) voices are required. Defaults are
 `Anna (Deutsch (Deutschland))` and `Samantha`; British English (`en-GB`,
@@ -142,59 +144,36 @@ instance. Preserve shared environments, source files, credentials that are
 still in use, system packages, and unrelated services. Setup does not remove
 those resources.
 
-## Optional VibeVoice backend
+## Selectable speech engines prototype
 
-VibeVoice is disabled by default. Keep `TTS_DEFAULT_BACKEND=macos-say`,
-`TTS_VIBEVOICE_ENABLED=false`, and `TTS_VIBEVOICE_QUALIFIED=false` unless the
-model, voice assets, runtime package inventory, host behavior, and intended-use
-terms have been reviewed and the specific deployment has received approval.
-The upstream model card identifies research and development as its intended
-use, discourages commercial or real-world use without further work, and
-includes responsible-use restrictions. This deployment is limited to private
-research and development. That scope is not production approval, Microsoft
-permission for unsupported languages, or redistribution approval. See the
-[third-party inventory](../THIRD_PARTY_NOTICES.md).
+The serving prototype defaults to `macos-say`. `fish-speech` is an optional
+separately managed engine and remains disabled unless an operator configures
+`TTS_FISH_ENABLED=true`, a loopback-only `TTS_FISH_SERVER_URL`, and a protected
+`TTS_FISH_API_KEY` or `TTS_FISH_API_KEY_FILE`. The Fish API key is distinct from
+the public speech API credential. `TTS_FISH_REQUEST_TIMEOUT_SECONDS` bounds
+upstream requests. Do not configure Fish to call an unreviewed remote host.
 
-After all release gates are satisfied, the worker runtime is isolated from the
-API environment under `vibevoice_worker/`. It requires Python 3.11, a checkout
-of the reviewed VibeVoice source at the pinned revision, local Realtime 0.5B
-model files, and the reviewed Carter/Spk1/Spk0 prompt files. German generation
-is experimental. The worker uses offline-only model loading and does not
-download assets during startup. The owner has authorized local installation
-for private R&D only. Exact package-artifact review, production use, and
-redistribution remain separate gates. The isolated worker environment is
-managed separately from the API environment with `uv sync --locked`.
+The adapter sends bounded MessagePack requests to the configured Fish service
+and accepts validated WAV audio. The existing encoder handles MP3 output and
+speed conversion. Fish weights, codecs, runtime packages, and voices are not
+bundled or downloaded by the speech API. Select and install an exact candidate
+only after its checkpoint-specific terms, voice provenance, target capacity,
+and permitted use have been reviewed. Private use does not waive these checks.
 
-The operator settings are:
+`GET /v1/audio/engines` is authenticated and read-only. It reports configured
+engine identifiers, availability, supported English/German locales, and public
+voice identifiers; it never exposes credentials or private runtime paths. The
+repository speech interface discovers these choices through its same-origin
+server-side proxy. An unavailable engine returns 503 rather than silently
+substituting another engine. Legacy `model=vibevoice` requests also return 503;
+the serving application does not create or start the old VibeVoice worker.
+`/readyz` remains based on the macOS baseline and reports optional Fish status
+separately. Historical private VibeVoice evaluation materials are not a serving
+backend or deployment authorization.
 
-- `TTS_VIBEVOICE_ENABLED=true` and `TTS_VIBEVOICE_QUALIFIED=true` to enable a
-previously qualified deployment.
-- `TTS_VIBEVOICE_RESEARCH_ONLY=true` to acknowledge the private R&D-only scope.
-  Configuration rejects worker enablement without this setting.
-- `TTS_DEFAULT_BACKEND=vibevoice` to make it the configured default; requests
-may instead select `model` as `macos-say` or `vibevoice`.
-- `TTS_VIBEVOICE_WORKER_PYTHON`, `TTS_VIBEVOICE_SOURCE_PATH`, and
-`TTS_VIBEVOICE_MODEL_PATH` to identify the isolated interpreter and already
-installed local assets.
-- `TTS_VIBEVOICE_WORKER_PEAK_MEMORY_BYTES` and
-`TTS_HIGHER_PRIORITY_MEMORY_RESERVE_BYTES` to provide measured worker peak and
-operator-selected reserve budgets. Both are required; do not guess values.
-- `TTS_VIBEVOICE_WORKER_TIMEOUT_SECONDS` to bound worker startup and synthesis;
-the existing request timeout remains authoritative.
-
-Cold admission requires available memory for both the measured worker peak and
-the higher-priority reserve. While the worker is resident, the service adds
-back its measured RSS when evaluating external memory pressure, so its own
-footprint does not trigger a false yield. It terminates the worker when
-external available memory drops below reserve and does not reload until
-capacity recovers. Missing assets, unsupported
-runtime, failed probes, or worker errors fall back to `say` at most once and
-discard partial VibeVoice output. Successful responses include
-`X-Speech-Backend`; `X-Speech-Fallback` identifies a fallback. VibeVoice does
-not affect `/readyz`, which continues to depend on the existing macOS speech
-prerequisites. Linux mocks do not qualify the memory policy or inference on a
-macOS target host. `/readyz` reports the optional worker state in
-`X-VibeVoice-Status` while its readiness result remains based on macOS speech.
+The prototype has been designed for parallel deployment. Review a separate
+install plan and port before adding a service. Do not stop or reconfigure an
+existing healthy speech service as part of this prototype.
 
 ## Qualification and release gates
 

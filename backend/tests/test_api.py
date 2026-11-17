@@ -8,6 +8,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.main import create_app
+from app.fish_speech import FishSpeechError
 from app.services import (
     AudioTooLarge,
     SynthesisFailure,
@@ -148,156 +149,70 @@ def test_success_returns_binary_audio_and_expected_headers(settings, monkeypatch
 
 def test_response_reports_actual_backend(settings_factory, monkeypatch):
     settings = settings_factory(
-        vibevoice_enabled=True,
-        vibevoice_qualified=True,
-        vibevoice_worker_peak_memory_bytes=100,
-        higher_priority_memory_reserve_bytes=50,
+        fish_enabled=True,
+        fish_server_url="http://127.0.0.1:8080",
+        fish_api_key="unit-test-fish-key",
     )
     app = create_app(settings)
     monkeypatch.setattr(
         app.state.speech_service,
         "synthesize_reserved",
         lambda *_args: SynthesisResult(
-            b"audio", "audio/wav", "speech.wav", actual_backend="vibevoice"
+            b"audio", "audio/wav", "speech.wav", actual_backend="fish-speech"
         ),
     )
     response = TestClient(app).post(
         "/v1/audio/speech",
-        json={"input": "Hello there", "model": "vibevoice", "language": "en-US"},
+        json={"input": "Hello there", "model": "fish-speech", "language": "en-US"},
         headers={"Authorization": f"Bearer {settings.api_key}"},
     )
     assert response.status_code == 200
-    assert response.headers["x-speech-backend"] == "vibevoice"
+    assert response.headers["x-speech-backend"] == "fish-speech"
     assert response.headers["x-speech-fallback"] == "false"
 
 
-def test_fallback_response_reports_macos_backend(settings_factory, monkeypatch):
+def test_fish_failure_returns_unavailable_without_silent_macos_fallback(
+    settings_factory, monkeypatch
+):
     settings = settings_factory(
-        vibevoice_enabled=True,
-        vibevoice_qualified=True,
-        vibevoice_worker_peak_memory_bytes=100,
-        higher_priority_memory_reserve_bytes=50,
+        fish_enabled=True,
+        fish_server_url="http://127.0.0.1:8080",
+        fish_api_key="unit-test-fish-key",
     )
+    app = create_app(settings)
+    monkeypatch.setattr(
+        app.state.speech_service.fish_speech,
+        "synthesize_wav",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(FishSpeechError("fixture failure")),
+    )
+    monkeypatch.setattr(
+        app.state.speech_service,
+        "_synthesize_macos",
+        lambda *_args, **_kwargs: pytest.fail("Fish failure silently fell back to macOS"),
+    )
+    response = TestClient(app).post(
+        "/v1/audio/speech",
+        json={"input": "Hello there", "model": "fish-speech", "language": "en-US"},
+        headers={"Authorization": f"Bearer {settings.api_key}"},
+    )
+    assert response.status_code == 503
+    assert response.json() == {"detail": "Speech synthesis is unavailable."}
+
+
+def test_legacy_vibevoice_selector_is_safe_unavailable_without_admission(settings, monkeypatch):
     app = create_app(settings)
     monkeypatch.setattr(
         app.state.speech_service,
-        "synthesize_reserved",
-        lambda *_args: SynthesisResult(
-            b"complete fallback",
-            "audio/mpeg",
-            "speech.mp3",
-            actual_backend="macos-say",
-            fallback=True,
-            failure_reason="vibevoice_unavailable",
-        ),
+        "try_acquire",
+        lambda: pytest.fail("legacy VibeVoice request reached synthesis admission"),
     )
     response = TestClient(app).post(
         "/v1/audio/speech",
         json={"input": "Hello there", "model": "vibevoice", "language": "en-US"},
         headers={"Authorization": f"Bearer {settings.api_key}"},
     )
-    assert response.status_code == 200
-    assert response.content == b"complete fallback"
-    assert response.headers["x-speech-backend"] == "macos-say"
-    assert response.headers["x-speech-fallback"] == "true"
-
-
-def test_german_vibevoice_request_uses_say_when_vibevoice_is_disabled(settings_factory, monkeypatch):
-    settings = settings_factory(vibevoice_enabled=False, vibevoice_research_only=False)
-    app = create_app(settings)
-    service = app.state.speech_service
-    calls = []
-
-    def say(_text, language, *_args, **_kwargs):
-        calls.append(language)
-        return SynthesisResult(
-            b"German speech", "audio/wav", "speech.wav", actual_backend="macos-say"
-        )
-
-    monkeypatch.setattr(service, "_synthesize_macos", say)
-    monkeypatch.setattr(
-        service.vibevoice_worker,
-        "_ensure_process",
-        lambda *_args: pytest.fail("German request started the VibeVoice process"),
-    )
-    response = TestClient(app).post(
-        "/v1/audio/speech",
-        json={"input": "Guten Morgen", "model": "vibevoice", "language": "de-DE"},
-        headers={"Authorization": f"Bearer {settings.api_key}"},
-    )
-
-    assert response.status_code == 200
-    assert response.content == b"German speech"
-    assert response.headers["x-speech-backend"] == "macos-say"
-    assert response.headers["x-speech-fallback"] == "true"
-    assert calls == ["de-DE"]
-
-
-def test_german_vibevoice_request_is_available_in_research_mode(settings_factory, monkeypatch):
-    settings = settings_factory(
-        vibevoice_enabled=True,
-        vibevoice_research_only=True,
-        vibevoice_qualified=True,
-        vibevoice_worker_peak_memory_bytes=100,
-        higher_priority_memory_reserve_bytes=50,
-    )
-    app = create_app(settings)
-    calls = []
-
-    def synthesize(text, language, voice, _cancel_event=None):
-        calls.append((text, language, voice))
-        return b"German research audio"
-
-    monkeypatch.setattr(app.state.speech_service.vibevoice_worker, "synthesize", synthesize)
-    response = TestClient(app).post(
-        "/v1/audio/speech",
-        json={
-            "input": "Guten Morgen",
-            "model": "vibevoice",
-            "language": "de-DE",
-            "response_format": "wav",
-        },
-        headers={"Authorization": f"Bearer {settings.api_key}"},
-    )
-
-    assert response.status_code == 200
-    assert response.content == b"German research audio"
-    assert response.headers["x-speech-backend"] == "vibevoice"
-    assert response.headers["x-speech-fallback"] == "false"
-    assert calls == [("Guten Morgen", "de-DE", "de-Spk1_woman")]
-
-
-def test_openai_tts_blank_voice_auto_detects_german_and_selects_default(settings_factory, monkeypatch):
-    settings = settings_factory(
-        vibevoice_enabled=True,
-        vibevoice_research_only=True,
-        vibevoice_qualified=True,
-        vibevoice_worker_peak_memory_bytes=100,
-        higher_priority_memory_reserve_bytes=50,
-    )
-    app = create_app(settings)
-    calls = []
-
-    def synthesize(text, language, voice, _cancel_event=None):
-        calls.append((language, voice))
-        return b"German speech"
-
-    monkeypatch.setattr(app.state.speech_service.vibevoice_worker, "synthesize", synthesize)
-    response = TestClient(app).post(
-        "/v1/audio/speech",
-        json={
-            "input": "Guten Morgen, dies ist ein ausreichend langer deutscher Beispielsatz.",
-            "model": "vibevoice",
-            "voice": "",
-            "response_format": "wav",
-        },
-        headers={"Authorization": f"Bearer {settings.api_key}"},
-    )
-
-    assert response.status_code == 200
-    assert response.content == b"German speech"
-    assert response.headers["x-speech-backend"] == "vibevoice"
-    assert calls == [("de-DE", "de-Spk1_woman")]
+    assert response.status_code == 503
+    assert response.json() == {"detail": "Speech synthesis is unavailable."}
 
 
 def test_invalid_vibevoice_voice_is_rejected_before_capacity(settings_factory, monkeypatch):
@@ -329,11 +244,10 @@ def test_invalid_vibevoice_voice_is_rejected_before_capacity(settings_factory, m
 
 def test_configured_backend_and_explicit_override_reach_service(settings_factory, monkeypatch):
     settings = settings_factory(
-        default_backend="vibevoice",
-        vibevoice_enabled=True,
-        vibevoice_qualified=True,
-        vibevoice_worker_peak_memory_bytes=100,
-        higher_priority_memory_reserve_bytes=50,
+        default_backend="fish-speech",
+        fish_enabled=True,
+        fish_server_url="http://127.0.0.1:8080",
+        fish_api_key="unit-test-fish-key",
     )
     app = create_app(settings)
     calls = []
@@ -351,10 +265,10 @@ def test_configured_backend_and_explicit_override_reach_service(settings_factory
             payload["model"] = model
         response = client.post("/v1/audio/speech", json=payload, headers=headers)
         assert response.status_code == 200
-    assert [call[-2:] for call in calls] == [("vibevoice", None), ("macos-say", None)]
+    assert [call[-2:] for call in calls] == [("fish-speech", None), ("macos-say", None)]
 
 
-def test_disabled_vibevoice_override_is_rejected_before_synthesis(settings, monkeypatch):
+def test_legacy_vibevoice_override_returns_unavailable_before_synthesis(settings, monkeypatch):
     app = create_app(settings)
     monkeypatch.setattr(
         app.state.speech_service,
@@ -366,8 +280,8 @@ def test_disabled_vibevoice_override_is_rejected_before_synthesis(settings, monk
         json={"input": "Hello there", "model": "vibevoice", "language": "en-US"},
         headers={"Authorization": f"Bearer {settings.api_key}"},
     )
-    assert response.status_code == 422
-    assert response.json() == {"detail": "Invalid request."}
+    assert response.status_code == 503
+    assert response.json() == {"detail": "Speech synthesis is unavailable."}
 
 
 def test_unsupported_detected_language_synthesizes_with_en_us(settings_factory, monkeypatch):

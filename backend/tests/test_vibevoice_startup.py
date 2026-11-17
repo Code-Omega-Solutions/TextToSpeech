@@ -1,6 +1,7 @@
 from fastapi.testclient import TestClient
 
 from app.main import create_app
+from app.vibevoice import VibeVoiceWorker
 
 
 def prepare_macos_readiness(monkeypatch):
@@ -15,63 +16,39 @@ def prepare_macos_readiness(monkeypatch):
     )
 
 
-def test_readiness_does_not_require_optional_worker_assets(settings, monkeypatch):
+def test_readiness_keeps_macos_baseline_when_optional_engines_are_disabled(settings, monkeypatch):
     prepare_macos_readiness(monkeypatch)
     app = create_app(settings)
     response = TestClient(app).get("/readyz")
     assert response.status_code == 200
     assert response.json() == {"status": "ready"}
     assert response.headers["x-vibevoice-status"] == "disabled"
+    assert response.headers["x-fish-speech-status"] == "disabled"
 
 
-def test_missing_worker_assets_are_reported_without_blocking_readiness(
-    settings_factory, monkeypatch
-):
+def test_unavailable_fish_service_does_not_block_macos_readiness(settings_factory, monkeypatch):
     prepare_macos_readiness(monkeypatch)
+    monkeypatch.setattr("app.services.FishSpeechEngine.is_available", lambda _self: False)
     settings = settings_factory(
-        vibevoice_enabled=True,
-        vibevoice_qualified=True,
-        vibevoice_worker_peak_memory_bytes=100,
-        higher_priority_memory_reserve_bytes=50,
+        fish_enabled=True,
+        fish_server_url="http://127.0.0.1:8080",
+        fish_api_key="unit-test-fish-key",
     )
     response = TestClient(create_app(settings)).get("/readyz")
     assert response.status_code == 200
     assert response.json() == {"status": "ready"}
-    assert response.headers["x-vibevoice-status"] == "unavailable"
+    assert response.headers["x-fish-speech-status"] == "unavailable"
 
 
-def test_application_shutdown_stops_optional_worker(settings, monkeypatch):
+def test_serving_application_never_constructs_vibevoice_worker(settings, monkeypatch):
     prepare_macos_readiness(monkeypatch)
+    monkeypatch.setattr(
+        VibeVoiceWorker,
+        "__init__",
+        lambda *_args, **_kwargs: pytest.fail("serving app constructed VibeVoice worker"),
+    )
     app = create_app(settings)
-    stopped = []
-    monkeypatch.setattr(app.state.speech_service.vibevoice_worker, "stop", lambda: stopped.append(True))
 
     with TestClient(app) as client:
         assert client.get("/readyz").status_code == 200
-        assert stopped == []
-
-    assert stopped == [True]
-
-
-def test_application_shutdown_terminates_a_resident_worker(settings):
-    app = create_app(settings)
-
-    class ResidentProcess:
-        returncode = None
-        terminated = False
-
-        def poll(self):
-            return self.returncode
-
-        def terminate(self):
-            self.terminated = True
-            self.returncode = -15
-
-        def wait(self, timeout=None):
-            return self.returncode
-
-    process = ResidentProcess()
-    app.state.speech_service.vibevoice_worker._process = process
-    with TestClient(app):
-        assert process.terminated is False
-    assert process.terminated is True
+    assert not hasattr(app.state.speech_service, "vibevoice_worker")

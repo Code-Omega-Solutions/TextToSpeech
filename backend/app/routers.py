@@ -63,6 +63,13 @@ def _authenticate(authorization: str | None, settings: Settings) -> None:
 def build_router(settings: Settings, speech_service: SpeechService) -> APIRouter:
     api = APIRouter()
 
+    @api.get("/v1/audio/engines")
+    async def list_speech_engines(
+        authorization: str | None = Header(default=None, alias="Authorization"),
+    ) -> dict[str, object]:
+        _authenticate(authorization, settings)
+        return {"engines": speech_service.engine_registry.catalog()}
+
     @api.post("/v1/audio/speech")
     async def create_speech(
         payload: SpeechRequest,
@@ -77,21 +84,11 @@ def build_router(settings: Settings, speech_service: SpeechService) -> APIRouter
         status_code = 500
         try:
             _authenticate(authorization, settings)
-            selected_language = resolve_language(payload, settings)
             if selected_backend == "vibevoice":
-                if (
-                    not settings.vibevoice_enabled or not settings.vibevoice_research_only
-                ) and not selected_language.startswith("de-"):
-                    raise HTTPException(status_code=422, detail="Invalid request.")
-                if payload.voice is not None:
-                    voice_languages = {
-                        "en-Carter_man": "en",
-                        "de-Spk1_woman": "de",
-                        "de-Spk0_man": "de",
-                    }
-                    voice_language = voice_languages.get(payload.voice)
-                    if voice_language is None or not selected_language.startswith(voice_language):
-                        raise HTTPException(status_code=422, detail="Invalid request.")
+                raise HTTPException(
+                    status_code=503, detail="Speech synthesis is unavailable."
+                )
+            selected_language = resolve_language(payload, settings)
             if not speech_service.try_acquire():
                 raise SynthesisCapacityExceeded
             cancel_event = threading.Event()
@@ -188,7 +185,9 @@ def build_router(settings: Settings, speech_service: SpeechService) -> APIRouter
     return api
 
 
-def build_health_router(settings: Settings, vibevoice_worker=None) -> APIRouter:
+def build_health_router(
+    settings: Settings, vibevoice_worker=None, engine_registry=None
+) -> APIRouter:
     health = APIRouter()
 
     @health.get("/healthz")
@@ -224,7 +223,14 @@ def build_health_router(settings: Settings, vibevoice_worker=None) -> APIRouter:
             headers={
                 "X-VibeVoice-Status": (
                     vibevoice_worker.status if vibevoice_worker is not None else "disabled"
-                )
+                ),
+                "X-Fish-Speech-Status": (
+                    "disabled"
+                    if engine_registry is None
+                    or (fish := engine_registry.resolve("fish-speech")) is None
+                    or not fish.enabled()
+                    else "available" if fish.is_available() else "unavailable"
+                ),
             },
         )
 

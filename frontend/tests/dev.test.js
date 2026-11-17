@@ -11,14 +11,19 @@ function postChunked(url, path, body, headers = {}) {
   return new Promise((resolve, reject) => {
     const request = httpRequest(
       target,
-      { method: "POST", headers: { "Content-Type": "application/json", ...headers } },
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...headers },
+      },
       (response) => {
         const chunks = [];
         response.on("data", (chunk) => chunks.push(chunk));
-        response.on("end", () => resolve({
-          status: response.statusCode,
-          body: Buffer.concat(chunks),
-        }));
+        response.on("end", () =>
+          resolve({
+            status: response.statusCode,
+            body: Buffer.concat(chunks),
+          }),
+        );
       },
     );
     request.on("error", reject);
@@ -41,12 +46,27 @@ test("development serving preserves API paths, method restrictions and static 40
       body,
     });
     response.writeHead(200, { "Content-Type": "application/json" });
-    response.end(JSON.stringify({
-      path: request.url,
-      method: request.method,
-      body,
-      authorization: request.headers.authorization,
-    }));
+    response.end(
+      JSON.stringify(
+        request.url === "/v1/audio/engines"
+          ? {
+              engines: [
+                {
+                  id: "macos-say",
+                  available: true,
+                  languages: ["en-US"],
+                  voices: { "en-US": ["en-reference"] },
+                },
+              ],
+            }
+          : {
+              path: request.url,
+              method: request.method,
+              body,
+              authorization: request.headers.authorization,
+            },
+      ),
+    );
   });
   fixture.listen(0, "127.0.0.1");
   await once(fixture, "listening");
@@ -71,18 +91,55 @@ test("development serving preserves API paths, method restrictions and static 40
     const url = `http://127.0.0.1:${server.httpServer.address().port}`;
     const html = await (await fetch(url)).text();
     assert.match(html, /Private Speech Studio/);
-    assert.ok(!html.includes(upstream), "Upstream origin must not be injected into the HTML");
-    assert.ok(!html.includes(secret), "Backend credentials must not be injected into HTML");
+    assert.ok(
+      !html.includes(upstream),
+      "Upstream origin must not be injected into the HTML",
+    );
+    assert.ok(
+      !html.includes(secret),
+      "Backend credentials must not be injected into HTML",
+    );
     for (const path of ["/healthz", "/readyz"]) {
       const response = await fetch(`${url}/api${path}?test=1`);
       assert.equal(response.status, 200);
       assert.equal((await response.json()).path, `${path}?test=1`);
       assert.equal(requests.at(-1).authorization, `Bearer ${secret}`);
     }
-    const body = JSON.stringify({ input: "Development proxy test", response_format: "mp3", speed: 1 });
+    const catalogResponse = await fetch(`${url}/api/v1/audio/engines`, {
+      headers: { Authorization: "Bearer attacker-value" },
+    });
+    assert.equal(catalogResponse.status, 200);
+    const catalogText = await catalogResponse.clone().text();
+    assert.deepEqual(await catalogResponse.json(), {
+      engines: [
+        {
+          id: "macos-say",
+          available: true,
+          languages: ["en-US"],
+          voices: { "en-US": ["en-reference"] },
+        },
+      ],
+    });
+    assert.equal(requests.at(-1).authorization, `Bearer ${secret}`);
+    assert.equal(requests.at(-1).method, "GET");
+    assert.equal(catalogText.includes(secret), false);
+    for (const method of ["POST", "DELETE"]) {
+      assert.equal(
+        (await fetch(`${url}/api/v1/audio/engines`, { method })).status,
+        403,
+      );
+    }
+    const body = JSON.stringify({
+      input: "Development proxy test",
+      response_format: "mp3",
+      speed: 1,
+    });
     const response = await fetch(`${url}/api/v1/audio/speech`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: "Bearer attacker-value" },
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer attacker-value",
+      },
       body,
     });
     assert.deepEqual(await response.json(), {
@@ -92,8 +149,17 @@ test("development serving preserves API paths, method restrictions and static 40
       authorization: `Bearer ${secret}`,
     });
     assert.equal((await fetch(`${url}/api/v1/audio/speech`)).status, 403);
-    assert.equal((await fetch(`${url}/api/healthz`, { method: "POST" })).status, 403);
-    for (const path of ["/missing", "/missing.js", "/api/unknown", "/api/healthz/extra", "/api/readyzextra"]) {
+    assert.equal(
+      (await fetch(`${url}/api/healthz`, { method: "POST" })).status,
+      403,
+    );
+    for (const path of [
+      "/missing",
+      "/missing.js",
+      "/api/unknown",
+      "/api/healthz/extra",
+      "/api/readyzextra",
+    ]) {
       assert.equal((await fetch(`${url}${path}`)).status, 404, path);
     }
 
@@ -110,13 +176,23 @@ test("development serving preserves API paths, method restrictions and static 40
     assert.equal(requests.at(-1).authorization, `Bearer ${secret}`);
     const forwardedCount = requests.length;
     const oversized = Buffer.concat([exact, Buffer.from(" ")]);
-    const oversizedResult = await postChunked(url, "/api/v1/audio/speech", oversized);
+    const oversizedResult = await postChunked(
+      url,
+      "/api/v1/audio/speech",
+      oversized,
+    );
     assert.equal(oversizedResult.status, 413);
-    assert.equal(requests.length, forwardedCount, "oversized bodies must not reach upstream");
+    assert.equal(
+      requests.length,
+      forwardedCount,
+      "oversized bodies must not reach upstream",
+    );
   } finally {
     if (server) await server.close();
     fixture.closeAllConnections();
-    await new Promise((resolve, reject) => fixture.close((error) => error ? reject(error) : resolve()));
+    await new Promise((resolve, reject) =>
+      fixture.close((error) => (error ? reject(error) : resolve())),
+    );
     for (const [name, value] of Object.entries(previous)) {
       if (value === undefined) delete process.env[name];
       else process.env[name] = value;

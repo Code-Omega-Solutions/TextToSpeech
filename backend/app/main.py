@@ -8,7 +8,6 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
-from starlette.concurrency import run_in_threadpool
 
 from app.config import Settings
 from app.routers import build_health_router, build_router
@@ -130,10 +129,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @asynccontextmanager
     async def lifespan(_application: FastAPI):
-        try:
-            yield
-        finally:
-            await run_in_threadpool(speech_service.close)
+        yield
 
     application = FastAPI(
         title="Bilingual macOS Speech Service",
@@ -152,7 +148,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return JSONResponse(status_code=422, content={"detail": "Invalid request."})
 
     application.include_router(
-        build_health_router(configured, speech_service.vibevoice_worker)
+        build_health_router(configured, engine_registry=speech_service.engine_registry)
     )
     application.include_router(build_router(configured, speech_service))
     application.add_middleware(RequestBoundaryMiddleware)

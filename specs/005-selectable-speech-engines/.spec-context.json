@@ -1,0 +1,876 @@
+{
+  "workflow": "companion",
+  "specName": "Selectable Speech Engines Prototype",
+  "branch": "main",
+  "currentStep": "implement",
+  "status": "completed",
+  "history": [
+    {
+      "step": "specify",
+      "substep": null,
+      "kind": "start",
+      "by": "extension",
+      "at": "2026-11-16T11:21:25.372Z"
+    },
+    {
+      "step": "specify",
+      "substep": null,
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-16T11:24:44.593Z"
+    },
+    {
+      "step": "clarify",
+      "substep": null,
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-16T15:07:36.095Z"
+    },
+    {
+      "step": "plan",
+      "substep": null,
+      "kind": "start",
+      "by": "extension",
+      "at": "2026-11-16T15:07:52.873Z"
+    },
+    {
+      "step": "plan",
+      "substep": "research",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-16T15:14:18.894Z"
+    },
+    {
+      "step": "plan",
+      "substep": "design",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-16T15:20:26.627Z"
+    },
+    {
+      "step": "plan",
+      "substep": null,
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-16T15:20:27.313Z"
+    },
+    {
+      "step": "tasks",
+      "substep": null,
+      "kind": "start",
+      "by": "extension",
+      "at": "2026-11-16T15:21:18.867Z"
+    },
+    {
+      "step": "tasks",
+      "substep": null,
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-16T15:35:07.333Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "kind": "start",
+      "by": "extension",
+      "at": "2026-11-16T15:35:39.819Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T001",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-16T22:53:29.823Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T002",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-16T22:55:07.898Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T003",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-16T22:55:08.923Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T004",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-16T22:55:56.474Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T005",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-16T22:57:53.786Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T006",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-16T23:05:06.348Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T007",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-16T23:06:59.249Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T008",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-16T23:09:04.077Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T009",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-16T23:10:34.393Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T010",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-16T23:10:35.446Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T011",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-16T23:11:26.783Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T012",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-16T23:12:33.791Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T013",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-16T23:13:55.802Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T014",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-16T23:13:56.817Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T015",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-16T23:13:57.887Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T016",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-16T23:14:28.855Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T017",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-16T23:15:56.337Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T018",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-16T23:15:57.324Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T019",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-16T23:15:58.401Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T020",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-16T23:17:23.827Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T021",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-16T23:22:46.031Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T022",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-16T23:22:47.038Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T023",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-16T23:23:13.437Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T024",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-16T23:24:00.851Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T026",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-16T23:31:20.116Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T027",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-16T23:31:26.570Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T028",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-16T23:32:31.134Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T029",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-16T23:35:26.121Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T030",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-16T23:35:48.572Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T031",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-16T23:50:16.245Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T032",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-16T23:50:57.826Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T033",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T00:07:27.237Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T025",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T03:19:19.534Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T03:19:19.749Z"
+    }
+  ],
+  "telemetryInstanceId": "d006b589-41ee-4e93-84f7-1e3016c3810f",
+  "unattended": true,
+  "request": "The indented use is for a private home automation system and private AI harness (open WebUI). As this is for private use we'll use voices (weights) provided by the community - or do not have any license restrictions.\n\nThe hardware will be glados.ehrendingen (192.168.0.231); verify if ssh key authentification works. Else set it up together with me.\n\nThe architecture of the backend system should support different tts engines - as we currently use VibeVoice in R&D mode - but can not keep this. As we do not know if Fish will meet our expectations the best way forward is to have an architecture that allows to select unti we finished our evaluation.\n\nCan you create a a spec for a prototype and implement and deploy it to glados (English and German); none breaking API contract?",
+  "expectations": [
+    "No breaking endpoint, request, response, header, authentication, or resource-limit changes",
+    "No VibeVoice worker or model assets deployed in the prototype",
+    "No unreviewed Fish model, voice, or package installed or enabled",
+    "No SSH key or host-key changes without exact user-approved scope",
+    "No deployment until host identity, SSH authorization, OS/runtime, and network boundary are verified"
+  ],
+  "context": [
+    "living spec: backend-synthesis requirement scenarios reviewed; record-living-specs helper is unavailable, so the capability spec was read directly",
+    "living spec: project-licensing model and third-party material boundaries reviewed",
+    "area: backend API request validation, engine dispatch, readiness, tests, and deployment documentation",
+    "constraint: preserve existing OpenAI-compatible speech request/response contract",
+    "constraint: do not record private target addresses or credentials in feature documents",
+    "constraint: SSH host-key verification failed; no remote authentication or deployment performed",
+    "constraint: no Fish weights, voices, or runtime installation until exact terms and provenance are reviewed"
+  ],
+  "coverage": {
+    "FR-001": {
+      "title": "Preserve existing speech API behavior for clients",
+      "tasks": [
+        "T009",
+        "T010",
+        "T011",
+        "T012"
+      ],
+      "tests": [
+        "backend/tests/test_speech_contract.py",
+        "backend/tests/test_api.py"
+      ]
+    },
+    "FR-002": {
+      "title": "Configure and select enabled engines",
+      "tasks": [
+        "T002",
+        "T003",
+        "T004",
+        "T006"
+      ],
+      "tests": [
+        "backend/tests/test_engines.py",
+        "backend/tests/test_api.py"
+      ]
+    },
+    "FR-003": {
+      "title": "Dispatch through a shared bounded engine contract",
+      "tasks": [
+        "T004",
+        "T005",
+        "T006"
+      ],
+      "tests": [
+        "backend/tests/test_services.py",
+        "backend/tests/test_fish_speech.py"
+      ]
+    },
+    "FR-004": {
+      "title": "Support existing macOS speech and optional Fish Speech candidate for English and German",
+      "tests": [
+        "backend/tests/test_engines.py",
+        "backend/tests/test_fish_speech.py",
+        "backend/tests/test_vibevoice_startup.py"
+      ],
+      "assumes": "Fish remains disabled until exact artifact terms and target runtime are approved"
+    },
+    "FR-005": {
+      "title": "Return safe unavailable errors without silent unconfigured fallback",
+      "tests": [
+        "backend/tests/test_services.py",
+        "backend/tests/test_api.py"
+      ]
+    },
+    "FR-006": {
+      "title": "Report actual engine and fallback state in existing response metadata",
+      "tests": [
+        "backend/tests/test_speech_contract.py",
+        "backend/tests/test_api.py"
+      ]
+    },
+    "FR-007": {
+      "title": "Return safe unavailable for legacy VibeVoice requests without loading VibeVoice",
+      "tests": [
+        "backend/tests/test_config.py",
+        "backend/tests/test_api.py",
+        "backend/tests/test_vibevoice_retirement.py"
+      ]
+    },
+    "FR-008": {
+      "title": "Gate Fish artifact installation and enablement on terms and provenance review",
+      "assumes": "Manual rights/provenance gate; no model, voice, or codec assets were downloaded or enabled"
+    },
+    "FR-009": {
+      "title": "Report readiness independently for configured optional engines"
+    },
+    "FR-010": {
+      "title": "Preserve authentication, credential protection, network boundaries, and unrelated services during deployment"
+    },
+    "FR-011": {
+      "title": "Stop deployment until host identity and key authentication are verified"
+    },
+    "FR-012": {
+      "title": "Verify target operating system, runtime, engine assets, service manager, and exposure before deployment"
+    },
+    "FR-013": {
+      "title": "Keep speech text, credentials, subprocess output, and private host configuration out of logs/errors"
+    },
+    "FR-014": {
+      "title": "Provide authenticated read-only discovery of engine availability, supported languages, and public voices"
+    },
+    "FR-015": {
+      "title": "Populate the repository speech interface from engine discovery and submit advertised selections"
+    },
+    "FR-016": {
+      "title": "Deploy in parallel without changing the existing healthy speech service"
+    },
+    "FR-017": {
+      "title": "Compare Fish variants using sourced size/resource and language evidence without overstating local results"
+    }
+  },
+  "classification": {
+    "projectedFiles": 14,
+    "projectedTasks": 22,
+    "scopeSignal": "none",
+    "verdict": "oversized"
+  },
+  "intent": "Build a backwards-compatible pluggable English/German speech engine prototype and deploy only after rights and host gates pass",
+  "size": "oversized",
+  "source": ".specify/assessments/fish-speech/",
+  "approach": "Add bounded engine selection behind the current API contract, preserve migration compatibility, and gate Fish artifact activation and remote deployment",
+  "planBlocks": [
+    "calls",
+    "states",
+    "screens"
+  ],
+  "planBlocksPicked": [
+    "calls",
+    "states",
+    "screens"
+  ],
+  "verified": [
+    {
+      "what": "plan blocks check out",
+      "command": "python3 .specify/extensions/companion/scripts/check_plan.py --feature-dir specs/005-selectable-speech-engines --strict",
+      "source": "derived",
+      "exitCode": 0,
+      "durationSeconds": 0.2,
+      "result": "[plan-check] plan.md: 2 call paths, 14 lines, 2 screens, 16 parts, 1 state block (4 states). Every cited file and line checks out."
+    },
+    {
+      "what": "Companion validation",
+      "command": "bash checks/run_companion_validation.sh",
+      "source": "derived",
+      "exitCode": 0,
+      "durationSeconds": 62.5,
+      "result": "---------------------------------------------------------------------- · Ran 13 tests in 0.590s · OK",
+      "commit": "a16778a",
+      "tree": "045b39bac02cba074d0f725e42f7c559949ceccf"
+    },
+    {
+      "what": "Production frontend proxy",
+      "command": "npm --prefix frontend run test:docker",
+      "source": "derived",
+      "exitCode": 0,
+      "durationSeconds": 26.0,
+      "result": "â„¹ skipped 0 · â„¹ todo 0 · â„¹ duration_ms 24432.3451",
+      "commit": "a16778a",
+      "tree": "045b39bac02cba074d0f725e42f7c559949ceccf"
+    },
+    {
+      "what": "Companion validation after voice selection",
+      "command": "bash checks/run_companion_validation.sh",
+      "source": "derived",
+      "exitCode": 0,
+      "durationSeconds": 61.4,
+      "result": "---------------------------------------------------------------------- · Ran 13 tests in 0.539s · OK",
+      "commit": "a16778a",
+      "tree": "41aa93f444f8c49138216285808348c1c3817a3b"
+    },
+    {
+      "what": "Production frontend discovery proxy after UI changes",
+      "command": "npm --prefix frontend run test:docker",
+      "source": "derived",
+      "exitCode": 0,
+      "durationSeconds": 25.0,
+      "result": "â„¹ skipped 0 · â„¹ todo 0 · â„¹ duration_ms 23300.8479",
+      "commit": "a16778a",
+      "tree": "41aa93f444f8c49138216285808348c1c3817a3b"
+    },
+    {
+      "what": "Parallel macOS prototype deployment",
+      "result": "LaunchAgent is running on the approved listener; health/readiness and authenticated catalog checks passed; authenticated English/German macOS WAV requests passed; legacy VibeVoice and disabled Fish returned 503; existing service remained healthy."
+    },
+    {
+      "what": "Final local validation",
+      "result": "Companion validation hook and production Docker proxy tests exited 0; two existing visual-fidelity cases remain skipped by project configuration."
+    }
+  ],
+  "decisions": [
+    {
+      "decision": "Use a fixed engine registry behind SpeechService",
+      "why": "The project needs only two in-tree engines; a registry supports selection without an open-ended plugin loader",
+      "rejected": "Runtime plugin discovery",
+      "by": "agent",
+      "at": "2026-11-16T15:20:25.392Z"
+    },
+    {
+      "decision": "Run Fish through a separately managed loopback MessagePack API service",
+      "why": "The pinned upstream server uses MessagePack and loads one checkpoint per service; keeping it separate avoids coupling the API process to model startup and memory",
+      "rejected": "Embedding Fish model runtime in the backend process or invoking a new CLI process per request",
+      "by": "agent",
+      "at": "2026-11-16T15:20:25.392Z"
+    },
+    {
+      "decision": "Add a protected read-only engine catalog and wire the existing vanilla JavaScript UI",
+      "why": "The user requested discoverable engine/language/voice choices, and the repository UI is not Vue",
+      "rejected": "Expose private paths or modify an external Open WebUI checkout",
+      "by": "agent",
+      "at": "2026-11-16T15:20:25.392Z"
+    },
+    {
+      "decision": "Compare Fish variants and defer selection/install until exact terms and evidence are reviewed",
+      "why": "Model-size and multilingual claims are not local quality or rights evidence",
+      "rejected": "Select a variant solely from parameter count or community availability",
+      "by": "agent",
+      "at": "2026-11-16T15:20:25.392Z"
+    },
+    {
+      "decision": "Deploy in parallel on a separately approved port",
+      "why": "A healthy service already occupies the current default listener and the user selected side-by-side deployment",
+      "rejected": "Replace or reconfigure the existing service",
+      "by": "agent",
+      "at": "2026-11-16T15:20:25.392Z"
+    },
+    {
+      "decision": "Deploy macOS baseline in parallel with Fish disabled",
+      "why": "The approved prototype preserves the API and runs English/German while exact Fish artifact rights and local evaluation remain unresolved",
+      "rejected": "Enable a community Fish checkpoint based only on private-use assumptions or upstream claims",
+      "by": "agent",
+      "at": "2026-11-17T03:21:11.483Z"
+    },
+    {
+      "decision": "Leave Open WebUI client settings unchanged",
+      "why": "Open WebUI runs on a separate device and its configuration is not in this workspace",
+      "rejected": "Modify an external client configuration without its approved path and exact setting scope",
+      "by": "agent",
+      "at": "2026-11-17T03:21:11.483Z"
+    }
+  ],
+  "concerns": [
+    {
+      "note": "Backend uv lockfile could not be used by uv because httpx2 has a missing source field with multiple matching packages; do not repair unrelated lock state silently",
+      "step": "plan"
+    },
+    {
+      "note": "Target preflight showed runtime prerequisites are not ready; remote deployment stays gated on separately reviewed remediation",
+      "step": "plan"
+    },
+    {
+      "note": "Fish model/checkpoint terms, voice provenance, and local English/German quality remain unresolved; no candidate assets may be downloaded or enabled",
+      "step": "plan"
+    },
+    {
+      "note": "T025 remains blocked: the target lacks required Python/uv/ffmpeg prerequisites and no explicit approval was received to install Homebrew/packages, provision a dedicated protected service credential, or register a parallel service. Open WebUI location/network exposure also remains unconfirmed.",
+      "step": "implement"
+    },
+    {
+      "note": "Fish variant terms, voice provenance, and local English/German quality/latency remain unreviewed; Fish is deployed as unavailable/disabled and no model or voice assets were installed.",
+      "step": "implement"
+    },
+    {
+      "note": "Open WebUI on the separate private device still needs its client URL and protected API credential configured by its operator; the secret was not displayed or copied into the repository.",
+      "step": "implement"
+    }
+  ],
+  "currentTask": null,
+  "task_summaries": {
+    "T001": {
+      "status": "DONE",
+      "did": "Reviewed MessagePack 1.2.4 Apache-2.0 terms, added the backend runtime dependency, corrected the unresolved httpx2 2.x dev range, regenerated and checked the lock, and updated third-party inventory",
+      "files": [
+        "backend/pyproject.toml",
+        "backend/uv.lock",
+        "THIRD_PARTY_NOTICES.md"
+      ]
+    },
+    "T002": {
+      "status": "DONE",
+      "did": "Added disabled-by-default Fish URL/key/timeout settings with loopback validation",
+      "files": [
+        "backend/app/config.py"
+      ]
+    },
+    "T003": {
+      "status": "DONE",
+      "did": "Added fish-speech as an additive request selector while retaining existing selectors",
+      "files": [
+        "backend/app/models.py"
+      ]
+    },
+    "T004": {
+      "status": "DONE",
+      "did": "Added immutable engine descriptors, explicit registrations, catalog serialization, and fixed registry resolution",
+      "files": [
+        "backend/app/engines.py"
+      ]
+    },
+    "T005": {
+      "status": "DONE",
+      "did": "Added bounded MessagePack WAV requests with bearer auth, loopback-only origin, no redirects/proxies, timeout, cancellation checks, size cap, and WAV validation",
+      "files": [
+        "backend/app/fish_speech.py"
+      ]
+    },
+    "T006": {
+      "status": "DONE",
+      "did": "Integrated fixed registry dispatch, added timed Fish readiness via loopback health, retained bounded WAV conversion, and passed non-VibeVoice service tests",
+      "files": [
+        "backend/app/services.py",
+        "backend/app/fish_speech.py"
+      ]
+    },
+    "T007": {
+      "status": "DONE",
+      "did": "Added authenticated engine catalog and safe unavailable response for legacy VibeVoice requests; preserved auth/readiness tests",
+      "files": [
+        "backend/app/routers.py"
+      ]
+    },
+    "T008": {
+      "status": "DONE",
+      "did": "Removed VibeVoice worker construction/shutdown from serving; public readiness stays ready and reports optional Fish disabled",
+      "files": [
+        "backend/app/services.py",
+        "backend/app/main.py",
+        "backend/app/routers.py"
+      ]
+    },
+    "T009": {
+      "status": "DONE",
+      "did": "Added fish-speech model identifier while retaining legacy VibeVoice request parsing and validation",
+      "files": [
+        "backend/tests/test_models.py"
+      ]
+    },
+    "T010": {
+      "status": "DONE",
+      "did": "Preserved binary audio, media type, filename, and response metadata contract for macOS and Fish selectors",
+      "files": [
+        "backend/tests/test_speech_contract.py"
+      ]
+    },
+    "T011": {
+      "status": "DONE",
+      "did": "Updated HTTP tests for Fish actual-engine metadata, legacy VibeVoice 503, configured default selection, and no silent Fish fallback",
+      "files": [
+        "backend/tests/test_api.py"
+      ]
+    },
+    "T012": {
+      "status": "DONE",
+      "did": "Updated service tests for Fish selection, audio conversion, speed, German references, and no implicit fallback; all service tests pass",
+      "files": [
+        "backend/tests/test_services.py"
+      ]
+    },
+    "T013": {
+      "status": "DONE",
+      "did": "Verified registry resolution, no substitution, language/voice constraints, and dynamic installed-voice catalog filtering",
+      "files": [
+        "backend/app/engines.py",
+        "backend/app/services.py",
+        "backend/tests/test_engines.py"
+      ]
+    },
+    "T014": {
+      "status": "DONE",
+      "did": "Added local fake-server tests for MessagePack, auth, WAV validation, limits, timeout, cancellation, and redirect refusal",
+      "files": [
+        "backend/tests/test_fish_speech.py"
+      ]
+    },
+    "T015": {
+      "status": "DONE",
+      "did": "Added authenticated catalog shape and private-field exclusion tests",
+      "files": [
+        "backend/tests/test_engine_catalog.py"
+      ]
+    },
+    "T016": {
+      "status": "DONE",
+      "did": "Compared S2-Pro and Drama 3 using pinned upstream sources; left local quality/resource metrics unavailable and candidate selection gated",
+      "files": [
+        "specs/005-selectable-speech-engines/fish-variant-comparison.md"
+      ]
+    },
+    "T017": {
+      "status": "DONE",
+      "did": "Updated config tests for retired VibeVoice default and disabled-by-default Fish loopback credentials",
+      "files": [
+        "backend/tests/test_config.py"
+      ]
+    },
+    "T018": {
+      "status": "DONE",
+      "did": "Added and passed a regression test proving serving startup never constructs VibeVoiceWorker",
+      "files": [
+        "backend/tests/test_vibevoice_retirement.py"
+      ]
+    },
+    "T019": {
+      "status": "DONE",
+      "did": "Updated startup tests: unavailable Fish is separate from macOS readiness and VibeVoice serving header is disabled",
+      "files": [
+        "backend/tests/test_vibevoice_startup.py"
+      ]
+    },
+    "T020": {
+      "status": "DONE",
+      "did": "Replaced obsolete VibeVoice serving instructions with selectable-engine, catalog, Fish, and gated deployment guidance",
+      "files": [
+        "backend/README.md"
+      ]
+    },
+    "T021": {
+      "status": "DONE",
+      "did": "Updated backend synthesis living requirements for engine registry, Fish adapter, discovery, and unavailable legacy VibeVoice",
+      "files": [
+        "capabilities/backend-synthesis/backend-synthesis.spec.md"
+      ]
+    },
+    "T022": {
+      "status": "DONE",
+      "did": "Mapped engine, Fish, catalog, service, and readiness requirements to focused backend tests",
+      "files": [
+        "capabilities/backend-synthesis/backend-synthesis.coverage.md"
+      ]
+    },
+    "T023": {
+      "status": "DONE",
+      "did": "Indexed selectable-engine prototype and documented Fish/legal/parallel-deployment gates",
+      "files": [
+        "specs/README.md"
+      ]
+    },
+    "T024": {
+      "status": "DONE",
+      "did": "Recorded verified key access, target prerequisite blockers, parallel service boundary, and required approvals without private identifiers",
+      "files": [
+        "specs/005-selectable-speech-engines/deployment-plan.md"
+      ]
+    },
+    "T026": {
+      "status": "DONE",
+      "did": "Added proxy coverage for authenticated catalog GET, method/path denial, and server-side credential confinement; confirmed it fails before allowlisting.",
+      "files": [
+        "frontend/tests/dev.test.js"
+      ]
+    },
+    "T027": {
+      "status": "DONE",
+      "did": "Added browser coverage for available engine/voice options, language filtering, safe discovery failure/empty states, selected request fields, and playback/download; confirmed it fails before UI implementation.",
+      "files": [
+        "frontend/tests/e2e/engine-discovery.spec.js"
+      ]
+    },
+    "T028": {
+      "status": "DONE",
+      "did": "Added accessible engine/voice selectors and polite discovery status, with generation disabled until catalog initialization; production build passed.",
+      "files": [
+        "frontend/index.html"
+      ]
+    },
+    "T029": {
+      "status": "DONE",
+      "did": "Added authenticated catalog fetch, safe option normalization, language filtering, default/valid-selection preservation, safe failure states, and selected model/voice submission; focused browser suite passed.",
+      "files": [
+        "frontend/app.js"
+      ]
+    },
+    "T030": {
+      "status": "DONE",
+      "did": "Allowlisted authenticated catalog GET with a bounded 15-second proxy timeout and explicit method denial; proxy integration test passed.",
+      "files": [
+        "frontend/config/upstream.js",
+        "frontend/vite.config.js"
+      ]
+    },
+    "T031": {
+      "status": "DONE",
+      "did": "Updated validation runner to use locked backend environment and include engine/Fish/retirement test files",
+      "files": [
+        "checks/run_companion_validation.sh"
+      ]
+    },
+    "T032": {
+      "status": "DONE",
+      "did": "Confirmed the implement hook owns validation through the checked-in runner",
+      "files": [
+        "checks/tests/test_companion_validation_hook.py"
+      ]
+    },
+    "T033": {
+      "status": "DONE",
+      "did": "Companion validation hook and production Docker proxy tests passed; remote deployment remains separately gated",
+      "files": [
+        "checks/run_companion_validation.sh",
+        "frontend/docker/default.conf.template",
+        "frontend/tests/docker.test.js"
+      ]
+    },
+    "T025": {
+      "status": "DONE",
+      "did": "Created and started the approved parallel LaunchAgent after installing approved prerequisites; verified health, authenticated catalog, English/German macOS audio, legacy VibeVoice/Fish unavailable, and existing service unchanged",
+      "files": [
+        "specs/005-selectable-speech-engines/deployment-plan.md"
+      ]
+    }
+  },
+  "step_summaries": {
+    "implement": {
+      "summary": "Completed a backward-compatible engine-selection prototype and parallel macOS deployment; Fish remains gated pending rights/quality review and Open WebUI client setup."
+    }
+  },
+  "last_action": "All 33 tasks are synchronized complete; local and deployed macOS verification passed; Fish assets remain disabled."
+}

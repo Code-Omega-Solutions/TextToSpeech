@@ -1,7 +1,7 @@
 {
   "goal_id": "ui-endpoint-configuration",
-  "status": "inspecting",
-  "iteration": 1,
+  "status": "completed",
+  "iteration": 2,
   "builder_model": "GPT:5.6-Luna",
   "inspector_model": "GPT:5.6-Sol",
   "initial_sha": "e63512c4023e0bc93986d7b127f3d1947bc52967",
@@ -10,7 +10,14 @@
     {
       "iteration": 1,
       "verdict": "FAIL",
+      "summary": "Production runtime routing/persistence absent; unsafe settings boundary, missing behavior tests and incomplete validation.",
       "at": "2026-11-17T04:02:02.641Z"
+    },
+    {
+      "iteration": 2,
+      "verdict": "BUILT",
+      "summary": "Implemented authenticated allowlisted runtime routing, durable production persistence, visible unsaved state, explicit discovery handling, tests, docs and living-spec coverage.",
+      "at": "2026-11-17T05:30:00.000Z"
     }
   ]
 }

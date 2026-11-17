@@ -61,6 +61,18 @@ documented volume is retained.
 - **THEN** a fresh browser session reports the saved origin without requiring
   browser-local storage or an image rebuild.
 
+Configuration reads and writes SHALL require the operator bearer token, and
+saved destinations SHALL match the exact `TTS_ALLOWED_UPSTREAMS` origin
+allowlist. Failed validation, authorization, policy, or persistence operations
+SHALL leave the previously saved origin unchanged.
+
+#### Scenario: an unauthorized or disallowed destination is submitted
+
+- **WHEN** a caller omits the operator token or submits an origin outside the
+  configured allowlist
+- **THEN** the service rejects the request without changing the persisted
+  endpoint or forwarding credentials.
+
 ### API forwarding is restricted to the known service routes
 <!-- touches: frontend/config/**, frontend/vite.config.js, frontend/docker/default.conf.template, frontend/tests/config.test.js, frontend/tests/dev.test.js, frontend/tests/docker.test.js -->
 
@@ -104,8 +116,9 @@ package inventory, not source tooling or local environment files.
 The image SHALL preserve Debian package copyright/license files and expose OCI
 labels linking to the source revision and bundled notices. Standalone Compose
 binds loopback port 8081. Nginx applies the existing CSP, anti-framing, no-sniff
-and referrer safeguards, enforces a 32 KiB request-body limit, and disables
-speech proxy buffering.
+and referrer safeguards, enforces a 32 KiB request-body limit, and disables speech proxy buffering. Dynamic runtime routing reloads the
+retained endpoint file for every request; Nginx remains available for
+configuration diagnostics.
 
 #### Scenario: deploying the standalone frontend container
 

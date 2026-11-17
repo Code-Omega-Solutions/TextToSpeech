@@ -4,6 +4,7 @@ COPY frontend/package.json frontend/package-lock.json frontend/.npmrc ./
 RUN npm ci
 COPY frontend/index.html frontend/app.js frontend/styles.css frontend/vite.config.js ./
 COPY frontend/config ./config
+COPY frontend/runtime ./runtime
 COPY frontend/public ./public
 RUN npm run build
 
@@ -26,7 +27,10 @@ LABEL org.opencontainers.image.title="Private Speech Studio frontend" \
       com.code-omega-solutions.runtime-package-inventory="/usr/share/doc/texttospeech-frontend/RUNTIME-PACKAGES.txt"
 
 RUN rm /etc/nginx/conf.d/default.conf /usr/share/nginx/html/index.html /usr/share/nginx/html/50x.html
+RUN apt-get update && apt-get install -y --no-install-recommends nodejs ca-certificates && rm -rf /var/lib/apt/lists/*
 COPY --from=build /app/dist /usr/share/nginx/html
+COPY frontend/config ./config
+COPY frontend/runtime /runtime
 COPY frontend/docker/default.conf.template /etc/nginx/templates/default.conf.template
 COPY --chmod=555 frontend/docker/entrypoint.sh /entrypoint.sh
 COPY LICENSE NOTICE THIRD_PARTY_NOTICES.md SOURCE_OFFER.md /usr/share/doc/texttospeech-frontend/

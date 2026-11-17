@@ -8,6 +8,7 @@ import {
   saveConfiguredUpstream,
   validateUpstream,
 } from "./config/upstream.js";
+import { createApiHandler } from "./runtime/api-handler.js";
 
 const root = fileURLToPath(new URL(".", import.meta.url));
 
@@ -145,8 +146,26 @@ export default defineConfig(({ command, mode, isPreview }) => {
     plugins: [
       {
         name: "speech-api-boundary",
-        configureServer: (server) => restrictApi(server, env),
-        configurePreviewServer: (server) => restrictApi(server, env),
+        configureServer: (server) => {
+          const api = createApiHandler(env);
+          server.middlewares.use(async (request, response, next) => {
+            if ((request.url || "").startsWith("/api/")) {
+              const handled = await api(request, response);
+              if (handled) return;
+            }
+            next();
+          });
+        },
+        configurePreviewServer: (server) => {
+          const api = createApiHandler(env);
+          server.middlewares.use(async (request, response, next) => {
+            if ((request.url || "").startsWith("/api/")) {
+              const handled = await api(request, response);
+              if (handled) return;
+            }
+            next();
+          });
+        },
       },
     ],
     server: { host: "127.0.0.1", port: 5173, strictPort: true, proxy },

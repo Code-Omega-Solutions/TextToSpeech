@@ -23,12 +23,29 @@ const endpointInput = document.querySelector("#endpoint-input");
 const activeEndpoint = document.querySelector("#active-endpoint");
 const endpointSave = document.querySelector("#endpoint-save");
 const configurationStatus = document.querySelector("#configuration-status");
+const operatorToken = document.querySelector("#operator-token");
+const unsavedEndpoint = document.querySelector("#unsaved-endpoint");
 
 const supportedLanguages = new Set(["de-DE", "en-US", "en-GB"]);
 let availableEngines = [];
 let audioUrl;
 let endpointRevision = 0;
 let activeOrigin = "";
+
+function updateUnsaved() {
+  unsavedEndpoint.hidden = endpointInput.value === activeOrigin;
+  endpointSave.disabled = unsavedEndpoint.hidden || !operatorToken.value;
+}
+
+endpointInput.addEventListener("input", updateUnsaved);
+operatorToken.addEventListener("input", updateUnsaved);
+operatorToken.addEventListener("change", () => {
+  loadConfiguration()
+    .then(() => loadEngineCatalog())
+    .catch((error) => {
+      configurationStatus.textContent = error.message;
+    });
+});
 
 function showTab(tab) {
   const configuration = tab === "configuration";
@@ -42,12 +59,16 @@ speechTab.addEventListener("click", () => showTab("speech"));
 configurationTab.addEventListener("click", () => showTab("configuration"));
 
 async function loadConfiguration() {
-  const response = await fetch("/api/configuration", { cache: "no-store" });
+  const response = await fetch("/api/configuration", {
+    cache: "no-store",
+    headers: operatorToken.value ? { Authorization: `Bearer ${operatorToken.value}` } : {},
+  });
   if (!response.ok) throw new Error("The active endpoint could not be loaded.");
   const data = await response.json();
   activeOrigin = data.origin;
   endpointInput.value = activeOrigin;
   activeEndpoint.textContent = `Active endpoint: ${activeOrigin}`;
+  updateUnsaved();
 }
 
 endpointSave.addEventListener("click", async () => {
@@ -57,7 +78,12 @@ endpointSave.addEventListener("click", async () => {
   try {
     const response = await fetch("/api/configuration", {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        ...(operatorToken.value
+          ? { Authorization: `Bearer ${operatorToken.value}` }
+          : {}),
+      },
       body: JSON.stringify({ origin: endpointInput.value }),
       cache: "no-store",
     });
@@ -67,6 +93,7 @@ endpointSave.addEventListener("click", async () => {
     activeOrigin = data.origin;
     endpointInput.value = activeOrigin;
     activeEndpoint.textContent = `Active endpoint: ${activeOrigin}`;
+    updateUnsaved();
     configurationStatus.textContent = "Endpoint saved. Speech options refreshed.";
     availableEngines = [];
     clearAudio();
@@ -248,6 +275,7 @@ async function loadEngineCatalog() {
       cache: "no-store",
     });
     if (response.status === 404 || response.status === 501) {
+      if (revision !== endpointRevision) return;
       availableEngines = [];
       engineSelect.hidden = true;
       voiceSelect.hidden = true;
@@ -255,9 +283,24 @@ async function loadEngineCatalog() {
       discoveryStatus.textContent = "This service does not support discovery. Service defaults will be used.";
       return;
     }
-    if (!response.ok) throw new Error("Catalog unavailable");
-    availableEngines = normalizeCatalog(await response.json());
+    if (!response.ok) {
+      const message =
+        response.status === 401 || response.status === 403
+          ? "Discovery authorization failed."
+          : response.status >= 500
+            ? "Speech options are unavailable. Check the service connection and try again."
+            : "The speech service returned an invalid discovery response.";
+      throw new Error(message);
+    }
+    let catalog;
+    try {
+      catalog = await response.json();
+    } catch {
+      throw new Error("The speech service returned a malformed catalog.");
+    }
+    const normalized = normalizeCatalog(catalog);
     if (revision !== endpointRevision) return;
+    availableEngines = normalized;
     if (availableEngines.length === 0) {
       renderEngines("");
       return;
@@ -268,7 +311,7 @@ async function loadEngineCatalog() {
           ? "macos-say"
           : availableEngines[0].id),
     );
-  } catch {
+  } catch (error) {
     if (revision !== endpointRevision) return;
     availableEngines = [];
     setOptions(engineSelect, [], "");
@@ -276,8 +319,7 @@ async function loadEngineCatalog() {
     engineSelect.disabled = true;
     voiceSelect.disabled = true;
     generateButton.disabled = true;
-    discoveryStatus.textContent =
-      "Speech options are unavailable. Check the service connection and try again.";
+    discoveryStatus.textContent = error.message;
   }
 }
 
@@ -359,7 +401,9 @@ form.addEventListener("submit", async (event) => {
 });
 
 checkService();
-loadConfiguration().catch((error) => {
-  configurationStatus.textContent = error.message;
-});
-loadEngineCatalog();
+loadConfiguration()
+  .then(() => loadEngineCatalog())
+  .catch((error) => {
+    configurationStatus.textContent = error.message;
+    loadEngineCatalog();
+  });

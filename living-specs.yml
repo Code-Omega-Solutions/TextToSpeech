@@ -28,6 +28,7 @@ capabilities:
         "frontend/package-lock.json",
         "frontend/vite.config.js",
         "frontend/config/**",
+        "frontend/runtime/**",
         "frontend/docker/**",
         "frontend/tests/config.test.js",
         "frontend/tests/dev.test.js",

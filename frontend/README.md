@@ -105,19 +105,36 @@ file is reported and never replaced with an unsaved value. The included
 Compose example uses the named `tts_endpoint_config` volume. It is synthetic
 and does not authorize any particular private address.
 
+Configuration reads and writes require `Authorization: Bearer
+${TTS_OPERATOR_TOKEN}`. `TTS_ALLOWED_UPSTREAMS` is a comma-separated exact
+origin allowlist; it must contain every destination the operator may select.
+The proxy credential remains server-side and is never forwarded to an origin
+outside that allowlist. The named volume is retained across `compose down`
+and container replacement; initialize its ownership before first use (the
+serving process creates the directory with 0700 and the file with 0600).
+
 ```powershell
 docker compose down
 ```
 
 The multi-stage Dockerfile pins the Node build image and Debian-based Nginx
-runtime by digest. Its runtime contains the built static assets, Nginx and
-runtime configuration, project notices, a Debian package/version/source
-inventory, and a written source offer; it does not contain npm or source
-tooling. Debian package copyright and license files are retained under
-`/usr/share/doc/*/copyright`. The Nginx template is rendered at startup; only
-`TTS_UPSTREAM_URL` is substituted. Startup validates the origin using the
-recovered entrypoint. Shell files are normalized to LF via `.gitattributes`,
-and the Dockerfile sets executable permissions.
+runtime by digest. Nginx remains installed for configuration diagnostics while
+the bundled Node runtime owns dynamic routing and atomic settings persistence;
+this avoids stale startup proxy targets. The runtime contains the built static
+assets, project notices, package inventory and source offer. Shell files are
+normalized to LF via `.gitattributes`, and the Dockerfile sets executable
+permissions.
+
+Synthetic Compose initialization:
+
+```yaml
+environment:
+  TTS_UPSTREAM_URL: http://speech-a:8000
+  TTS_ALLOWED_UPSTREAMS: http://speech-a:8000,http://speech-b:8000
+  TTS_OPERATOR_TOKEN: replace-with-an-operator-secret
+volumes:
+  - tts_endpoint_config:/var/lib/private-speech-studio
+```
 
 ## GitHub image publishing
 

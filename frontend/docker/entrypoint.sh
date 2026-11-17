@@ -11,11 +11,6 @@ if ! printf '%s\n' "$TTS_UPSTREAM_URL" | grep -Eq '^https?://([A-Za-z0-9-]+(\.[A
     exit 1
 fi
 
-if [ -n "${TTS_API_KEY:-}" ]; then
-    echo "Configure the container credential through a read-only TTS_API_KEY_FILE secret." >&2
-    exit 1
-fi
-
 if [ -z "${TTS_API_KEY_FILE:-}" ] || [ ! -f "$TTS_API_KEY_FILE" ] || [ -L "$TTS_API_KEY_FILE" ] || [ ! -r "$TTS_API_KEY_FILE" ]; then
     echo "A readable regular TTS_API_KEY_FILE secret is required." >&2
     exit 1
@@ -47,6 +42,9 @@ esac
 
 umask 077
 export TTS_API_KEY
+unset TTS_API_KEY_FILE
 export NGINX_ENVSUBST_FILTER='^(TTS_UPSTREAM_URL|TTS_API_KEY)$'
-
-exec /docker-entrypoint.sh "$@"
+# Keep a syntactically valid Nginx configuration available for operators and
+# diagnostics; the dynamic Node runtime below owns the live API routing.
+/docker-entrypoint.sh nginx -t >/dev/null
+exec node /runtime/server.js

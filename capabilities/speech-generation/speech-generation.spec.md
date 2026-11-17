@@ -96,6 +96,13 @@ string JSON `detail` when available, otherwise the HTTP status; network failures
 and empty audio have explicit messages. Generation failure marks the service
 unavailable; successful generation marks it connected.
 
+Discovery SHALL distinguish unsupported endpoints (404/501), unauthorized
+access, network/service failures, malformed catalogs, and empty usable
+catalogs. Capability state SHALL only be mutated when the response revision
+matches the endpoint revision that initiated the request. A legacy service
+that does not support discovery SHALL still accept a speech request using its
+default engine and voice contract.
+
 #### Scenario: the service recovers
 
 - **WHEN** a request succeeds after a failed request

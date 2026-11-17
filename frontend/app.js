@@ -19,19 +19,11 @@ const speechTab = document.querySelector("#speech-tab");
 const configurationTab = document.querySelector("#configuration-tab");
 const speechPanel = document.querySelector("#speech-panel");
 const configurationPanel = document.querySelector("#configuration-panel");
-const endpointInput = document.querySelector("#endpoint-input");
-const activeEndpoint = document.querySelector("#active-endpoint");
-const endpointSave = document.querySelector("#endpoint-save");
-const configurationStatus = document.querySelector("#configuration-status");
-const operatorToken = document.querySelector("#operator-token");
-const unsavedEndpoint = document.querySelector("#unsaved-endpoint");
 
 const supportedLanguages = new Set(["de-DE", "en-US", "en-GB"]);
 let availableEngines = [];
 let audioUrl;
 let endpointRevision = 0;
-let activeOrigin = "";
-let endpointEditVersion = 0;
 let speechRequestSequence = 0;
 let currentSpeechRequest = 0;
 let currentSpeechRevision = 0;
@@ -39,24 +31,6 @@ let currentSpeechRevision = 0;
 function isNetworkError(error) {
   return error instanceof TypeError || error?.message === "Failed to fetch";
 }
-
-function updateUnsaved() {
-  unsavedEndpoint.hidden = endpointInput.value === activeOrigin;
-  endpointSave.disabled = unsavedEndpoint.hidden || !operatorToken.value;
-}
-
-endpointInput.addEventListener("input", () => {
-  endpointEditVersion += 1;
-  updateUnsaved();
-});
-operatorToken.addEventListener("input", updateUnsaved);
-operatorToken.addEventListener("change", () => {
-  loadConfiguration()
-    .then(() => loadEngineCatalog())
-    .catch((error) => {
-      configurationStatus.textContent = error.message;
-    });
-});
 
 function showTab(tab) {
   const configuration = tab === "configuration";
@@ -68,59 +42,6 @@ function showTab(tab) {
 
 speechTab.addEventListener("click", () => showTab("speech"));
 configurationTab.addEventListener("click", () => showTab("configuration"));
-
-async function loadConfiguration() {
-  const editVersion = endpointEditVersion;
-  const response = await fetch("/api/configuration", {
-    cache: "no-store",
-    headers: operatorToken.value ? { Authorization: `Bearer ${operatorToken.value}` } : {},
-  });
-  if (!response.ok) throw new Error("The active endpoint could not be loaded.");
-  const data = await response.json();
-  activeOrigin = data.origin;
-  if (editVersion === endpointEditVersion) endpointInput.value = activeOrigin;
-  activeEndpoint.textContent = `Active endpoint: ${activeOrigin}`;
-  updateUnsaved();
-}
-
-endpointSave.addEventListener("click", async () => {
-  configurationStatus.textContent = "";
-  endpointSave.disabled = true;
-  const revision = ++endpointRevision;
-  const editVersion = endpointEditVersion;
-  try {
-    const response = await fetch("/api/configuration", {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        ...(operatorToken.value
-          ? { Authorization: `Bearer ${operatorToken.value}` }
-          : {}),
-      },
-      body: JSON.stringify({ origin: endpointInput.value }),
-      cache: "no-store",
-    });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.detail || "The endpoint was not saved.");
-    if (revision !== endpointRevision) return;
-    activeOrigin = data.origin;
-    if (editVersion === endpointEditVersion) endpointInput.value = activeOrigin;
-    activeEndpoint.textContent = `Active endpoint: ${activeOrigin}`;
-    updateUnsaved();
-    configurationStatus.textContent = "Endpoint saved. Speech options refreshed.";
-    availableEngines = [];
-    clearAudio();
-    await Promise.all([checkService(), loadEngineCatalog()]);
-    if (currentSpeechRequest && currentSpeechRevision < endpointRevision) {
-      generateButton.disabled = false;
-      generateButton.firstElementChild.textContent = "Generate speech";
-    }
-  } catch (error) {
-    configurationStatus.textContent = error.message;
-  } finally {
-    updateUnsaved();
-  }
-});
 
 function clearAudio() {
   audioPlayer.pause();
@@ -435,9 +356,4 @@ form.addEventListener("submit", async (event) => {
 });
 
 checkService();
-loadConfiguration()
-  .then(() => loadEngineCatalog())
-  .catch((error) => {
-    configurationStatus.textContent = error.message;
-    loadEngineCatalog();
-  });
+loadEngineCatalog();

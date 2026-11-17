@@ -95,8 +95,9 @@ upstream connection's transport separately. A server-side backend credential
 authenticates proxy-to-backend requests only and does not authenticate browser
 users.
 
-The authorized operator can change the upstream origin from the Configuration
-tab. The shared setting is stored at
+The authorized operator can change the upstream origin with the authenticated
+server-side configuration API. The browser Configuration tab is informational:
+it never asks for, stores, or sends the backend credential. The shared setting is stored at
 `/var/lib/private-speech-studio/endpoint.json` inside the container. Mount that
 directory as writable storage, owned by the serving user, with directory mode
 0700 and file mode 0600. The first start initializes from `TTS_UPSTREAM_URL`;
@@ -106,8 +107,11 @@ Compose example uses the named `tts_endpoint_config` volume. It is synthetic
 and does not authorize any particular private address.
 
 Configuration reads and writes require `Authorization: Bearer
-<the same backend token configured by TTS_API_KEY_FILE>`. The UI labels this
-input as the backend token so no second operator secret is needed.
+<the same backend token configured by TTS_API_KEY_FILE>`. This credential must
+be supplied only by an authorized operator workflow outside browser assets
+(for example, a protected administration client or local server-side
+automation). The endpoint remains privileged even though no second operator
+secret is needed.
 `TTS_ALLOWED_UPSTREAMS` is a comma-separated exact origin allowlist; it must
 contain every destination the operator may select.
 The proxy credential remains server-side and is never forwarded to an origin

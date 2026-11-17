@@ -33,7 +33,8 @@ SHALL load exactly one backend credential source on the server. Credential files
 SHALL be read-only and protected; conflicting sources SHALL prevent startup.
 The upstream URL, credential, and generated credential configuration SHALL not
 be injected into browser assets. An authorized operator MAY save a replacement
-origin through the configuration tab. The serving instance SHALL store that
+origin through the authenticated server-side configuration API; the browser
+configuration tab is informational and never collects credentials. The serving instance SHALL store that
 origin at `/var/lib/private-speech-studio/endpoint.json` with restrictive
 permissions and atomically replace it. A valid saved origin SHALL take
 precedence over startup configuration and survive replacement when the
@@ -56,10 +57,11 @@ documented volume is retained.
 
 #### Scenario: a saved endpoint survives image replacement
 
-- **WHEN** the operator saves a valid origin and recreates the container with
+- **WHEN** the operator saves a valid origin through the protected server-side
+  workflow and recreates the container with
   the documented persistent volume
-- **THEN** a fresh browser session reports the saved origin without requiring
-  browser-local storage or an image rebuild.
+- **THEN** a fresh browser session uses the saved origin without requiring
+  browser-local storage, browser credentials, or an image rebuild.
 
 Configuration reads and writes SHALL require the operator bearer token, and
 saved destinations SHALL match the exact `TTS_ALLOWED_UPSTREAMS` origin

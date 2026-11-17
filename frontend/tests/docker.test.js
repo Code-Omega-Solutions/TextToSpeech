@@ -198,7 +198,6 @@ test(
         "--env",
         `TTS_UPSTREAM_URL=http://host.docker.internal:${upstreamPort}`,
         "--env",
-        "--env",
         "TTS_API_KEY_FILE=/run/secrets/tts_api_key",
         "--mount",
         `type=bind,src=${secretPath},dst=/run/secrets/tts_api_key,readonly`,
@@ -380,7 +379,6 @@ test(
               "--env",
               "TTS_UPSTREAM_URL=http://speech.example",
               "--env",
-              "--env",
               "TTS_API_KEY_FILE=/run/secrets/missing",
               image,
             ],
@@ -405,7 +403,6 @@ test(
             const args = [
               "run",
               "--rm",
-              "--env",
               ...(upstream ? ["--env", `TTS_UPSTREAM_URL=${upstream}`] : []),
               image,
             ];

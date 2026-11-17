@@ -138,33 +138,15 @@ test("discovery connectivity failure is distinct from an HTTP failure", async ({
   );
 });
 
-test("a token-triggered configuration load cannot overwrite a later endpoint edit", async ({
+test("configuration does not collect backend credentials in the browser", async ({
   page,
 }) => {
-  let releaseTokenLoad;
-  const tokenLoad = new Promise((resolve) => {
-    releaseTokenLoad = resolve;
-  });
-  await page.route("**/api/configuration", async (route) => {
-    if (route.request().method() === "PUT") {
-      return route.fulfill({ json: { origin: "http://service-b" } });
-    }
-    if (route.request().headers().authorization) {
-      await tokenLoad;
-      return route.fulfill({ json: { origin: "http://service-a" } });
-    }
-    return route.fulfill({ json: { origin: "http://service-a" } });
-  });
   await open(page);
   await page.getByRole("button", { name: "Configuration" }).click();
-  await page.locator("#operator-token").fill("synthetic-browser-backend-token");
-  await page.locator("#endpoint-input").fill("http://service-b");
-  await expect.poll(() => Boolean(releaseTokenLoad)).toBe(true);
-  releaseTokenLoad();
-  await expect(page.locator("#endpoint-input")).toHaveValue("http://service-b");
-  await expect(page.locator("#unsaved-endpoint")).toBeVisible();
-  await page.getByRole("button", { name: "Save endpoint" }).click();
-  await expect(page.getByRole("button", { name: "Save endpoint" })).toBeDisabled();
+  await expect(page.locator("#operator-token")).toHaveCount(0);
+  await expect(page.locator("#configuration-status")).toContainText(
+    "Browser users do not enter or receive backend credentials.",
+  );
 });
 
 test("an empty available catalog explains why submission is disabled", async ({
@@ -201,30 +183,6 @@ test("legacy discovery omits selectors and submits backend defaults", async ({ p
   await page.getByRole("textbox", { name: "YOUR TEXT" }).fill("legacy");
   await page.getByRole("button", { name: "Generate speech" }).click();
   await expect.poll(() => speechPayload).toEqual({ input: "legacy", response_format: "mp3", speed: 1 });
-});
-
-test("late old discovery cannot replace the saved endpoint catalog", async ({ page }) => {
-  let releaseOld;
-  await page.route(`**${catalogPath}`, async (route) => {
-    if (!releaseOld) {
-      await new Promise((resolve) => { releaseOld = resolve; });
-      await route.fulfill({ json: { engines: [{ id: "old", available: true, languages: ["en-US"], voices: { "en-US": ["old"] } }] } });
-    } else {
-      await route.fulfill({ json: { engines: [{ id: "new", available: true, languages: ["en-US"], voices: { "en-US": ["new"] } }] } });
-    }
-  });
-  await page.route("**/api/healthz", (route) => route.fulfill({ json: { status: "ok" } }));
-  await page.goto("/");
-  await page.getByRole("button", { name: "Configuration" }).click();
-  await page.locator("#operator-token").fill("synthetic-browser-backend-token");
-  await page.locator("#endpoint-input").fill("http://service-b");
-  await page.route("**/api/configuration", (route) =>
-    route.fulfill({ json: { origin: "http://service-b" } }),
-  );
-  await page.locator("#endpoint-save").click();
-  releaseOld?.();
-  await expect(page.locator("#discovery-status")).toContainText("Speech options are ready.");
-  await expect(page.locator("#engine")).toHaveValue("new");
 });
 
 test("submits selected engine and voice and preserves audio playback and download", async ({

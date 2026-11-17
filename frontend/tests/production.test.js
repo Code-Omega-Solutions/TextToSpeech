@@ -101,38 +101,21 @@ test("production container switches real services, isolates late work, and retai
     browser = await chromium.launch({ headless: true });
     const page = await browser.newPage();
     await page.goto(url);
-    await page.getByRole("button", { name: "Configuration" }).click();
-    await page.locator("#operator-token").fill("synthetic-production-secret");
-    const configurationResponse = page.waitForResponse((response) =>
-      response.url() === `${url}/api/configuration` &&
-      response.request().method() === "GET" &&
-      response.status() === 200
-    );
-    await page.locator("#operator-token").press("Tab");
-    await configurationResponse;
-    await expect(page.locator("#endpoint-input")).toHaveValue(aOrigin);
-    await page.locator("#endpoint-input").focus();
-    await page.keyboard.press("Control+A");
-    await page.keyboard.type(aOrigin);
-    await page.locator("#endpoint-input").press("Tab");
-    await expect(page.locator("#endpoint-input")).toHaveValue(aOrigin);
-    await page.getByRole("button", { name: "Speech" }).click();
+    await expect(page.locator("#operator-token")).toHaveCount(0);
     await expectText(page, "#discovery-status", "Speech options are ready.");
 
     await page.locator("#speech-text").fill("old speech");
     await page.getByRole("button", { name: "Generate speech" }).click();
-    await page.getByRole("button", { name: "Configuration" }).click();
-    await page.locator("#endpoint-input").focus();
-    await page.keyboard.press("Control+A");
-    await page.keyboard.type(bOrigin);
-    await expect(page.locator("#unsaved-endpoint")).toBeVisible();
-    await expect(page.getByRole("button", { name: "Save endpoint" })).toBeEnabled();
-    await page.getByRole("button", { name: "Save endpoint" }).focus();
-    await page.keyboard.press("Enter");
-    await expectText(page, "#configuration-status", "Endpoint saved.");
-    await expect(page.locator("#unsaved-endpoint")).toBeHidden();
-    await expect(page.getByRole("button", { name: "Save endpoint" })).toBeDisabled();
-    await page.getByRole("button", { name: "Speech" }).click();
+    const changeEndpoint = await fetch(`${url}/api/configuration`, {
+      method: "PUT",
+      headers: {
+        Authorization: "Bearer synthetic-production-secret",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ origin: bOrigin }),
+    });
+    assert.equal(changeEndpoint.status, 200);
+    await page.reload();
     await expectText(page, "#discovery-status", "Speech options are ready.");
     await delay(2600);
     await expect(page.locator("#service-status")).toHaveText(" SERVICE CONNECTED");
@@ -156,11 +139,7 @@ test("production container switches real services, isolates late work, and retai
     const freshContext = await browser.newContext();
     const freshPage = await freshContext.newPage();
     await freshPage.goto(url);
-    await freshPage.getByRole("button", { name: "Configuration" }).click();
-    await freshPage.locator("#operator-token").fill("synthetic-production-secret");
-    await freshPage.locator("#operator-token").press("Tab");
-    await expect(freshPage.locator("#active-endpoint")).toHaveText(`Active endpoint: ${bOrigin}`);
-    await freshPage.getByRole("button", { name: "Speech" }).click();
+    await expect(freshPage.locator("#operator-token")).toHaveCount(0);
     await expectText(freshPage, "#discovery-status", "Speech options are ready.");
     await freshPage.locator("#speech-text").fill("persisted routing");
     await freshPage.getByRole("button", { name: "Generate speech" }).click();

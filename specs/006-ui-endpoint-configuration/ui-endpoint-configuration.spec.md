@@ -8,7 +8,10 @@
 
 ### User Story 1 - Choose the intended speech service (Priority: P1)
 
-As an evaluator, I can inspect and change the speech-service endpoint in a configuration tab so that the same interface can use an approved prototype or existing service without rebuilding the image.
+As an evaluator, I can use the configured speech-service endpoint in the same
+interface. An authorized operator changes that endpoint through the protected
+server-side configuration workflow, without putting a backend credential in a
+browser.
 
 **Why this priority**: Evaluating the wrong service defeats the purpose of the prototype interface.
 
@@ -16,7 +19,7 @@ As an evaluator, I can inspect and change the speech-service endpoint in a confi
 
 **Acceptance Scenarios**:
 
-1. **Given** a working configured service, **When** I open the configuration tab, **Then** I see the active endpoint and can edit and save a replacement using the keyboard.
+1. **Given** a working configured service, **When** I open the configuration tab, **Then** I see that routing is operator-managed and no credential input is offered.
 2. **Given** a permitted, reachable replacement service, **When** I save its endpoint, **Then** the interface confirms the save, refreshes connection and speech-option information, and sends subsequent speech requests to that service.
 3. **Given** an invalid or unauthorized destination or a failed configuration write, **When** I try to save, **Then** an actionable error appears and the previous saved endpoint remains active.
 
@@ -62,8 +65,8 @@ As a container operator, I can locate and persist the saved configuration so an 
 
 ### Functional Requirements
 
-- **FR-001**: The interface MUST provide a labeled, keyboard-operable configuration tab with an editable endpoint and a save action.
-- **FR-002**: The configuration tab MUST identify the active endpoint and distinguish unsaved edits from saved settings.
+- **FR-001**: The interface MUST provide a labeled, keyboard-operable configuration tab explaining that endpoint routing is operator-managed.
+- **FR-002**: The browser MUST NOT provide a backend-token input or send a backend credential; authorized endpoint changes use the protected server-side workflow.
 - **FR-003**: The system MUST reject invalid endpoint values with a visible reason before changing active configuration.
 - **FR-004**: A successful save MUST make subsequent connection, discovery, and speech requests use the saved endpoint without rebuilding the frontend image.
 - **FR-005**: An endpoint change MUST discard previous capability selections and ignore late discovery responses belonging to the previous endpoint.
@@ -88,7 +91,7 @@ As a container operator, I can locate and persist the saved configuration so an 
 
 ### Measurable Outcomes
 
-- **SC-001**: An evaluator can inspect, change, and confirm the active destination in at most one minute, excluding service response time, without rebuilding an image.
+- **SC-001**: An evaluator can use the configured destination without browser credential setup; an authorized operator can change it server-side without rebuilding an image.
 - **SC-002**: All controlled-service switching cases route subsequent connection checks, discovery, and generation exclusively to the saved destination.
 - **SC-003**: Both a discovery-enabled service and a compatible legacy service produce playable, downloadable speech; unsupported selectors are absent in the legacy case.
 - **SC-004**: Every tested invalid endpoint, unauthorized destination, failed save, and discovery failure produces an explicit status without showing stale selectable choices.
@@ -103,7 +106,7 @@ As a container operator, I can locate and persist the saved configuration so an 
 - Explicit unsupported-discovery responses permit legacy mode. Authentication failures, timeouts, invalid responses, and an empty supported catalog do not establish lack of support.
 - Existing speech-compatible services accept their established default engine/model behavior without voice discovery. Planning must verify that contract against repository evidence rather than inventing a model identifier.
 - Endpoint switching requires an operator-approved destination and compatible server-side authentication. This feature does not introduce a general-purpose proxy or a new identity-management system.
-- Displaying the configured destination to an authorized operator intentionally extends the current serving baseline, which keeps upstream configuration out of browser assets. Secrets must remain excluded.
+- The browser does not display the configured destination or accept operator credentials. Authorized endpoint changes use a protected administration workflow outside browser assets.
 - Existing living specifications currently block generation on failed or empty discovery. Legacy compatibility is a proposed targeted change, not already implemented behavior.
 - The reported deployed routing and suspected production port are unverified. No live installation inspection, restart, or deployment is authorized by this specification.
 - Backend engine installation, model enablement, voice cloning, production migration, and changes to existing model/voice release gates are outside scope.

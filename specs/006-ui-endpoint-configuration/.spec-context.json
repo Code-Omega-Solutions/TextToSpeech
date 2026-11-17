@@ -749,6 +749,16 @@
           "docker": "npm --prefix frontend run test:docker: PASS (6 tests)",
           "build": "npm --prefix frontend run build: PASS"
         }
+      },
+      {
+        "at": "2026-11-17T06:45:00+01:00",
+        "iteration": 7,
+        "note": "Additive correction: synchronized the production keyboard edit on the actual successful configuration GET and the applied endpoint value after token blur. This preserves real Control+A/type evidence without arbitrary sleeps and corrects iteration 6's failed production PASS claim.",
+        "verification": {
+          "hook": "C:\\Program Files\\Git\\bin\\bash.exe checks/run_companion_validation.sh: PASS; 155 backend tests, 7 frontend unit tests, 66 browser tests passed, 2 optional fidelity tests skipped, and 13 integrity tests passed",
+          "production": "npm --prefix frontend run test:production: PASS in 3 serial runs; each run completed 1 test with 1 pass, 0 failures, and 0 skips",
+          "focused": "npm --prefix frontend run build: PASS; git diff --check: PASS"
+        }
       }
     ]
   }

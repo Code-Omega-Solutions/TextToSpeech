@@ -104,6 +104,14 @@ test("production container switches real services, isolates late work, and retai
     await page.goto(url);
     await page.getByRole("button", { name: "Configuration" }).click();
     await page.locator("#operator-token").fill("synthetic-operator-token");
+    const configurationResponse = page.waitForResponse((response) =>
+      response.url() === `${url}/api/configuration` &&
+      response.request().method() === "GET" &&
+      response.status() === 200
+    );
+    await page.locator("#operator-token").press("Tab");
+    await configurationResponse;
+    await expect(page.locator("#endpoint-input")).toHaveValue(aOrigin);
     await page.locator("#endpoint-input").focus();
     await page.keyboard.press("Control+A");
     await page.keyboard.type(aOrigin);

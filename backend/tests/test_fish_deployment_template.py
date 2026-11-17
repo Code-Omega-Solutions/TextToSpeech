@@ -25,7 +25,14 @@ def test_prototype_operations_quarantines_stale_startup_and_waits_boundedly():
 
     assert "launchctl disable" in runbook
     assert 'grep -F "=> disabled"' in runbook
-    assert 'mv "<LEGACY_PLIST>" "<LEGACY_PLIST>.quarantined"' in runbook
-    assert "sleep 0.25" in runbook
-    assert '"$attempt" -lt 40' in runbook
-    assert "Do not continue after a wait timeout" in runbook
+    assert 'LEGACY_QUARANTINE="${LEGACY_PLIST}.quarantined"' in runbook
+    assert 'mv "$LEGACY_PLIST" "$LEGACY_QUARANTINE"' in runbook
+    assert 'WAIT_ATTEMPTS=40' in runbook
+    assert 'WAIT_SECONDS=0.25' in runbook
+    assert "bootout_if_loaded" in runbook
+    assert "wait_present" in runbook
+    assert 'PROTECTED_DIR="$(mktemp -d' in runbook
+    assert 'cp -p "$PROTECTED_DIR/backend.plist" "$BACKEND_PLIST"' in runbook
+    assert "rollback_required=1" in runbook
+    assert "trap '" in runbook
+    assert "Never continue after a wait timeout" in runbook

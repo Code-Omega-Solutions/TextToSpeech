@@ -31,6 +31,7 @@ def _approval_manifest(source, checkpoint, decoder, model_files):
     source_revision, source_tree_sha256 = fish_worker_launcher._source_tree(source)
     model_sha256 = fish_worker_launcher._entry_tree_digest(checkpoint, model_files)
     codec_sha256 = fish_worker_launcher._sha256(decoder)
+    entrypoint = source / "tools" / "api_server.py"
     return {
         "status": "approved",
         "source_revision": source_revision,
@@ -52,6 +53,19 @@ def _approval_manifest(source, checkpoint, decoder, model_files):
             }
         ],
         "codec_sha256": codec_sha256,
+        "runtime": {
+            "entrypoint_path": "tools/api_server.py",
+            "entrypoint_sha256": fish_worker_launcher._sha256(entrypoint),
+            "mode": "tts",
+            "listen_host": "127.0.0.1",
+            "workers": 1,
+            "device": "mps",
+            "half": True,
+            "offline": True,
+            "max_text_length": 5000,
+            "decoder_config_name": "firefly_gan_vq",
+            "decoder_path": decoder.name,
+        },
     }
 
 
@@ -79,6 +93,7 @@ def test_launcher_executes_offline_loopback_api(monkeypatch, tmp_path):
         json.dumps(_approval_manifest(source, checkpoint, decoder, model_files)),
         encoding="utf-8",
     )
+    manifest.chmod(0o600)
     monkeypatch.setenv("TTS_FISH_SOURCE_ROOT", str(source))
     monkeypatch.setenv("TTS_FISH_CHECKPOINT_ROOT", str(checkpoint))
     monkeypatch.setenv("TTS_FISH_WORKER_HOST", "127.0.0.1")
@@ -148,12 +163,76 @@ def test_launcher_rejects_forged_source_revision(monkeypatch, tmp_path):
     document["source_terms"]["revision"] = "a" * 40
     manifest = tmp_path / "approval.json"
     manifest.write_text(json.dumps(document), encoding="utf-8")
+    manifest.chmod(0o600)
     monkeypatch.setenv("TTS_FISH_SOURCE_ROOT", str(source))
     monkeypatch.setenv("TTS_FISH_CHECKPOINT_ROOT", str(checkpoint))
     monkeypatch.setenv("TTS_FISH_ARTIFACTS_APPROVED", "true")
     monkeypatch.setenv("TTS_FISH_ARTIFACT_MANIFEST", str(manifest))
 
     with pytest.raises(SystemExit, match="revision does not match approval"):
+        fish_worker_launcher.main()
+
+
+def test_launcher_rejects_dirty_source_checkout(monkeypatch, tmp_path):
+    source = tmp_path / "source"
+    checkpoint = tmp_path / "checkpoint"
+    source.mkdir()
+    checkpoint.mkdir()
+    _git_source(source)
+    decoder = checkpoint / "firefly-gan-vq-fsq-8x1024-21hz-generator.pth"
+    decoder.write_bytes(b"codec")
+    model = checkpoint / "model.bin"
+    model.write_bytes(b"model")
+    manifest = tmp_path / "approval.json"
+    manifest.write_text(
+        json.dumps(
+            _approval_manifest(
+                source,
+                checkpoint,
+                decoder,
+                [{"path": "model.bin", "sha256": fish_worker_launcher._sha256(model)}],
+            )
+        ),
+        encoding="utf-8",
+    )
+    manifest.chmod(0o600)
+    (source / "references").mkdir()
+    (source / "references" / "unapproved.wav").write_bytes(b"not approved")
+    monkeypatch.setenv("TTS_FISH_SOURCE_ROOT", str(source))
+    monkeypatch.setenv("TTS_FISH_CHECKPOINT_ROOT", str(checkpoint))
+    monkeypatch.setenv("TTS_FISH_ARTIFACTS_APPROVED", "true")
+    monkeypatch.setenv("TTS_FISH_ARTIFACT_MANIFEST", str(manifest))
+
+    with pytest.raises(SystemExit, match="not clean and pinned"):
+        fish_worker_launcher.main()
+
+
+def test_launcher_rejects_runtime_entrypoint_mismatch(monkeypatch, tmp_path):
+    source = tmp_path / "source"
+    checkpoint = tmp_path / "checkpoint"
+    source.mkdir()
+    checkpoint.mkdir()
+    _git_source(source)
+    decoder = checkpoint / "firefly-gan-vq-fsq-8x1024-21hz-generator.pth"
+    decoder.write_bytes(b"codec")
+    model = checkpoint / "model.bin"
+    model.write_bytes(b"model")
+    document = _approval_manifest(
+        source,
+        checkpoint,
+        decoder,
+        [{"path": "model.bin", "sha256": fish_worker_launcher._sha256(model)}],
+    )
+    document["runtime"]["entrypoint_sha256"] = "a" * 64
+    manifest = tmp_path / "approval.json"
+    manifest.write_text(json.dumps(document), encoding="utf-8")
+    manifest.chmod(0o600)
+    monkeypatch.setenv("TTS_FISH_SOURCE_ROOT", str(source))
+    monkeypatch.setenv("TTS_FISH_CHECKPOINT_ROOT", str(checkpoint))
+    monkeypatch.setenv("TTS_FISH_ARTIFACTS_APPROVED", "true")
+    monkeypatch.setenv("TTS_FISH_ARTIFACT_MANIFEST", str(manifest))
+
+    with pytest.raises(SystemExit, match="runtime entrypoint"):
         fish_worker_launcher.main()
 
 
@@ -173,6 +252,7 @@ def test_launcher_rejects_omitted_model_or_codec_files(monkeypatch, tmp_path):
     document = _approval_manifest(source, checkpoint, decoder, model_files)
     manifest = tmp_path / "approval.json"
     manifest.write_text(json.dumps(document), encoding="utf-8")
+    manifest.chmod(0o600)
     monkeypatch.setenv("TTS_FISH_SOURCE_ROOT", str(source))
     monkeypatch.setenv("TTS_FISH_CHECKPOINT_ROOT", str(checkpoint))
     monkeypatch.setenv("TTS_FISH_ARTIFACTS_APPROVED", "true")

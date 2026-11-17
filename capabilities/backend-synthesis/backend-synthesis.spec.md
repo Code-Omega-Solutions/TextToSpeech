@@ -236,9 +236,11 @@ oversized output and native failures SHALL not become success-shaped fallbacks.
 An enabled managed Fish service SHALL require a private, reviewed local argv
 launcher and at least two overall request permits. Its launcher SHALL require
 an exact local approval manifest for the actual clean source checkout revision
-and deterministic source-tree digest, every runtime model file, the codec file,
-immutable artifact revisions, per-file hashes, and applicable terms before
-exec. The reference approval SHALL bind each advertised ID to exactly
+and deterministic source-tree digest, with no tracked, untracked, or ignored
+files, every runtime model file, the codec file, immutable artifact revisions,
+per-file hashes, applicable terms, and the tracked runtime entrypoint hash plus
+fixed loopback serving contract before exec. The approval manifest itself SHALL
+not be group- or world-writable on POSIX. The reference approval SHALL bind each advertised ID to exactly
 `references/<id>/<stem>.wav` and its matching `.lab` under the Fish source
 tree, reject symlinks and extra Fish-consumed files, and record provenance,
 consent, and intended use. It SHALL
@@ -340,6 +342,16 @@ remained unchanged. This establishes safe prototype service recreation only;
 it does not qualify Fish artifacts, references, neural output, or managed
 neural lifecycle behavior. The checked-in template therefore remains
 fail-closed.
+
+### Iteration 10 deployment-safety hardening
+
+The managed Fish launcher now fails closed for dirty or ignored source trees,
+requires a protected approval-manifest file on POSIX, and binds the exact
+tracked runtime entrypoint and loopback serving contract before exec. The
+prototype operations runbook is idempotent for already-unloaded labels and
+uses bounded exact-label waits plus protected-copy rollback. These changes do
+not qualify a model, codec, reference, native output, or live recreation; the
+authorized native sequence remains an operational gate.
 
 ## Uncovered
 

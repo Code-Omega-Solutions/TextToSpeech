@@ -198,7 +198,11 @@ With Fish disabled the flag works without a model installation. With Fish
 enabled it additionally requires a reviewed `TTS_FISH_WORKER_COMMAND`: a JSON
 argv list whose executable is an absolute POSIX path, and the launcher must
 require an approval manifest with an exact clean source-checkout revision/tree,
-every model file, every codec file, and exact terms before exec. There is deliberately no
+every model file, every codec file, the tracked runtime entrypoint hash, the
+fixed loopback serving contract, and exact terms before exec. Clean means no
+tracked, untracked, or ignored source files; runtime files cannot be supplied
+from an ignored or dirty checkout. The approval manifest is also rejected when
+it is group- or world-writable on POSIX. There is deliberately no
 bundled approved manifest. Do not put credentials in argv. A private operator
 launcher must use pre-reviewed local artifacts, the configured authenticated
 loopback MessagePack/WAV interface, and must not daemonize or move model
@@ -206,6 +210,12 @@ processes out of its process group. An MLX OpenAI-compatible server is not
 automatically compatible. Do not point the managed policy at an independently
 running service: an already listening origin or uncertain connection probe
 denies worker launch.
+
+The manifest's `runtime` object is an exact binding, not descriptive metadata:
+it records the `tools/api_server.py` SHA-256, `tts` mode, loopback host, one
+worker, MPS device, half precision, offline mode, maximum text length, decoder
+configuration, and decoder-relative path. The launcher compares every value
+with its fixed argv and environment before starting the process.
 
 | Setting | Default | Meaning |
 | --- | --- | --- |

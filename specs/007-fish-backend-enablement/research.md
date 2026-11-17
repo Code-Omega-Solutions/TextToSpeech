@@ -196,6 +196,36 @@ These inputs block artifact installation, launcher/reference integration and
 native evaluation, not the model-independent policy in [plan.md](plan.md).
 The local design and task list deliberately leave those gated tasks open.
 
+## Iteration 10 fail-closed hardening evidence
+
+The managed launcher now rejects any source checkout with tracked, untracked,
+or ignored files, including the previously tolerated `references/` exception.
+The approval manifest must be a non-symlink, non-group/world-writable POSIX
+file and must bind the tracked `tools/api_server.py` entrypoint hash plus the
+fixed loopback `tts`/MPS/one-worker/decoder contract. Model-tree coverage,
+codec hashing, canonical relative paths, and source-tree hashing remain
+independently checked before `exec`; no terms, model revision, codec revision,
+or reference permission is inferred by this change. Focused launcher tests
+cover dirty-source rejection and runtime-entrypoint mismatch.
+
+The sanitized prototype runbook is now one idempotent bounded sequence. It
+conditionally boots out only exact managed labels, waits up to 10 seconds for
+each label to disappear before any bootstrap, captures owner-protected
+prototype/UI copies, and uses an exit-trap rollback that restores those copies
+if any subsequent check fails. Re-running after a successful stale quarantine
+does not fail merely because the legacy label is already unloaded. The
+sequence still preserves the non-`.plist` stale quarantine and excludes the
+production label.
+
+No new authorized native execution is claimed in this iteration: this builder
+environment has no authorized SSH target/path available to run the sanitized
+sequence, and no production or secret operation was attempted. The previous
+independent run remains the authoritative evidence that the old unguarded
+recreation snippet failed before rollback. Exact artifact/codec terms, a clean
+approved source checkout, four consented WAV/`.lab` pairs, managed neural
+outputs, and live lifecycle measurements remain blocked. Fish stays disabled
+and no model, codec, reference, or terms were downloaded or fabricated.
+
 ## Iteration 9 authoritative and deployment evidence
 
 The public, tagged Fish 1.5.0 README and inference guide were re-reviewed

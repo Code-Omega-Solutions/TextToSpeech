@@ -173,6 +173,35 @@ therefore exposes the qualified engine boundary without promising an
 unqualified voice identity. The production engine-discovery 404 is expected
 for that legacy service and the UI correctly falls back to service defaults.
 
+## Iteration 10 sanitized hardening record
+
+The launcher and deployment runbook were hardened without changing the
+fail-closed deployment state. A source tree is now rejected when Git reports
+any tracked, untracked, or ignored file; the old exception for untracked
+`references/` files is gone. The local approval manifest must be a non-symlink
+file without group/world write permission on POSIX and must bind the exact
+tracked runtime entrypoint hash and fixed loopback Fish serving contract in
+addition to every model/codec file hash and pinned terms. No model, codec,
+reference, or license term was invented or downloaded.
+
+The prototype-only operations runbook now guards an already-absent
+`launchctl` label, waits for exact labels to disappear before bootstrapping,
+and captures protected backend/UI copies before recreation. An exit trap
+restores those copies only after the same bounded unload wait if any post-load
+check fails. The stale definition remains disabled and quarantined under a
+non-`.plist` name; the production label is never passed to the sequence.
+Focused launcher and runbook tests pass locally.
+
+This iteration has no new native execution result. The current builder
+environment does not expose an authorized SSH target/path, so the corrected
+sequence was not run against the designated host and no production or secret
+operation was attempted. The previous independent run's failure of the old
+unguarded recreation stage remains open evidence; no deterministic live
+recreation/rollback success is claimed here. Exact model/codec terms, a clean
+approved source checkout, four consented WAV/`.lab` pairs, Fish outputs,
+managed neural lifecycle measurements, and browser/live checks remain
+unresolved gates.
+
 ## Iteration 9 sanitized deployment record
 
 The authorized strict-SSH session reached the designated Apple Silicon macOS

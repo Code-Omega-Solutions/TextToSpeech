@@ -50,12 +50,15 @@ SHALL not disclose credential values or credential-file paths.
 The serving application SHALL use a fixed registry of configured speech
 engines. The `model` field SHALL select an enabled engine; omitting it SHALL
 select the configured default. A request using legacy `vibevoice` SHALL return
-503 without synthesis or fallback. An unknown, disabled, or unavailable engine
+503 without synthesis or fallback under the default strict policy. An unknown, disabled, or unavailable engine
 SHALL return a safe unavailable response and SHALL NOT silently select another
-engine. Authenticated `GET /v1/audio/engines` SHALL list public engine IDs,
+engine unless the explicit headroom-first policy below applies to a valid
+neural selection. Authenticated `GET /v1/audio/engines` SHALL list public engine IDs,
 availability, supported English/German locales, and public voice IDs without
 private paths or credentials. Fish Speech SHALL remain disabled unless a
-loopback service origin and server-side credential are configured.
+loopback service origin and a server-side credential are configured. By
+default, the Fish transport reuses the authenticated `TTS_API_KEY` credential;
+an explicit Fish credential is optional for separately authorized deployments.
 
 #### Scenario: an enabled engine is selected
 
@@ -65,7 +68,7 @@ loopback service origin and server-side credential are configured.
 
 #### Scenario: an unavailable engine is selected
 
-- **WHEN** a request selects an unknown, disabled, or unavailable engine,
+- **WHEN** the default strict policy is active and a request selects an unknown, disabled, or unavailable engine,
   including legacy `vibevoice`
 - **THEN** it returns a safe 503 without reaching synthesis or silently
   substituting another engine.
@@ -83,6 +86,13 @@ loopback service origin and server-side credential are configured.
 - **WHEN** Fish is disabled or its loopback endpoint or credential is absent
 - **THEN** Fish reports unavailable and the macOS speech path remains usable.
 
+#### Scenario: Fish reuses the backend credential
+
+- **WHEN** Fish is enabled with a loopback endpoint and only the protected
+  backend credential is configured
+- **THEN** Fish authenticates with that credential and no second
+  user-managed secret is required.
+
 #### Scenario: discovery does not leak runtime configuration
 
 - **WHEN** the engine catalog is returned
@@ -96,7 +106,7 @@ loopback service origin and server-side credential are configured.
 
 #### Scenario: legacy VibeVoice selection is retired
 
-- **WHEN** a request explicitly selects the legacy `vibevoice` identifier
+- **WHEN** the default strict policy is active and a request explicitly selects the legacy `vibevoice` identifier
 - **THEN** it receives a safe 503 before synthesis admission, without fallback, while the configured default engine remains available to other requests.
 
 ### Speech requests are validated against the supported contract
@@ -109,7 +119,8 @@ optional language (`de`, `de-DE`, `en`, `en-US`, or `en-GB`), optional bounded
 `voice` hint, `response_format` of `mp3` or `wav`, and finite speed from 0.5
 through 2.0. The backend default is `macos-say` unless an operator explicitly
 configures an enabled `fish-speech` deployment. Legacy `vibevoice` requests
-return a safe 503 and are not routed to another engine. MP3 and speed 1.0 remain
+return a safe 503 under the default strict policy; the explicit headroom-first
+policy may instead use native speech. MP3 and speed 1.0 remain
 the request defaults. Unknown fields and
 invalid values are rejected with a safe 422 response. The backend SHALL enforce
 a 32 KiB encoded request-body limit while streaming, independent of
@@ -153,7 +164,8 @@ installed public voice; an unrecognized legacy voice hint SHALL retain the
 configured default. It SHALL scale the configured base words-per-minute rate
 by request speed and use ffmpeg to produce mono 44.1 kHz
 PCM WAV or 128 kbps MP3. Fish Speech SHALL run as an optional separately
-managed loopback service. Its adapter SHALL use bounded MessagePack requests,
+managed loopback service by default, or an explicitly owned process under the
+headroom-first policy below. Its adapter SHALL use bounded MessagePack requests,
 the configured server-side bearer key, a finite timeout, response-size limits,
 and validated WAV output. Fish WAV output SHALL use the existing bounded
 conversion path for requested MP3/WAV format and speed. Fish SHALL remain
@@ -184,7 +196,7 @@ identify the engine that generated it and any explicitly configured fallback.
 
 #### Scenario: a legacy VibeVoice request arrives
 
-- **WHEN** a request selects `vibevoice` after the serving worker is retired
+- **WHEN** the strict policy is active and a request selects `vibevoice` after the serving worker is retired
 - **THEN** the route returns the safe unavailable response before synthesis admission and does not construct or invoke the worker.
 
 #### Scenario: synthesis prerequisites or capacity are unavailable
@@ -201,6 +213,62 @@ identify the engine that generated it and any explicitly configured fallback.
 
 - **WHEN** a valid request is synthesized with an available configured voice
 - **THEN** the service returns the requested audio format with the configured rate and preserved sentence and paragraph pauses.
+
+### Optional neural synthesis yields to native speech and host headroom
+<!-- touches: backend/app/config.py, backend/app/fish_process.py, backend/app/memory.py, backend/app/fish_speech.py, backend/app/services.py, backend/app/routers.py, backend/app/main.py, backend/tests/test_fish_process.py, backend/tests/test_config.py, backend/tests/test_engines.py, backend/tests/test_api.py -->
+
+`TTS_FISH_OPPORTUNISTIC=true` SHALL explicitly opt in to language-preserving
+native fallback for valid neural selections, including retired `vibevoice`,
+when optional synthesis is disabled, busy, resource-denied, unavailable or
+times out within its neural budget. Unknown models and invalid/unauthenticated
+requests SHALL remain rejected. Explicit native requests SHALL not start Fish.
+Fallback SHALL ignore neural voice preference, use the resolved locale's native
+default, preserve format/speed/output bounds and the original overall deadline,
+and report actual-engine/fallback metadata with a safe reason code. Cancellation,
+oversized output and native failures SHALL not become success-shaped fallbacks.
+
+An enabled managed Fish service SHALL require a private, reviewed local argv
+launcher and at least two overall request permits. It SHALL lazily create one
+low-priority owned process session, admit one neural request, and leave native
+admission independent of waiting neural requests. Defaults SHALL be a 16 GiB
+worker process-group RSS budget, 12 GiB available-memory reserve, and 30-second
+idle/cooldown limits. A cold start SHALL require both reserve and peak budget;
+a loaded worker SHALL not have its resident memory credited toward the reserve.
+
+The supervisor SHALL monitor loading, active and idle workers, reject invalid
+measurements, and stop only the owned process group on pressure, budget breach,
+cancellation, timeout, idle expiry or shutdown. Unverified termination SHALL
+disable neural restart and log an explicit safe error. Discovery SHALL not start
+a model. The reviewed launcher SHALL use local approved assets without downloads;
+offline library flags are not a network sandbox. Sampled host/RSS estimates
+SHALL not be represented as hard physical/Metal memory isolation or native
+qualification. Exact runtime/artifact/reference and deployment approval remain
+separate gates.
+
+#### Scenario: a valid optional selection cannot run
+
+- **WHEN** the headroom-first policy is enabled and Fish is disabled, busy, unavailable or resource-denied, or a valid legacy neural selection is made
+- **THEN** native speech uses the resolved German/English locale without the neural voice preference, reports `macos-say` and fallback metadata, and retains the original response bounds.
+
+#### Scenario: memory pressure occurs while loading, active or idle
+
+- **WHEN** the owned worker exceeds its budget, available memory falls below reserve, or a memory probe fails in any lifecycle phase
+- **THEN** the supervisor terminates only its owned group, rejects the neural result, and requires cooldown plus sufficient cold-start headroom before restart.
+
+#### Scenario: the exact configured memory boundary is available
+
+- **WHEN** available memory equals reserve plus peak budget at cold start, or equals reserve while the worker is loaded and RSS is no greater than budget
+- **THEN** memory admission succeeds; dropping below reserve or exceeding budget denies neural work.
+
+#### Scenario: cancellation, idle expiry or shutdown occurs
+
+- **WHEN** an active request is cancelled or times out, or the worker idles past its limit, or the application shuts down
+- **THEN** the owned worker is stopped and reaped without terminating an external listener; cancellation starts no native fallback.
+
+#### Scenario: an external listener or unverified cleanup is encountered
+
+- **WHEN** the target endpoint is already listening or its connection probe is uncertain before worker creation, or owned group termination cannot be verified
+- **THEN** the external listener is not adopted or killed, and unverified cleanup disables further neural starts rather than assuming memory was released.
 
 ### Health and readiness report distinct service states
 <!-- touches: backend/app/routers.py, backend/app/voices.py, backend/app/engines.py, backend/tests/test_api.py, backend/tests/test_voices.py, backend/tests/test_vibevoice_startup.py -->

@@ -10,7 +10,6 @@ services:
     environment:
       TTS_UPSTREAM_URL: ${TTS_UPSTREAM_URL:?Set TTS_UPSTREAM_URL to the authorized speech service origin}
       TTS_ALLOWED_UPSTREAMS: ${TTS_ALLOWED_UPSTREAMS:-${TTS_UPSTREAM_URL}}
-      TTS_OPERATOR_TOKEN: ${TTS_OPERATOR_TOKEN:?Set TTS_OPERATOR_TOKEN for configuration writes}
       TTS_API_KEY_FILE: /run/secrets/tts_api_key
     secrets:
       - source: tts_api_key

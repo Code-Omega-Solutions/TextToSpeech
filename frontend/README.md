@@ -106,8 +106,10 @@ Compose example uses the named `tts_endpoint_config` volume. It is synthetic
 and does not authorize any particular private address.
 
 Configuration reads and writes require `Authorization: Bearer
-${TTS_OPERATOR_TOKEN}`. `TTS_ALLOWED_UPSTREAMS` is a comma-separated exact
-origin allowlist; it must contain every destination the operator may select.
+<the same backend token configured by TTS_API_KEY_FILE>`. The UI labels this
+input as the backend token so no second operator secret is needed.
+`TTS_ALLOWED_UPSTREAMS` is a comma-separated exact origin allowlist; it must
+contain every destination the operator may select.
 The proxy credential remains server-side and is never forwarded to an origin
 outside that allowlist. The named volume is retained across `compose down`
 and container replacement; initialize its ownership before first use (the
@@ -131,7 +133,7 @@ Synthetic Compose initialization:
 environment:
   TTS_UPSTREAM_URL: http://speech-a:8000
   TTS_ALLOWED_UPSTREAMS: http://speech-a:8000,http://speech-b:8000
-  TTS_OPERATOR_TOKEN: replace-with-an-operator-secret
+  # The backend token authorizes both speech and privileged endpoint changes.
 volumes:
   - tts_endpoint_config:/var/lib/private-speech-studio
 ```

@@ -35,7 +35,7 @@ class FishSpeechEngine:
         self.settings = settings
         self._opener = opener or build_opener(ProxyHandler({}), _NoRedirect()).open
 
-    def is_available(self) -> bool:
+    def is_available(self, timeout_seconds: float | None = None) -> bool:
         if not self.settings.fish_enabled or not self.settings.fish_server_url:
             return False
         if not self.settings.fish_api_key:
@@ -46,7 +46,10 @@ class FishSpeechEngine:
             method="GET",
         )
         try:
-            with self._opener(request, timeout=min(3, self.settings.fish_request_timeout_seconds)) as response:
+            timeout = min(3, self.settings.fish_request_timeout_seconds)
+            if timeout_seconds is not None:
+                timeout = max(0.001, min(timeout, timeout_seconds))
+            with self._opener(request, timeout=timeout) as response:
                 if response.status != 200:
                     return False
                 body = response.read(4097)

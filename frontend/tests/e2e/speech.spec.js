@@ -308,7 +308,7 @@ test("stale speech completion cannot unlock or publish over a newer request", as
   await expect(page.getByRole("button", { name: "Generating" })).toBeDisabled();
 
   await page.getByRole("button", { name: "Configuration" }).click();
-  await page.locator("#operator-token").fill("operator");
+  await page.locator("#operator-token").fill("synthetic-browser-backend-token");
   await page.locator("#endpoint-input").fill("http://service-b");
   await page.getByRole("button", { name: "Save endpoint" }).click();
   await expect(page.locator("#configuration-status")).toContainText("Endpoint saved.");

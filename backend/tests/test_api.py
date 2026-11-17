@@ -215,6 +215,65 @@ def test_legacy_vibevoice_selector_is_safe_unavailable_without_admission(setting
     assert response.json() == {"detail": "Speech synthesis is unavailable."}
 
 
+@pytest.mark.parametrize(
+    ("model", "language", "voice"),
+    [
+        ("fish-speech", "de", "neural-reference"),
+        ("fish-speech", "en", "neural-reference"),
+        ("vibevoice", "de", "de-Spk0_man"),
+        ("vibevoice", "en", "en-Carter_man"),
+    ],
+)
+def test_optional_fallback_is_authenticated_language_only_and_observable(
+    settings_factory, monkeypatch, caplog, model, language, voice
+):
+    settings = settings_factory(fish_opportunistic=True)
+    app = create_app(settings)
+    calls = []
+
+    def native(*args, **kwargs):
+        calls.append(args)
+        assert kwargs["deadline"] <= time.monotonic() + settings.request_timeout_seconds
+        return SynthesisResult(b"native audio", "audio/wav", "speech.wav")
+
+    monkeypatch.setattr(app.state.speech_service, "_synthesize_macos", native)
+    with TestClient(app) as client:
+        body = {
+            "input": "synthetic speech marker", "model": model,
+            "language": language, "voice": voice, "response_format": "wav",
+        }
+        assert client.post("/v1/audio/speech", json=body).status_code == 401
+        assert calls == []
+        with caplog.at_level(logging.INFO):
+            response = client.post(
+                "/v1/audio/speech", json=body,
+                headers={"Authorization": f"Bearer {settings.api_key}"},
+            )
+        assert response.status_code == 200
+        assert calls[0][1] == {"de": "de-DE", "en": "en-US"}[language]
+        assert calls[0][5] is None
+        assert response.content == b"native audio"
+        assert response.headers["x-speech-backend"] == "macos-say"
+        assert response.headers["x-speech-fallback"] == "true"
+        body["model"] = "unknown"
+        assert client.post(
+            "/v1/audio/speech", json=body,
+            headers={"Authorization": f"Bearer {settings.api_key}"},
+        ).status_code == 422
+        assert len(calls) == 1
+    assert "synthetic speech marker" not in caplog.text
+    assert settings.api_key not in caplog.text
+
+
+def test_application_shutdown_closes_managed_worker(settings_factory, monkeypatch):
+    app = create_app(settings_factory(fish_opportunistic=True))
+    closed = []
+    monkeypatch.setattr(app.state.speech_service.fish_process, "close", lambda: closed.append(True))
+    with TestClient(app):
+        assert not closed
+    assert closed == [True]
+
+
 def test_invalid_vibevoice_voice_is_rejected_before_capacity(settings_factory, monkeypatch):
     settings = settings_factory(
         vibevoice_enabled=True,

@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import json
 import os
 import stat
 from dataclasses import dataclass, field
 from ipaddress import ip_address
+from pathlib import PurePosixPath
 from typing import Literal
 from urllib.parse import urlsplit
 
@@ -34,6 +36,12 @@ class _SettingsValues(BaseModel):
     fish_server_url: str | None = None
     fish_api_key: str | None = Field(default=None, repr=False)
     fish_request_timeout_seconds: int = Field(default=30, ge=1, le=180)
+    fish_opportunistic: bool = False
+    fish_worker_command: tuple[str, ...] | None = Field(default=None, repr=False)
+    fish_worker_peak_memory_bytes: int = Field(default=16 * 1024**3, ge=1)
+    fish_memory_reserve_bytes: int = Field(default=12 * 1024**3, ge=1)
+    fish_idle_timeout_seconds: int = Field(default=30, ge=1, le=600)
+    fish_cooldown_seconds: int = Field(default=30, ge=1, le=600)
     vibevoice_enabled: bool = False
     vibevoice_research_only: bool = False
     vibevoice_qualified: bool = False
@@ -61,11 +69,41 @@ class _SettingsValues(BaseModel):
 
     @model_validator(mode="after")
     def fish_requires_loopback_service_and_credential(self) -> _SettingsValues:
-        if self.default_backend == "fish-speech" and not self.fish_enabled:
+        if self.default_backend == "fish-speech" and not self.fish_enabled and not self.fish_opportunistic:
             raise ValueError("TTS_DEFAULT_BACKEND=fish-speech requires TTS_FISH_ENABLED=true")
-        if self.fish_enabled and (self.fish_server_url is None or self.fish_api_key is None):
-            raise ValueError("Fish Speech requires a loopback service URL and API key")
+        if self.fish_enabled and (
+            self.fish_server_url is None
+            or self.fish_api_key is None and self.api_key is None
+        ):
+            raise ValueError(
+                "Fish Speech requires a loopback service URL and the shared API key"
+            )
+        if self.fish_opportunistic:
+            if self.fish_enabled and self.fish_worker_command is None:
+                raise ValueError("Opportunistic Fish requires a managed worker command")
+            if self.max_concurrent_synthesis < 2:
+                raise ValueError("Opportunistic Fish requires reserved native capacity")
         return self
+
+    @field_validator("fish_worker_command", mode="before")
+    @classmethod
+    def fish_command_is_local_argv(cls, value: object) -> tuple[str, ...] | None:
+        if value is None:
+            return None
+        if isinstance(value, str):
+            try:
+                value = json.loads(value)
+            except ValueError:
+                raise ValueError("Fish worker command must be a JSON argv list") from None
+        if (
+            not isinstance(value, (list, tuple))
+            or not value
+            or any(not isinstance(part, str) or not part.strip() or "\0" in part for part in value)
+        ):
+            raise ValueError("Fish worker command must be a nonempty string argv list")
+        if not PurePosixPath(value[0]).is_absolute():
+            raise ValueError("Fish worker executable must be an absolute POSIX path")
+        return tuple(value)
 
     @field_validator("api_key")
     @classmethod
@@ -171,6 +209,12 @@ class Settings:
     vibevoice_model_path: str | None
     vibevoice_worker_peak_memory_bytes: int | None
     higher_priority_memory_reserve_bytes: int | None
+    fish_opportunistic: bool = False
+    fish_worker_command: tuple[str, ...] | None = field(default=None, repr=False)
+    fish_worker_peak_memory_bytes: int = 16 * 1024**3
+    fish_memory_reserve_bytes: int = 12 * 1024**3
+    fish_idle_timeout_seconds: int = 30
+    fish_cooldown_seconds: int = 30
 
     @classmethod
     def from_env(cls) -> Settings:
@@ -196,6 +240,12 @@ class Settings:
             "TTS_FISH_SERVER_URL": "fish_server_url",
             "TTS_FISH_API_KEY": "fish_api_key",
             "TTS_FISH_REQUEST_TIMEOUT_SECONDS": "fish_request_timeout_seconds",
+            "TTS_FISH_OPPORTUNISTIC": "fish_opportunistic",
+            "TTS_FISH_WORKER_COMMAND": "fish_worker_command",
+            "TTS_FISH_WORKER_PEAK_MEMORY_BYTES": "fish_worker_peak_memory_bytes",
+            "TTS_FISH_MEMORY_RESERVE_BYTES": "fish_memory_reserve_bytes",
+            "TTS_FISH_IDLE_TIMEOUT_SECONDS": "fish_idle_timeout_seconds",
+            "TTS_FISH_COOLDOWN_SECONDS": "fish_cooldown_seconds",
             "TTS_VIBEVOICE_ENABLED": "vibevoice_enabled",
             "TTS_VIBEVOICE_RESEARCH_ONLY": "vibevoice_research_only",
             "TTS_VIBEVOICE_QUALIFIED": "vibevoice_qualified",
@@ -219,6 +269,14 @@ class Settings:
             if "TTS_FISH_API_KEY" in os.environ:
                 raise ValueError("TTS_FISH_API_KEY and TTS_FISH_API_KEY_FILE cannot both be set")
             values["fish_api_key"] = _read_credential_file(os.environ["TTS_FISH_API_KEY_FILE"])
+        if (
+            str(values.get("fish_enabled", "")).lower() in {"true", "1", "yes", "on"}
+            and "fish_api_key" not in values
+            and "api_key" in values
+        ):
+            # Fish is an internal prototype transport. Reuse the authenticated
+            # backend bearer credential rather than provisioning a second secret.
+            values["fish_api_key"] = values["api_key"]
         parsed = _SettingsValues.model_validate(values)
         return cls(**parsed.model_dump())
 

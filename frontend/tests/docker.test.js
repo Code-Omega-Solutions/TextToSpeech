@@ -198,7 +198,6 @@ test(
         "--env",
         `TTS_UPSTREAM_URL=http://host.docker.internal:${upstreamPort}`,
         "--env",
-        "TTS_OPERATOR_TOKEN=synthetic-operator-token",
         "--env",
         "TTS_API_KEY_FILE=/run/secrets/tts_api_key",
         "--mount",
@@ -381,7 +380,6 @@ test(
               "--env",
               "TTS_UPSTREAM_URL=http://speech.example",
               "--env",
-              "TTS_OPERATOR_TOKEN=synthetic-operator-token",
               "--env",
               "TTS_API_KEY_FILE=/run/secrets/missing",
               image,
@@ -394,22 +392,6 @@ test(
             missingCredential.stderr,
             /readable regular TTS_API_KEY_FILE/,
           );
-
-          const missingOperator = spawnSync(
-            "docker",
-            [
-              "run",
-              "--rm",
-              "--env",
-              "TTS_UPSTREAM_URL=http://speech.example",
-              "--env",
-              "TTS_API_KEY_FILE=/run/secrets/missing",
-              image,
-            ],
-            { encoding: "utf8", timeout: 30_000 },
-          );
-          assert.equal(missingOperator.status, 1);
-          assert.match(missingOperator.stderr, /TTS_OPERATOR_TOKEN is required/);
 
           for (const upstream of [
             undefined,
@@ -424,7 +406,6 @@ test(
               "run",
               "--rm",
               "--env",
-              "TTS_OPERATOR_TOKEN=synthetic-operator-token",
               ...(upstream ? ["--env", `TTS_UPSTREAM_URL=${upstream}`] : []),
               image,
             ];

@@ -157,7 +157,7 @@ test("a token-triggered configuration load cannot overwrite a later endpoint edi
   });
   await open(page);
   await page.getByRole("button", { name: "Configuration" }).click();
-  await page.locator("#operator-token").fill("operator");
+  await page.locator("#operator-token").fill("synthetic-browser-backend-token");
   await page.locator("#endpoint-input").fill("http://service-b");
   await expect.poll(() => Boolean(releaseTokenLoad)).toBe(true);
   releaseTokenLoad();
@@ -216,7 +216,7 @@ test("late old discovery cannot replace the saved endpoint catalog", async ({ pa
   await page.route("**/api/healthz", (route) => route.fulfill({ json: { status: "ok" } }));
   await page.goto("/");
   await page.getByRole("button", { name: "Configuration" }).click();
-  await page.locator("#operator-token").fill("operator");
+  await page.locator("#operator-token").fill("synthetic-browser-backend-token");
   await page.locator("#endpoint-input").fill("http://service-b");
   await page.route("**/api/configuration", (route) =>
     route.fulfill({ json: { origin: "http://service-b" } }),

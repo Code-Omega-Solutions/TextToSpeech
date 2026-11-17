@@ -155,7 +155,6 @@ test("configuration API enforces operator authorization and destination policy",
   const env = {
     TTS_UPSTREAM_URL: "http://localhost:8000",
     TTS_ALLOWED_UPSTREAMS: "http://localhost:8000,http://localhost:8001",
-    TTS_OPERATOR_TOKEN: "synthetic-operator-token",
     TTS_API_KEY: "synthetic-backend-token",
     TTS_ENDPOINT_CONFIG_FILE: join(directory, "endpoint.json"),
   };
@@ -166,11 +165,11 @@ test("configuration API enforces operator authorization and destination policy",
   try {
     assert.equal((await fetch(url)).status, 401);
     assert.equal(
-      (await fetch(url, { headers: { Authorization: "Bearer synthetic-backend-token" } })).status,
+      (await fetch(url, { headers: { Authorization: "Bearer wrong-token" } })).status,
       401,
     );
     const headers = {
-      Authorization: "Bearer synthetic-operator-token",
+      Authorization: "Bearer synthetic-backend-token",
       "Content-Type": "application/json",
     };
     assert.equal((await fetch(url, { headers })).status, 200);

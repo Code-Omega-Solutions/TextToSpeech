@@ -89,7 +89,6 @@ test("production container switches real services, isolates late work, and retai
       "--publish", `127.0.0.1:${port}:8080`,
       "--env", `TTS_UPSTREAM_URL=${aOrigin}`,
       "--env", `TTS_ALLOWED_UPSTREAMS=${aOrigin},${bOrigin}`,
-      "--env", "TTS_OPERATOR_TOKEN=synthetic-operator-token",
       "--env", "TTS_API_KEY_FILE=/run/secrets/tts_api_key",
       "--mount", `type=bind,src=${secretPath},dst=/run/secrets/tts_api_key,readonly`,
       "--mount", `type=volume,src=${volume},dst=/var/lib/private-speech-studio`,
@@ -103,7 +102,7 @@ test("production container switches real services, isolates late work, and retai
     const page = await browser.newPage();
     await page.goto(url);
     await page.getByRole("button", { name: "Configuration" }).click();
-    await page.locator("#operator-token").fill("synthetic-operator-token");
+    await page.locator("#operator-token").fill("synthetic-production-secret");
     const configurationResponse = page.waitForResponse((response) =>
       response.url() === `${url}/api/configuration` &&
       response.request().method() === "GET" &&
@@ -158,7 +157,7 @@ test("production container switches real services, isolates late work, and retai
     const freshPage = await freshContext.newPage();
     await freshPage.goto(url);
     await freshPage.getByRole("button", { name: "Configuration" }).click();
-    await freshPage.locator("#operator-token").fill("synthetic-operator-token");
+    await freshPage.locator("#operator-token").fill("synthetic-production-secret");
     await freshPage.locator("#operator-token").press("Tab");
     await expect(freshPage.locator("#active-endpoint")).toHaveText(`Active endpoint: ${bOrigin}`);
     await freshPage.getByRole("button", { name: "Speech" }).click();
@@ -169,7 +168,7 @@ test("production container switches real services, isolates late work, and retai
     await expect(freshPage.locator("#result")).toBeVisible();
     await freshContext.close();
     const persisted = await fetch(`${url}/api/configuration`, {
-      headers: { Authorization: "Bearer synthetic-operator-token" },
+      headers: { Authorization: "Bearer synthetic-production-secret" },
     });
     assert.deepEqual(await persisted.json(), { origin: bOrigin });
     assert.equal(

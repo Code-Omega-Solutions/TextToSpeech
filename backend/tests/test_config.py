@@ -127,6 +127,14 @@ def test_fish_engine_requires_loopback_service_and_credential(monkeypatch):
     assert settings.fish_api_key == "fish-test-key"
 
 
+def test_fish_engine_reuses_backend_credential_when_no_second_secret_is_set(monkeypatch):
+    monkeypatch.setenv("TTS_API_KEY", "shared-backend-key")
+    monkeypatch.setenv("TTS_FISH_ENABLED", "true")
+    monkeypatch.setenv("TTS_FISH_SERVER_URL", "http://127.0.0.1:8080")
+    settings = Settings.from_env()
+    assert settings.fish_api_key == "shared-backend-key"
+
+
 @pytest.mark.parametrize("url", ["http://192.168.1.20:8080", "https://example.com", "http://127.0.0.1:8080/path"])
 def test_fish_engine_rejects_non_loopback_or_non_origin_url(monkeypatch, url):
     monkeypatch.setenv("TTS_FISH_ENABLED", "true")
@@ -240,3 +248,33 @@ def test_temporary_disk_budget_must_be_positive(monkeypatch, value):
 
 def test_default_temporary_disk_budget(settings):
     assert settings.max_temp_bytes == 256 * 1024 * 1024
+
+
+@pytest.mark.parametrize(
+    "command",
+    ['"python"', '[]', '["python"]', '["/runtime/python", ""]', '["/runtime/python", 3]'],
+)
+def test_managed_fish_requires_absolute_nonempty_argv(monkeypatch, command):
+    monkeypatch.setenv("TTS_FISH_WORKER_COMMAND", command)
+    with pytest.raises(ValidationError):
+        Settings.from_env()
+
+
+def test_opportunistic_fish_requires_managed_worker_and_native_capacity(monkeypatch):
+    monkeypatch.setenv("TTS_FISH_OPPORTUNISTIC", "true")
+    monkeypatch.setenv("TTS_FISH_ENABLED", "true")
+    monkeypatch.setenv("TTS_FISH_SERVER_URL", "http://127.0.0.1:8080")
+    monkeypatch.setenv("TTS_FISH_API_KEY", "synthetic-fish-key")
+    with pytest.raises(ValidationError, match="managed worker"):
+        Settings.from_env()
+    monkeypatch.setenv("TTS_FISH_WORKER_COMMAND", '["/runtime/launcher"]')
+    monkeypatch.setenv("TTS_MAX_CONCURRENT_SYNTHESIS", "1")
+    with pytest.raises(ValidationError, match="native capacity"):
+        Settings.from_env()
+
+
+def test_opportunistic_policy_allows_native_only_default_fallback(monkeypatch):
+    monkeypatch.setenv("TTS_FISH_OPPORTUNISTIC", "true")
+    monkeypatch.setenv("TTS_DEFAULT_BACKEND", "fish-speech")
+    monkeypatch.setenv("TTS_FISH_ENABLED", "false")
+    assert Settings.from_env().fish_opportunistic is True

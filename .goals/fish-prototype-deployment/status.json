@@ -1,0 +1,10 @@
+{
+  "goal_id": "fish-prototype-deployment",
+  "status": "building",
+  "iteration": 1,
+  "builder_model": "GPT:5.6-Luna",
+  "inspector_model": "GPT:5.6-Sol",
+  "initial_sha": "0ea0c854aae28bea3123aef9ab46ef94c7c9e6d6",
+  "created_at": "2026-11-17T11:26:42.7686744Z",
+  "history": []
+}

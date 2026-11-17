@@ -12,7 +12,10 @@ const json = (res, status, value) => {
   res.end(JSON.stringify(value));
 };
 const auth = (req, env) => {
-  const expected = env.TTS_OPERATOR_TOKEN;
+  // Configuration is privileged, but intentionally uses the same protected
+  // bearer credential as the upstream backend. This avoids a second operator
+  // secret while preserving an explicit authorization check.
+  const expected = env.TTS_API_KEY;
   return Boolean(expected && req.headers.authorization?.replace(/^Bearer\s+/i, "") === expected);
 };
 const body = async (req) => {

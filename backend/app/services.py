@@ -1,16 +1,18 @@
 from __future__ import annotations
 
+import logging
 import re
 import shutil
 import subprocess
 import tempfile
 import threading
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 from app.config import Settings
 from app.engines import EngineDescriptor, EngineRegistration, EngineRegistry
+from app.fish_process import FishProcess, FishResourceUnavailable
 from app.fish_speech import (
     FishSpeechAudioTooLarge,
     FishSpeechEngine,
@@ -32,6 +34,7 @@ _MAX_SPEECH_SEGMENTS = 100
 _PARAGRAPH_BREAK = re.compile(r"(?:\r\n|\r|\n)[ \t]*(?:(?:\r\n|\r|\n)[ \t]*)+")
 _SENTENCE_END = re.compile(r"[.!?]+(?:[\"'’”)\]]*)")
 _SENTENCE_CLOSERS = "\"'’”)]"
+logger = logging.getLogger(__name__)
 _ABBREVIATIONS = {
     "d.h",
     "dr",
@@ -167,6 +170,7 @@ class SpeechService:
         self.settings = settings
         self._permits = threading.BoundedSemaphore(settings.max_concurrent_synthesis)
         self.fish_speech = FishSpeechEngine(settings)
+        self.fish_process = FishProcess(settings, self.fish_speech)
         self.engine_registry = EngineRegistry(
             (
                 EngineRegistration(
@@ -201,6 +205,9 @@ class SpeechService:
     def release_permit(self) -> None:
         self._permits.release()
 
+    def close(self) -> None:
+        self.fish_process.close()
+
     def synthesize(
         self,
         text: str,
@@ -231,6 +238,10 @@ class SpeechService:
         voice: str | None = None,
     ) -> SynthesisResult:
         selected_backend = backend or self.settings.default_backend
+        if self.settings.fish_opportunistic and selected_backend in {"fish-speech", "vibevoice"}:
+            return self._synthesize_opportunistic(
+                text, language, speed, response_format, cancel_event, selected_backend, voice
+            )
         if selected_backend == "vibevoice":
             raise SynthesisUnavailable
         engine = self.engine_registry.resolve(selected_backend)
@@ -239,6 +250,50 @@ class SpeechService:
         return engine.synthesize(
             text, language, speed, response_format, cancel_event, voice
         )
+
+    def _synthesize_opportunistic(
+        self,
+        text: str,
+        language: str,
+        speed: float,
+        response_format: str,
+        cancel_event: threading.Event | None,
+        selected_backend: str,
+        voice: str | None,
+    ) -> SynthesisResult:
+        deadline = time.monotonic() + self.settings.request_timeout_seconds
+        if cancel_event is not None and cancel_event.is_set():
+            raise SynthesisFailure
+        reason = "fish_unavailable"
+        if selected_backend == "fish-speech" and self.settings.fish_enabled and language in {"de-DE", "en-US"}:
+            native_reserve = min(10, self.settings.request_timeout_seconds / 2)
+            fish_deadline = min(
+                deadline - native_reserve,
+                time.monotonic() + self.settings.fish_request_timeout_seconds,
+            )
+            try:
+                return self.fish_process.run(
+                    lambda: self._synthesize_fish(
+                        text, language, speed, response_format, cancel_event, voice,
+                        deadline=fish_deadline,
+                    ),
+                    deadline=fish_deadline,
+                    cancel_event=cancel_event,
+                )
+            except FishResourceUnavailable as exc:
+                reason = str(exc)
+            except SynthesisUnavailable:
+                reason = "fish_unavailable"
+            except SynthesisTimeout:
+                reason = "fish_timeout"
+        if cancel_event is not None and cancel_event.is_set():
+            raise SynthesisFailure
+        self._remaining(deadline)
+        logger.info("speech fallback actual_backend=macos-say locale=%s reason=%s", language, reason)
+        result = self._synthesize_macos(
+            text, language, speed, response_format, cancel_event, None, deadline=deadline
+        )
+        return replace(result, fallback=True, failure_reason=reason)
 
     def _synthesize_macos_engine(
         self,
@@ -286,8 +341,11 @@ class SpeechService:
         response_format: str,
         cancel_event: threading.Event | None,
         voice: str | None,
+        *,
+        deadline: float | None = None,
     ) -> SynthesisResult:
-        deadline = time.monotonic() + self.settings.request_timeout_seconds
+        if deadline is None:
+            deadline = time.monotonic() + self.settings.request_timeout_seconds
         try:
             wav_audio = self.fish_speech.synthesize_wav(
                 text,
@@ -404,9 +462,12 @@ class SpeechService:
         response_format: str,
         cancel_event: threading.Event | None = None,
         requested_voice: str | None = None,
+        *,
+        deadline: float | None = None,
     ) -> SynthesisResult:
         settings = self.settings
-        deadline = time.monotonic() + settings.request_timeout_seconds
+        if deadline is None:
+            deadline = time.monotonic() + settings.request_timeout_seconds
         segments = _speech_segments(text)
 
         try:

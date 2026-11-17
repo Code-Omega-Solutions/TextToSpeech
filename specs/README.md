@@ -48,6 +48,16 @@ review. Its remote deployment is planned in parallel and remains gated on host
 runtime prerequisites, a separately approved port, and service approval; the
 existing healthy service is not replaced.
 
+The [gated Fish backend enablement feature](007-fish-backend-enablement/spec.md)
+continues that work for private, noncommercial use with two consented bilingual
+speakers providing male and female German/English voice choices. Read-only
+capacity assessment and local headroom-first policy work are authorized. The
+backend now has an opt-in managed-worker/native-fallback policy, defaulting to a
+12 GiB reserve and 16 GiB monitored worker budget. Smaller Fish variants are
+screened before considering the conditional 8 GiB reserve. Exact runtime/artifact
+terms, speaker evidence, native qualification, installation and live enablement
+remain separate gates. The feature does not claim Fish is running or qualified.
+
 The [UI endpoint configuration feature](006-ui-endpoint-configuration/ui-endpoint-configuration.spec.md)
 proposes a configuration tab, capability-aware engine and voice controls, legacy
 speech compatibility, and documented file-backed container persistence. It is

@@ -22,8 +22,7 @@ export default defineConfig({
     reuseExistingServer: false,
     env: {
       TTS_UPSTREAM_URL: "http://127.0.0.1:9",
-      TTS_API_KEY: "synthetic-browser-backend-key",
-      TTS_OPERATOR_TOKEN: "synthetic-browser-operator-token",
+      TTS_API_KEY: "synthetic-browser-backend-token",
     },
   },
 });

@@ -84,7 +84,7 @@ def build_router(settings: Settings, speech_service: SpeechService) -> APIRouter
         status_code = 500
         try:
             _authenticate(authorization, settings)
-            if selected_backend == "vibevoice":
+            if selected_backend == "vibevoice" and not settings.fish_opportunistic:
                 raise HTTPException(
                     status_code=503, detail="Speech synthesis is unavailable."
                 )

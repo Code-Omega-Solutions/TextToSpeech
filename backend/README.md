@@ -148,9 +148,11 @@ those resources.
 
 The serving prototype defaults to `macos-say`. `fish-speech` is an optional
 separately managed engine and remains disabled unless an operator configures
-`TTS_FISH_ENABLED=true`, a loopback-only `TTS_FISH_SERVER_URL`, and a protected
-`TTS_FISH_API_KEY` or `TTS_FISH_API_KEY_FILE`. The Fish API key is distinct from
-the public speech API credential. `TTS_FISH_REQUEST_TIMEOUT_SECONDS` bounds
+`TTS_FISH_ENABLED=true` and a loopback-only `TTS_FISH_SERVER_URL`. Fish reuses
+the protected `TTS_API_KEY`/`TTS_API_KEY_FILE` bearer credential by default, so
+the prototype does not require a second user-managed secret. An explicit
+`TTS_FISH_API_KEY` or `TTS_FISH_API_KEY_FILE` remains available for a separately
+authorized internal deployment. `TTS_FISH_REQUEST_TIMEOUT_SECONDS` bounds
 upstream requests. Do not configure Fish to call an unreviewed remote host.
 
 The adapter sends bounded MessagePack requests to the configured Fish service
@@ -164,7 +166,7 @@ and permitted use have been reviewed. Private use does not waive these checks.
 engine identifiers, availability, supported English/German locales, and public
 voice identifiers; it never exposes credentials or private runtime paths. The
 repository speech interface discovers these choices through its same-origin
-server-side proxy. An unavailable engine returns 503 rather than silently
+server-side proxy. By default an unavailable engine returns 503 rather than silently
 substituting another engine. Legacy `model=vibevoice` requests also return 503;
 the serving application does not create or start the old VibeVoice worker.
 `/readyz` remains based on the macOS baseline and reports optional Fish status
@@ -174,6 +176,63 @@ backend or deployment authorization.
 The prototype has been designed for parallel deployment. Review a separate
 install plan and port before adding a service. Do not stop or reconfigure an
 existing healthy speech service as part of this prototype.
+
+### Opt-in headroom-first native fallback
+
+`TTS_FISH_OPPORTUNISTIC=true` changes valid neural selections to best effort.
+If Fish is disabled, busy, resource-denied, unavailable, or times out within
+its attempt budget, native `say` uses the resolved language and its configured
+default voice. The neural voice preference is ignored. This also applies to
+valid legacy `vibevoice` selections, without reviving that worker. Invalid
+input, authentication failures, cancellation and output-size errors still fail.
+Native failure is not disguised as success.
+
+Responses identify actual `X-Speech-Backend` and `X-Speech-Fallback`; safe reason
+codes are logged without speech text or private runtime details. Both attempts
+share the overall request deadline, with up to 10 seconds (half the total for
+short limits) reserved for native synthesis. This is not a guarantee of speech
+success if the native prerequisites or overall host capacity are unavailable.
+
+With Fish disabled the flag works without a model installation. With Fish
+enabled it additionally requires a reviewed `TTS_FISH_WORKER_COMMAND`: a JSON
+argv list whose executable is an absolute POSIX path. There is deliberately no
+bundled launcher. Do not put credentials in argv. A private operator launcher
+must use pre-reviewed local artifacts, the configured authenticated loopback
+MessagePack/WAV interface, and must not daemonize or move model processes out
+of its process group. An MLX OpenAI-compatible server is not automatically
+compatible. Do not point the managed policy at an independently running service:
+an already listening origin or uncertain connection probe denies worker launch.
+
+| Setting | Default | Meaning |
+| --- | --- | --- |
+| `TTS_FISH_OPPORTUNISTIC` | `false` | Explicit opt-in; strict behavior otherwise unchanged |
+| `TTS_FISH_WORKER_COMMAND` | unset | Operator-only local argv; no shell expansion |
+| `TTS_FISH_WORKER_PEAK_MEMORY_BYTES` | `17179869184` | 16 GiB monitored process-group RSS budget |
+| `TTS_FISH_MEMORY_RESERVE_BYTES` | `12884901888` | 12 GiB available-memory reserve while loaded |
+| `TTS_FISH_IDLE_TIMEOUT_SECONDS` | `30` | Unload idle worker |
+| `TTS_FISH_COOLDOWN_SECONDS` | `30` | Delay restart after unload/failure |
+
+Cold start requires reserve plus the whole worker budget. Only one neural
+attempt runs; at least two total synthesis permits are required so a waiting
+neural request cannot consume all native admission. The worker starts lazily at
+nice level 19 in a separately owned process session. The monitor polls every
+0.25 seconds between probes, including while loading and idle, and fails closed
+on unreadable measurements. It stops only the process group it created on
+pressure, cancellation, timeout, idle expiry or application shutdown. Unverified
+termination logs an error and disables neural restart. Discovery and readiness
+never launch the worker and native baseline readiness remains independent.
+
+These are sampled safety controls, not OS-enforced physical/GPU memory limits:
+macOS available memory uses free/inactive/speculative pages; summed process-group
+RSS can double-count shared pages and may omit Metal allocations. Probes have
+their own finite timeouts, so eviction is not instantaneous. Exact native
+unified-memory behavior, model footprint, load time and speech quality must be
+qualified before enablement. Offline model environment flags prevent supported
+libraries' automatic fetching, but a reviewed launcher must itself prohibit
+downloads; this is not network sandboxing.
+
+See [feature 007](../specs/007-fish-backend-enablement/plan.md) for the separation
+between implemented policy and pending model/reference/native deployment gates.
 
 ## Qualification and release gates
 

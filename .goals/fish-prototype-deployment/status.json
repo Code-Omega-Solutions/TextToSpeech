@@ -48,6 +48,12 @@
       "verdict": "FAIL",
       "summary": "Local fail-closed tests pass, but the authorized target still runs older unqualified configuration; artifact/reference binding, four Fish outputs, managed lifecycle, and deterministic startup remain incomplete.",
       "at": "2026-11-17T18:45:14.0857574+01:00"
+    },
+    {
+      "iteration": 8,
+      "verdict": "FAIL",
+      "summary": "Local gates, native fallback, managed recreation, rollback, privacy, and production preservation pass, but exact Fish approvals, four qualified outputs, live managed lifecycle, and deterministic stale-startup disablement remain incomplete.",
+      "at": "2026-11-17T19:58:35.9236503+01:00"
     }
   ]
 }

@@ -210,3 +210,89 @@ Fish and for the frontend's privileged endpoint configuration authorization;
 no separate Fish or operator token is required. This preserves an explicit
 bearer check and the exact upstream allowlist. It does not constitute a live
 deployment or native qualification.
+
+## Iteration 5 live prototype evidence
+
+**Recorded**: 2026-11-17. This section contains sanitized evidence from the
+designated Apple Silicon deployment target. It intentionally omits the host
+name, address, filesystem paths, bearer value, process inventories, and audio
+artifacts.
+
+Read-only discovery succeeded. The target is an Apple Silicon macOS host with
+the existing production backend on port 8000 and an isolated prototype backend
+on port 8001. Fish listens only on the prototype host's loopback port 8002.
+The production listener remained running throughout; it was not restarted,
+reconfigured, replaced, or terminated.
+
+### Pinned artifacts and terms
+
+The private prototype uses the following immutable public revisions:
+
+- Fish source: `7902e408c85b37193ce3f3c2361ca3c76be0d533`.
+- Fish model revision: `275a984d33c33659e39eed41ff5bcd6e67517f4c`.
+- Model SHA-256: `918dc960372cc1b77bbafb14c48ef7a1634ecf75d4eb85b78607223b780d6001`.
+- Codec SHA-256: `01b81dbf753224a156c3fe139b88bf0b9a0f54b11bee864f95e66511c3ccd754`.
+
+The pinned source license is Apache-2.0. The upstream source documentation
+states that model weights are CC BY-NC-SA 4.0. The model and codec remain
+private, non-redistributed prototype artifacts; this repository does not
+bundle them or make a redistribution claim. Codec release-term evidence is
+still not suitable for a public artifact decision, so T004 remains open even
+though the private deployment uses fixed hashes. No hosted inference or
+unreviewed voice download was used.
+
+### References and live outputs
+
+The deployed catalog exposes only two reviewed public reference IDs:
+`public-male-thorsten` (Thorsten-Voice's original TTS contribution, CC0
+dataset source) and `public-female-slr83` (OpenSLR SLR83 volunteer recording,
+CC BY-SA 4.0 source). They are private prototype screening references, not a
+claim that either speaker is bilingual or that cross-language identity is
+native. Cloning-consent and redistribution review remain open; T005 is not
+closed.
+
+Authenticated prototype requests returned HTTP 200 for all four combinations
+below. Each response was mono, 44.1 kHz PCM WAV, reported
+`X-Speech-Backend: fish-speech` and `X-Speech-Fallback: false`, and was
+validated as playable WAV:
+
+| Locale | Reference | Bytes | Audio | Elapsed |
+| --- | --- | ---: | ---: | ---: |
+| de-DE | public-male-thorsten | 397,356 | 4.50 s | 46.4 s |
+| de-DE | public-female-slr83 | 340,012 | 3.85 s | 40.0 s |
+| en-US | public-male-thorsten | 262,188 | 2.97 s | 31.8 s |
+| en-US | public-female-slr83 | 385,068 | 4.37 s | 45.4 s |
+
+These are synthetic checks only. No subjective listening acceptance was
+performed, so pronunciation, completeness, and identity quality remain
+pending. The prototype rejected an unauthenticated speech request with HTTP
+401. Production health, readiness, and authenticated speech were successful
+before and after the prototype rollout.
+
+The standalone browser UI was verified through a local loopback proxy against
+the two remote services because the target host has neither Docker nor Node.
+The browser displayed opaque `Production` and `Prototype` choices, discovered
+Fish and both references, submitted a German Fish request, and produced a
+playable audio blob. An unauthorised privileged configuration request returned
+HTTP 401. Browser text and resource URLs contained neither the backend origin
+nor credentials. The proxy now forwards the request content type required by
+FastAPI; its Windows standalone server also serves the root document correctly.
+
+### Lifecycle and rollback boundary
+
+The external loopback Fish worker is live, but it is not the repository's
+managed `FishProcess` worker. A prototype-only pause of that owned worker
+therefore produced the expected bounded HTTP 504 rather than a native fallback;
+the worker was resumed and the prototype returned to HTTP 200 readiness and
+Fish speech. Enabling opportunistic fallback is intentionally not claimed:
+the backend requires a reviewed local managed-worker argv before enabling that
+policy, and the external launcher does not provide one. No artificial memory
+pressure was generated, no shared process was terminated, and no native
+admission, idle unload, cooldown, cancellation, or RSS isolation claim is
+made. T010 remains open.
+
+Prototype launch-agent recreation and rollback were exercised only for the
+prototype service. After restoring its original external-worker policy,
+readiness and authenticated Fish speech returned HTTP 200. Production stayed
+untouched. These results establish deployment and rollback evidence, not
+completion of the remaining artifact, reference, or managed-lifecycle gates.

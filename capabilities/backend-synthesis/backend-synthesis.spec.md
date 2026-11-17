@@ -302,6 +302,18 @@ output, query strings, and private machine paths.
 - **WHEN** validation or synthesis fails for a request containing speech text, credentials, or a query string
 - **THEN** the response and correlated logs contain a request ID and safe diagnostics without those values, raw subprocess output, or private paths.
 
+### Iteration 5 private prototype evidence
+
+The designated Apple Silicon prototype has been deployed on a separate backend
+port using the existing backend bearer mechanism and a loopback Fish service.
+Four authenticated German/English male/female reference combinations returned
+playable WAV with truthful Fish backend metadata; the prototype rejected an
+unauthenticated request with 401. This is live deployment evidence, not a
+claim of subjective quality, bilingual identity, managed-worker lifecycle,
+native fallback, or hard unified-memory isolation. The exact artifact, public
+reference-consent, and managed-lifecycle gates remain tracked in feature 007's
+research and quickstart.
+
 ## Uncovered
 
 - Root reuse and attribution terms are defined separately in the

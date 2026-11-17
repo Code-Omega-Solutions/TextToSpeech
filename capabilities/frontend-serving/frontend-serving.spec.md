@@ -17,7 +17,8 @@ only its known speech-service endpoints.
 The frontend SHALL build with locked dependencies on the supported Node 24
 toolchain without requiring a backend connection. Development and preview bind
 to loopback port 5173 and fail on a port conflict. Builds preserve original
-gradient precision by disabling CSS minification.
+gradient precision by disabling CSS minification. The standalone runtime SHALL
+serve the root document on Windows and POSIX path implementations.
 
 #### Scenario: building without an upstream configuration
 
@@ -85,7 +86,8 @@ timeouts SHALL remain bounded at 10, 15, 15, and 75 seconds respectively.
 Health, readiness, and discovery require GET; speech generation requires POST.
 Unknown static/API paths return 404. The proxy replaces any client-provided
 upstream Authorization header with its configured credential and enforces a
-32 KiB speech-body limit while streaming.
+32 KiB speech-body limit while streaming. For POST requests it preserves the
+client Content-Type while still replacing client Authorization.
 
 #### Scenario: an unknown route or wrong speech method is received
 
@@ -98,6 +100,12 @@ upstream Authorization header with its configured credential and enforces a
 - **THEN** the proxy forwards it to `/v1/audio/engines`, replaces any supplied Authorization header, and bounds the read timeout.
 - **WHEN** a client uses another method for the discovery route
 - **THEN** the proxy denies the request without forwarding it.
+
+#### Scenario: a JSON speech request preserves its media type
+
+- **WHEN** a browser submits a JSON speech request through the standalone proxy
+- **THEN** the upstream receives `Content-Type: application/json`, the server
+  credential, and the unchanged bounded body.
 
 #### Scenario: a speech request exceeds the body limit
 

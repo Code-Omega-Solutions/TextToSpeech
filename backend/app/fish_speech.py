@@ -13,6 +13,12 @@ import msgpack
 from app.config import Settings
 
 
+FISH_REFERENCE_VOICES: dict[str, tuple[str, ...]] = {
+    "de-DE": ("public-male-thorsten", "public-female-slr83"),
+    "en-US": ("public-male-thorsten", "public-female-slr83"),
+}
+
+
 class FishSpeechError(RuntimeError):
     """The optional Fish Speech service cannot safely serve the request."""
 
@@ -42,8 +48,9 @@ class FishSpeechEngine:
             return False
         request = Request(
             f"{self.settings.fish_server_url}/v1/health",
+            data=b"",
             headers={"Authorization": f"Bearer {self.settings.fish_api_key}"},
-            method="GET",
+            method="POST",
         )
         try:
             timeout = min(3, self.settings.fish_request_timeout_seconds)

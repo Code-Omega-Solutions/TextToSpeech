@@ -14,6 +14,7 @@ from app.config import Settings
 from app.engines import EngineDescriptor, EngineRegistration, EngineRegistry
 from app.fish_process import FishProcess, FishResourceUnavailable
 from app.fish_speech import (
+    FISH_REFERENCE_VOICES,
     FishSpeechAudioTooLarge,
     FishSpeechEngine,
     FishSpeechError,
@@ -190,7 +191,7 @@ class SpeechService:
                 ),
                 EngineRegistration(
                     descriptor=EngineDescriptor(
-                        "fish-speech", ("de-DE", "en-US"), {}
+                        "fish-speech", ("de-DE", "en-US"), FISH_REFERENCE_VOICES
                     ),
                     enabled=lambda: settings.fish_enabled,
                     ready=self.fish_speech.is_available,

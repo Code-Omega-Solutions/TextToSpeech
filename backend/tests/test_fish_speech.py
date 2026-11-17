@@ -99,6 +99,10 @@ def test_availability_uses_authenticated_health_check(settings_factory, fish_fix
     engine = make_engine(settings_factory, fish_fixture.url)
 
     assert engine.is_available() is True
+    path, authorization, content_type, payload = fish_fixture.payloads[0]
+    assert path == "/v1/health"
+    assert authorization == "Bearer unit-test-fish-key"
+    assert payload == b""
 
 
 def test_synthesis_sends_bounded_messagepack_request_and_validates_wav(

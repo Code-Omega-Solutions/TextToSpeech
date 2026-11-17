@@ -102,7 +102,10 @@ export function createApiHandler(env = process.env) {
       const { target: selected } = targetFor(req);
       const target = new URL(selected.origin + url.pathname.replace(/^\/api/, "") + url.search);
       const headers = { Authorization: `Bearer ${readProxyCredential(env)}` };
-      if (payload) headers["Content-Length"] = String(payload.length);
+      if (payload) {
+        headers["Content-Length"] = String(payload.length);
+        if (req.headers["content-type"]) headers["Content-Type"] = req.headers["content-type"];
+      }
       const upstream = await fetch(target, { method, headers, body: payload, signal: AbortSignal.timeout(timeout), redirect: "manual" });
       res.writeHead(upstream.status, Object.fromEntries(upstream.headers));
       res.end(Buffer.from(await upstream.arrayBuffer()));

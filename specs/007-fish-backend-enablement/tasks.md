@@ -43,11 +43,14 @@ fallback, terminate only owned processes and preserve strict default behavior.
 - [x] T011 Update backend/README.md, capabilities/backend-synthesis/backend-synthesis.spec.md, capabilities/backend-synthesis/backend-synthesis.coverage.md, living-specs.yml and specs/README.md for the implemented opt-in policy and explicit deployment gates.
 - [x] T012 Run focused and directly affected regression checks from backend/tests/, inspect git diff for private data/unrelated edits, and record actual results in specs/007-fish-backend-enablement/quickstart.md without claiming native qualification.
 
-**Open gates**: T004 has no accepted exact model/codec artifact revision or
-native capacity evidence; the authoritative weight-host metadata fetch returned
-403. T005 has no approved two-speaker bilingual reference set. T006 depends on
-both and T010 additionally requires separate native rollout approval. Keep these
-four tasks open; the feature is not complete.
+**Open gates**: T004 now has fixed private prototype hashes, but codec release
+terms and public artifact acceptance remain open. T005 has provenance for the
+two public screening references but no approved bilingual identity or cloning
+consent. T006 has a live private MessagePack/WAV integration, but qualified
+reference approval remains open. T010 is blocked because the deployed external
+worker is not a reviewed managed `FishProcess` launcher and native fallback/
+resource measurements were not qualified. Keep these four tasks open; the
+feature is not complete.
 
 ## Dependencies and Execution Order
 

@@ -43,6 +43,7 @@ test("development serving preserves API paths, method restrictions and static 40
       path: request.url,
       method: request.method,
       authorization: request.headers.authorization,
+      contentType: request.headers["content-type"],
       body,
     });
     response.writeHead(200, { "Content-Type": "application/json" });
@@ -154,6 +155,7 @@ test("development serving preserves API paths, method restrictions and static 40
       body,
       authorization: `Bearer ${secret}`,
     });
+    assert.equal(requests.at(-1).contentType, "application/json");
     assert.equal((await fetch(`${url}/api/v1/audio/speech`)).status, 403);
     assert.equal(
       (await fetch(`${url}/api/healthz`, { method: "POST" })).status,

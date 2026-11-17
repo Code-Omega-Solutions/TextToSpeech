@@ -25,8 +25,9 @@ createServer(async (request, response) => {
   if (request.method !== "GET" && request.method !== "HEAD") {
     return response.writeHead(405, { Allow: "GET, HEAD" }).end();
   }
-  const pathname = normalize(new URL(request.url, "http://localhost").pathname);
-  const file = pathname === "/" ? join(root, "index.html") : join(root, pathname);
+  const requestPath = new URL(request.url, "http://localhost").pathname;
+  const pathname = requestPath === "/" ? "" : normalize(requestPath);
+  const file = requestPath === "/" ? join(root, "index.html") : join(root, pathname);
   if (!file.startsWith(root) || !existsSync(file) || !statSync(file).isFile()) return response.writeHead(404).end();
   const extension = file.slice(file.lastIndexOf("."));
   response.writeHead(200, {

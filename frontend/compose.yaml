@@ -13,7 +13,12 @@ services:
     secrets:
       - source: tts_api_key
         target: tts_api_key
+    volumes:
+      - tts_endpoint_config:/var/lib/private-speech-studio
 
 secrets:
   tts_api_key:
     file: ${TTS_API_KEY_FILE:?Set TTS_API_KEY_FILE to the protected backend credential file}
+
+volumes:
+  tts_endpoint_config:

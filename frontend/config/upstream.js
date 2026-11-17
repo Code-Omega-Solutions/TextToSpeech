@@ -1,14 +1,24 @@
 import {
   closeSync,
+  chmodSync,
+  existsSync,
   constants as fsConstants,
   fstatSync,
+  mkdirSync,
   openSync,
+  readFileSync,
   readSync,
+  renameSync,
+  writeFileSync,
 } from "node:fs";
+import { randomBytes } from "node:crypto";
+import { dirname } from "node:path";
 
 const originPattern =
   /^https?:\/\/([A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*|[0-9]{1,3}(\.[0-9]{1,3}){3})(:[0-9]{1,5})?$/;
 export const MAX_PROXY_BODY_BYTES = 32 * 1024;
+export const DEFAULT_ENDPOINT_CONFIG_FILE =
+  "/var/lib/private-speech-studio/endpoint.json";
 
 export function validateUpstream(value) {
   if (!value) {
@@ -22,6 +32,52 @@ export function validateUpstream(value) {
     );
   }
   return value;
+}
+
+export function endpointConfigPath(env = process.env) {
+  return env.TTS_ENDPOINT_CONFIG_FILE || DEFAULT_ENDPOINT_CONFIG_FILE;
+}
+
+export function loadConfiguredUpstream(env = process.env) {
+  const fallback = validateUpstream(env.TTS_UPSTREAM_URL);
+  const path = endpointConfigPath(env);
+  if (!existsSync(path)) return fallback;
+  let parsed;
+  try {
+    parsed = JSON.parse(readFileSync(path, "utf8"));
+  } catch {
+    throw new Error("The endpoint configuration file is corrupt or unreadable.");
+  }
+  if (!parsed || typeof parsed.origin !== "string") {
+    throw new Error("The endpoint configuration file is invalid.");
+  }
+  return validateUpstream(parsed.origin);
+}
+
+export function saveConfiguredUpstream(value, env = process.env) {
+  const origin = validateUpstream(value);
+  const path = endpointConfigPath(env);
+  const directory = dirname(path);
+  mkdirSync(directory, { recursive: true, mode: 0o700 });
+  const temporary = `${path}.${randomBytes(8).toString("hex")}.tmp`;
+  try {
+    writeFileSync(temporary, `${JSON.stringify({ origin })}\n`, {
+      encoding: "utf8",
+      mode: 0o600,
+    });
+    chmodSync(temporary, 0o600);
+    renameSync(temporary, path);
+  } catch (error) {
+    try {
+      if (existsSync(temporary)) renameSync(temporary, `${temporary}.failed`);
+    } catch {
+      // Preserve the original write failure.
+    }
+    throw new Error("The endpoint configuration could not be saved.", {
+      cause: error,
+    });
+  }
+  return origin;
 }
 
 export function readProxyCredential(env) {
@@ -76,7 +132,7 @@ export function readProxyCredential(env) {
   }
 }
 
-export function apiProxy(upstream, credential) {
+export function apiProxy(upstream, credential, env = process.env) {
   if (!credential || /[\r\n]/.test(credential)) {
     throw new Error("A server-side proxy credential is required.");
   }
@@ -89,6 +145,7 @@ export function apiProxy(upstream, credential) {
       `^/api${path}(?:\\?.*)?$`,
       {
         target: upstream,
+        router: () => loadConfiguredUpstream(env),
         rewrite: (requestPath) => requestPath.slice("/api".length),
         timeout,
         proxyTimeout: timeout,

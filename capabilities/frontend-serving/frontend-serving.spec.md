@@ -24,15 +24,20 @@ gradient precision by disabling CSS minification.
 - **WHEN** a contributor runs the production build with installed locked dependencies
 - **THEN** static output is generated without contacting a backend.
 
-### Upstream configuration is explicit and server-side
-<!-- touches: frontend/config/**, frontend/vite.config.js, frontend/docker/entrypoint.sh, frontend/.env.example, frontend/tests/config.test.js, frontend/tests/dev.test.js, frontend/tests/docker.test.js -->
+### Upstream configuration is explicit, durable and server-side
+<!-- touches: frontend/config/**, frontend/vite.config.js, frontend/docker/entrypoint.sh, frontend/.env.example, frontend/tests/config.test.js, frontend/tests/dev.test.js, frontend/tests/docker.test.js, frontend/README.md, frontend/compose.yaml -->
 
 Serving SHALL require `TTS_UPSTREAM_URL` as an HTTP(S) origin without credentials,
 path, query, fragment or trailing slash. Development and production serving
 SHALL load exactly one backend credential source on the server. Credential files
 SHALL be read-only and protected; conflicting sources SHALL prevent startup.
 The upstream URL, credential, and generated credential configuration SHALL not
-be injected into browser assets.
+be injected into browser assets. An authorized operator MAY save a replacement
+origin through the configuration tab. The serving instance SHALL store that
+origin at `/var/lib/private-speech-studio/endpoint.json` with restrictive
+permissions and atomically replace it. A valid saved origin SHALL take
+precedence over startup configuration and survive replacement when the
+documented volume is retained.
 
 #### Scenario: proxy credentials are missing or conflicting
 
@@ -48,6 +53,13 @@ be injected into browser assets.
 
 - **WHEN** the frontend is built or serves browser assets with an upstream URL and credential configured
 - **THEN** those assets contain neither the URL nor the credential or generated credential configuration.
+
+#### Scenario: a saved endpoint survives image replacement
+
+- **WHEN** the operator saves a valid origin and recreates the container with
+  the documented persistent volume
+- **THEN** a fresh browser session reports the saved origin without requiring
+  browser-local storage or an image rebuild.
 
 ### API forwarding is restricted to the known service routes
 <!-- touches: frontend/config/**, frontend/vite.config.js, frontend/docker/default.conf.template, frontend/tests/config.test.js, frontend/tests/dev.test.js, frontend/tests/docker.test.js -->

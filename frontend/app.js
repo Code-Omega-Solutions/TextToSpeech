@@ -15,10 +15,68 @@ const result = document.querySelector("#result");
 const audioPlayer = document.querySelector("#audio-player");
 const downloadLink = document.querySelector("#download");
 const serviceStatus = document.querySelector("#service-status");
+const speechTab = document.querySelector("#speech-tab");
+const configurationTab = document.querySelector("#configuration-tab");
+const speechPanel = document.querySelector("#speech-panel");
+const configurationPanel = document.querySelector("#configuration-panel");
+const endpointInput = document.querySelector("#endpoint-input");
+const activeEndpoint = document.querySelector("#active-endpoint");
+const endpointSave = document.querySelector("#endpoint-save");
+const configurationStatus = document.querySelector("#configuration-status");
 
 const supportedLanguages = new Set(["de-DE", "en-US", "en-GB"]);
 let availableEngines = [];
 let audioUrl;
+let endpointRevision = 0;
+let activeOrigin = "";
+
+function showTab(tab) {
+  const configuration = tab === "configuration";
+  speechTab.classList.toggle("active", !configuration);
+  configurationTab.classList.toggle("active", configuration);
+  speechPanel.hidden = configuration;
+  configurationPanel.hidden = !configuration;
+}
+
+speechTab.addEventListener("click", () => showTab("speech"));
+configurationTab.addEventListener("click", () => showTab("configuration"));
+
+async function loadConfiguration() {
+  const response = await fetch("/api/configuration", { cache: "no-store" });
+  if (!response.ok) throw new Error("The active endpoint could not be loaded.");
+  const data = await response.json();
+  activeOrigin = data.origin;
+  endpointInput.value = activeOrigin;
+  activeEndpoint.textContent = `Active endpoint: ${activeOrigin}`;
+}
+
+endpointSave.addEventListener("click", async () => {
+  configurationStatus.textContent = "";
+  endpointSave.disabled = true;
+  const revision = ++endpointRevision;
+  try {
+    const response = await fetch("/api/configuration", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ origin: endpointInput.value }),
+      cache: "no-store",
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.detail || "The endpoint was not saved.");
+    if (revision !== endpointRevision) return;
+    activeOrigin = data.origin;
+    endpointInput.value = activeOrigin;
+    activeEndpoint.textContent = `Active endpoint: ${activeOrigin}`;
+    configurationStatus.textContent = "Endpoint saved. Speech options refreshed.";
+    availableEngines = [];
+    clearAudio();
+    await Promise.all([checkService(), loadEngineCatalog()]);
+  } catch (error) {
+    configurationStatus.textContent = error.message;
+  } finally {
+    endpointSave.disabled = false;
+  }
+});
 
 function clearAudio() {
   audioPlayer.pause();
@@ -151,6 +209,8 @@ function renderVoices(engine, preferredVoice = voiceSelect.value) {
 }
 
 function renderEngines(preferredEngine = engineSelect.value) {
+  engineSelect.hidden = false;
+  voiceSelect.hidden = false;
   const language = languageSelect.value;
   const engines = availableEngines.filter(
     (engine) => !language || engine.languages.includes(language),
@@ -182,12 +242,22 @@ function renderEngines(preferredEngine = engineSelect.value) {
 }
 
 async function loadEngineCatalog() {
+  const revision = endpointRevision;
   try {
     const response = await fetch("/api/v1/audio/engines", {
       cache: "no-store",
     });
+    if (response.status === 404 || response.status === 501) {
+      availableEngines = [];
+      engineSelect.hidden = true;
+      voiceSelect.hidden = true;
+      generateButton.disabled = false;
+      discoveryStatus.textContent = "This service does not support discovery. Service defaults will be used.";
+      return;
+    }
     if (!response.ok) throw new Error("Catalog unavailable");
     availableEngines = normalizeCatalog(await response.json());
+    if (revision !== endpointRevision) return;
     if (availableEngines.length === 0) {
       renderEngines("");
       return;
@@ -199,6 +269,7 @@ async function loadEngineCatalog() {
           : availableEngines[0].id),
     );
   } catch {
+    if (revision !== endpointRevision) return;
     availableEngines = [];
     setOptions(engineSelect, [], "");
     setOptions(voiceSelect, [], "");
@@ -223,7 +294,7 @@ form.addEventListener("submit", async (event) => {
   const selectedEngine = availableEngines.find(
     (engine) => engine.id === engineSelect.value,
   );
-  if (!selectedEngine || generateButton.disabled) return;
+  if ((!selectedEngine && availableEngines.length > 0) || generateButton.disabled) return;
   statusMessage.textContent = "";
   clearAudio();
   generateButton.disabled = true;
@@ -233,8 +304,8 @@ form.addEventListener("submit", async (event) => {
     input: textInput.value,
     response_format: document.querySelector("#format").value,
     speed: Number(speedInput.value),
-    model: selectedEngine.id,
   };
+  if (selectedEngine) request.model = selectedEngine.id;
   const language = languageSelect.value;
   if (language) request.language = language;
   if (voiceSelect.value) request.voice = voiceSelect.value;
@@ -288,4 +359,7 @@ form.addEventListener("submit", async (event) => {
 });
 
 checkService();
+loadConfiguration().catch((error) => {
+  configurationStatus.textContent = error.message;
+});
 loadEngineCatalog();

@@ -1,0 +1,707 @@
+{
+  "workflow": "companion",
+  "specName": "UI Endpoint Configuration",
+  "branch": "main",
+  "currentStep": "implement",
+  "status": "completed",
+  "history": [
+    {
+      "step": "specify",
+      "substep": null,
+      "kind": "start",
+      "by": "extension",
+      "at": "2026-11-17T03:38:29.683Z"
+    },
+    {
+      "step": "specify",
+      "substep": null,
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-17T03:42:13.533Z"
+    },
+    {
+      "step": "plan",
+      "substep": null,
+      "kind": "start",
+      "by": "extension",
+      "at": "2026-11-17T03:47:01.034Z"
+    },
+    {
+      "step": "plan",
+      "substep": "research",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T03:47:43.354Z"
+    },
+    {
+      "step": "plan",
+      "substep": "design",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T03:47:44.302Z"
+    },
+    {
+      "step": "plan",
+      "substep": null,
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T03:47:47.610Z"
+    },
+    {
+      "step": "tasks",
+      "substep": null,
+      "kind": "start",
+      "by": "extension",
+      "at": "2026-11-17T03:48:20.400Z"
+    },
+    {
+      "step": "tasks",
+      "substep": "generate",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T03:48:46.515Z"
+    },
+    {
+      "step": "tasks",
+      "substep": null,
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T03:48:47.757Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "kind": "start",
+      "by": "extension",
+      "at": "2026-11-17T03:48:52.172Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T001",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T03:50:15.346Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T002",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T03:50:16.670Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T003",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T03:50:18.067Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T004",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T03:50:19.267Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T005",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T03:50:20.514Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T006",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T03:50:21.730Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T007",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T03:50:23.157Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T008",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T03:50:24.807Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T009",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T03:50:26.211Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T010",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T03:50:27.565Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T011",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T03:50:28.926Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T012",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T03:50:30.360Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T013",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T03:50:32.044Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T014",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T03:50:33.369Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T015",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T03:50:34.638Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T016",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T03:50:35.944Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T017",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T03:50:37.241Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T018",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T03:50:38.188Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T019",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T03:50:39.141Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T020",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T03:50:40.137Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T021",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T03:50:41.088Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T022",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T03:50:42.067Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T023",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T03:50:43.032Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T024",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T03:50:44.003Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-17T03:50:44.273Z"
+    }
+  ],
+  "telemetryInstanceId": "aa29ca0e-d3de-40e3-9f27-ba0265e39aed",
+  "selectedAt": "2026-11-17T03:38:29.683Z",
+  "coverage": {
+    "FR-001": {
+      "title": "The interface MUST provide a labeled, keyboard-operable configuration tab with an editable endpoint and a save action.",
+      "tasks": [
+        "T005",
+        "T010"
+      ]
+    },
+    "FR-002": {
+      "title": "The configuration tab MUST identify the active endpoint and distinguish unsaved edits from saved settings.",
+      "tasks": [
+        "T005",
+        "T010"
+      ]
+    },
+    "FR-003": {
+      "title": "The system MUST reject invalid endpoint values with a visible reason before changing active configuration.",
+      "tasks": [
+        "T003",
+        "T008",
+        "T010"
+      ]
+    },
+    "FR-004": {
+      "title": "A successful save MUST make subsequent connection, discovery, and speech requests use the saved endpoint without rebuilding the frontend image.",
+      "tasks": [
+        "T007",
+        "T011",
+        "T012"
+      ]
+    },
+    "FR-005": {
+      "title": "An endpoint change MUST discard previous capability selections and ignore late discovery responses belonging to the previous endpoint.",
+      "tasks": [
+        "T004",
+        "T012",
+        "T023"
+      ]
+    },
+    "FR-006": {
+      "title": "The system MUST display engine and voice selectors only for choices supported by the active service and applicable language.",
+      "tasks": [
+        "T016"
+      ]
+    },
+    "FR-007": {
+      "title": "A service explicitly lacking discovery MUST remain usable for speech with documented compatible defaults and without unsupported selectors.",
+      "tasks": [
+        "T014",
+        "T017"
+      ]
+    },
+    "FR-008": {
+      "title": "The interface MUST distinguish unsupported discovery from authentication, connectivity, malformed-response, and empty-catalog failures.",
+      "tasks": [
+        "T013",
+        "T015"
+      ]
+    },
+    "FR-009": {
+      "title": "Configuration-save failures MUST preserve the last successfully saved endpoint and report that the attempted change was not saved.",
+      "tasks": [
+        "T008",
+        "T010"
+      ]
+    },
+    "FR-010": {
+      "title": "The system MUST store the shared endpoint configuration in a container-side file that can be persisted independently of the image.",
+      "tasks": [
+        "T001",
+        "T003",
+        "T019"
+      ]
+    },
+    "FR-011": {
+      "title": "Saved configuration MUST survive browser reload, service restart, and container replacement when the documented persistent storage is retained.",
+      "tasks": [
+        "T018",
+        "T021"
+      ]
+    },
+    "FR-012": {
+      "title": "Deployment documentation MUST state the exact file path, mount target, permissions, initialization behavior, and precedence between saved and startup configuration, with a working synthetic Compose example.",
+      "tasks": [
+        "T019"
+      ]
+    },
+    "FR-013": {
+      "title": "The system MUST keep backend credentials server-side and prevent endpoint edits from forwarding them to an operator-unauthorized destination.",
+      "tasks": [
+        "T001",
+        "T007",
+        "T015"
+      ]
+    },
+    "FR-014": {
+      "title": "Configuration changes MUST be restricted to the authorized operator access boundary rather than granting arbitrary public clients control of shared routing.",
+      "tasks": [
+        "T007",
+        "T008"
+      ]
+    },
+    "FR-015": {
+      "title": "The feature MUST preserve existing text and audio privacy, request limits, language behavior, and playback/download behavior.",
+      "tasks": [
+        "T011",
+        "T014",
+        "T022"
+      ]
+    }
+  },
+  "size": "normal",
+  "classification": {
+    "projectedFiles": 10,
+    "projectedTasks": 10,
+    "scopeSignal": "none",
+    "verdict": "normal"
+  },
+  "concerns": [
+    {
+      "note": "Memory consultation attempted: memory-store is unavailable, no fallback plugin script was found in installed plugins, and repository memory reference files are absent. Memory import/export could not run.",
+      "step": "specify"
+    },
+    {
+      "note": "Living-spec recorder and resolver scripts are absent. Current capability files were read directly; deterministic livingSpecs.loaded capture was unavailable.",
+      "step": "specify"
+    },
+    {
+      "note": "Mandatory checks/run_companion_validation.sh could not start because uv is unavailable. Living-spec skip and review-dispatch helper flags are absent from the checked-in writer scripts, so loaded capability accounting remains explicit in this concern.",
+      "step": "implement"
+    }
+  ],
+  "expectations": [
+    "No engine installation, model enablement, voice cloning or production migration",
+    "No live deployment diagnosis or service changes"
+  ],
+  "context": [
+    "living spec: speech-generation, read as current-behavior context",
+    "living spec: frontend-serving, read as current-behavior context",
+    "living spec: project-licensing, preserve draft and release gates",
+    "area: frontend UI discovery identified app.js, index.html, styles.css and engine-discovery E2E tests; current discovery failure blocks generation",
+    "area: container discovery identified frontend compose, Dockerfile, entrypoint, proxy template, Docker tests and README; routing is startup environment-driven with no persistent settings mount",
+    "constraint: no private addresses, live access, deployment, secret exposure or model release-gate changes"
+  ],
+  "intent": "Configure the shared speech endpoint in the UI, expose only supported options, and persist settings across image updates.",
+  "workingBranch": "feat/ui-endpoint-configuration",
+  "planBlocks": [
+    "calls",
+    "code",
+    "states",
+    "screens"
+  ],
+  "planBlocksPicked": [
+    "calls",
+    "code",
+    "states",
+    "screens"
+  ],
+  "verified": [
+    {
+      "what": "plan blocks check out",
+      "command": "python3 .specify/extensions/companion/scripts/check_plan.py --feature-dir specs/006-ui-endpoint-configuration --strict",
+      "source": "derived",
+      "exitCode": 0,
+      "durationSeconds": 0.1,
+      "result": "  WARNING plan.md:53  `discovery` is not within 8 lines of `frontend/app.js:1` (symbol-not-near) ·   WARNING plan.md:54  `request` is not within 8 lines of `frontend/app.js:1` (symbol-not-near) ·   0 error(s), 7 warning(s)"
+    },
+    {
+      "what": "frontend unit",
+      "command": "npm --prefix frontend run test:unit",
+      "source": "derived",
+      "exitCode": 0,
+      "durationSeconds": 2.4,
+      "result": "â„¹ skipped 0 · â„¹ todo 0 · â„¹ duration_ms 1067.6871",
+      "commit": "e63512c",
+      "tree": "3303845a94cd06abae084623b5e205cdabc57442"
+    },
+    {
+      "what": "frontend build",
+      "command": "npm --prefix frontend run build",
+      "source": "derived",
+      "exitCode": 0,
+      "durationSeconds": 1.9,
+      "result": "dist/assets/index-CGVWAYLo.css  6.37 kB â”‚ gzip: 1.93 kB · dist/assets/index-Cgj-ETjh.js   7.29 kB â”‚ gzip: 2.70 kB · \u001b[32mâœ“ built in 74ms\u001b[39m",
+      "commit": "e63512c",
+      "tree": "08fd96394daf118d85518a40572f1de2d69a3de1"
+    },
+    {
+      "what": "focused unit after living-spec update",
+      "command": "npm --prefix frontend run test:unit",
+      "source": "derived",
+      "exitCode": 0,
+      "durationSeconds": 2.5,
+      "result": "â„¹ skipped 0 · â„¹ todo 0 · â„¹ duration_ms 1174.6485",
+      "commit": "e63512c",
+      "tree": "d3b2f7422734dcbc3d353eb526e57edd909e4209"
+    },
+    {
+      "what": "repository integrity",
+      "command": "python3 -m unittest discover -s checks/tests -v",
+      "source": "derived",
+      "exitCode": 0,
+      "durationSeconds": 1.1,
+      "result": "---------------------------------------------------------------------- · Ran 13 tests in 0.485s · OK",
+      "commit": "e63512c",
+      "tree": "0c3520f7d40fbc71f6b7448fb60c2602c7e6a066"
+    }
+  ],
+  "decisions": [
+    {
+      "decision": "Persist shared endpoint JSON with atomic replacement",
+      "why": "Survives image replacement while preserving complete writes",
+      "rejected": "Browser storage and environment-only configuration",
+      "by": "agent",
+      "at": "2026-11-17T03:47:45.237Z"
+    },
+    {
+      "decision": "Keep credentials server-side",
+      "why": "Preserves existing proxy authorization boundary",
+      "rejected": "Browser credentials and unrestricted forwarding",
+      "by": "agent",
+      "at": "2026-11-17T03:47:45.237Z"
+    },
+    {
+      "decision": "Model discovery failures explicitly",
+      "why": "Prevents outages being mislabeled as legacy compatibility",
+      "rejected": "Treating every failure as unsupported",
+      "by": "agent",
+      "at": "2026-11-17T03:47:45.237Z"
+    },
+    {
+      "decision": "Keep endpoint persistence in the existing frontend proxy boundary",
+      "why": "The browser already reaches only Vite/Nginx proxy routes and credentials remain server-side",
+      "rejected": "Moving credentials or routing into browser storage",
+      "by": "agent",
+      "at": "2026-11-17T03:52:14.606Z"
+    }
+  ],
+  "step_summaries": {
+    "plan": {
+      "summary": "Planned endpoint configuration, capability states, and durable persistence.",
+      "key_finding": "Existing proxy and backend defaults provide the safe integration points."
+    },
+    "tasks": {
+      "summary": "Created 24 dependency-ordered tasks across setup, foundation, three stories, and polish; validation is delegated to the owning hook."
+    },
+    "specify": {
+      "summary": "Implemented operator endpoint tab, durable proxy routing, legacy discovery handling, and documentation.",
+      "last_action": "Focused frontend unit, build, browser, and repository integrity checks passed; mandatory hook blocked by missing uv."
+    }
+  },
+  "approach": "Add operator-authorized server-side endpoint persistence, then scope frontend health, discovery, and speech state to the saved endpoint revision.",
+  "currentTask": null,
+  "task_summaries": {
+    "T001": {
+      "status": "DONE",
+      "did": "Defined endpoint path, startup fallback, and operator policy",
+      "files": [
+        "backend/app/config.py"
+      ]
+    },
+    "T002": {
+      "status": "DONE",
+      "did": "Added synthetic persistence and mount instructions",
+      "files": [
+        "frontend/README.md",
+        "frontend/compose.yaml"
+      ]
+    },
+    "T003": {
+      "status": "DONE",
+      "did": "Implemented validated endpoint persistence with atomic replacement",
+      "files": [
+        "frontend/config/upstream.js"
+      ]
+    },
+    "T004": {
+      "status": "DONE",
+      "did": "Added endpoint revision isolation for capability refresh",
+      "files": [
+        "frontend/app.js"
+      ]
+    },
+    "T005": {
+      "status": "DONE",
+      "did": "Added accessible configuration tab and status identifiers",
+      "files": [
+        "frontend/index.html"
+      ]
+    },
+    "T006": {
+      "status": "DONE",
+      "did": "Added responsive configuration styles",
+      "files": [
+        "frontend/styles.css"
+      ]
+    },
+    "T007": {
+      "status": "DONE",
+      "did": "Added authorized configuration GET and PUT boundary",
+      "files": [
+        "frontend/vite.config.js"
+      ]
+    },
+    "T008": {
+      "status": "DONE",
+      "did": "Covered endpoint validation and save error behavior",
+      "files": [
+        "frontend/config/upstream.js"
+      ]
+    },
+    "T009": {
+      "status": "DONE",
+      "did": "Covered active versus unsaved configuration UI",
+      "files": [
+        "frontend/app.js"
+      ]
+    },
+    "T010": {
+      "status": "DONE",
+      "did": "Implemented endpoint load, edit, save, and errors",
+      "files": [
+        "frontend/app.js"
+      ]
+    },
+    "T011": {
+      "status": "DONE",
+      "did": "Scoped health, discovery, and speech to saved endpoint",
+      "files": [
+        "frontend/config/upstream.js",
+        "frontend/app.js"
+      ]
+    },
+    "T012": {
+      "status": "DONE",
+      "did": "Integrated refresh and stale response cancellation",
+      "files": [
+        "frontend/app.js"
+      ]
+    },
+    "T013": {
+      "status": "DONE",
+      "did": "Distinguished discovery outcomes in UI",
+      "files": [
+        "frontend/app.js"
+      ]
+    },
+    "T014": {
+      "status": "DONE",
+      "did": "Preserved legacy speech defaults by omitting model and voice",
+      "files": [
+        "frontend/app.js"
+      ]
+    },
+    "T015": {
+      "status": "DONE",
+      "did": "Kept proxy credentials server-side",
+      "files": [
+        "frontend/config/upstream.js"
+      ]
+    },
+    "T016": {
+      "status": "DONE",
+      "did": "Rendered selectors only for supported options",
+      "files": [
+        "frontend/app.js"
+      ]
+    },
+    "T017": {
+      "status": "DONE",
+      "did": "Kept failed discovery distinct from legacy mode",
+      "files": [
+        "frontend/app.js"
+      ]
+    },
+    "T018": {
+      "status": "DONE",
+      "did": "Implemented durable configuration file behavior",
+      "files": [
+        "frontend/config/upstream.js"
+      ]
+    },
+    "T019": {
+      "status": "DONE",
+      "did": "Documented exact path, permissions, precedence, and Compose volume",
+      "files": [
+        "frontend/README.md",
+        "frontend/compose.yaml"
+      ]
+    },
+    "T020": {
+      "status": "DONE",
+      "did": "Recorded directly affected capability and index alignment",
+      "files": [
+        "specs/006-ui-endpoint-configuration"
+      ]
+    },
+    "T021": {
+      "status": "DONE",
+      "did": "Verified fresh-process persisted settings behavior",
+      "files": [
+        "frontend/config/upstream.js"
+      ]
+    },
+    "T022": {
+      "status": "DONE",
+      "did": "Preserved keyboard and playback behavior in the existing UI",
+      "files": [
+        "frontend/index.html",
+        "frontend/app.js"
+      ]
+    },
+    "T023": {
+      "status": "DONE",
+      "did": "Added endpoint revision guard for late responses",
+      "files": [
+        "frontend/app.js"
+      ]
+    },
+    "T024": {
+      "status": "DONE",
+      "did": "Deferred full validation to owning hook",
+      "files": [
+        "checks/run_companion_validation.sh"
+      ]
+    }
+  }
+}

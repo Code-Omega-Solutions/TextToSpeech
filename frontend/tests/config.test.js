@@ -1,9 +1,13 @@
 import assert from "node:assert/strict";
-import { chmod, unlink, writeFile } from "node:fs/promises";
+import { chmod, mkdtemp, rm, unlink, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { test } from "node:test";
 import {
   apiProxy,
+  loadConfiguredUpstream,
   readProxyCredential,
+  saveConfiguredUpstream,
   validateUpstream,
 } from "../config/upstream.js";
 
@@ -99,5 +103,28 @@ test("proxy credentials stay server-side and require one protected source", asyn
     }
   } finally {
     await unlink(path).catch(() => {});
+  }
+});
+
+test("endpoint configuration persists atomically and rejects unsafe origins", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "speech-endpoint-"));
+  const env = {
+    TTS_UPSTREAM_URL: "http://localhost:8000",
+    TTS_ENDPOINT_CONFIG_FILE: join(directory, "endpoint.json"),
+  };
+  try {
+    assert.equal(loadConfiguredUpstream(env), env.TTS_UPSTREAM_URL);
+    assert.equal(
+      saveConfiguredUpstream("https://speech.example", env),
+      "https://speech.example",
+    );
+    assert.equal(loadConfiguredUpstream(env), "https://speech.example");
+    assert.throws(
+      () => saveConfiguredUpstream("http://user:secret@service", env),
+      /must be an HTTP/,
+    );
+    assert.equal(loadConfiguredUpstream(env), "https://speech.example");
+  } finally {
+    await rm(directory, { recursive: true, force: true });
   }
 });

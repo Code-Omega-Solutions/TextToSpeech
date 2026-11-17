@@ -104,7 +104,9 @@ test("production container switches real services, isolates late work, and retai
     await page.goto(url);
     await page.getByRole("button", { name: "Configuration" }).click();
     await page.locator("#operator-token").fill("synthetic-operator-token");
-    await page.locator("#endpoint-input").fill(aOrigin);
+    await page.locator("#endpoint-input").focus();
+    await page.keyboard.press("Control+A");
+    await page.keyboard.type(aOrigin);
     await page.locator("#endpoint-input").press("Tab");
     await expect(page.locator("#endpoint-input")).toHaveValue(aOrigin);
     await page.getByRole("button", { name: "Speech" }).click();
@@ -113,7 +115,9 @@ test("production container switches real services, isolates late work, and retai
     await page.locator("#speech-text").fill("old speech");
     await page.getByRole("button", { name: "Generate speech" }).click();
     await page.getByRole("button", { name: "Configuration" }).click();
-    await page.locator("#endpoint-input").fill(bOrigin);
+    await page.locator("#endpoint-input").focus();
+    await page.keyboard.press("Control+A");
+    await page.keyboard.type(bOrigin);
     await expect(page.locator("#unsaved-endpoint")).toBeVisible();
     await expect(page.getByRole("button", { name: "Save endpoint" })).toBeEnabled();
     await page.getByRole("button", { name: "Save endpoint" }).focus();

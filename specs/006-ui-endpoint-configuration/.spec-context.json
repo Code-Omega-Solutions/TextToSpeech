@@ -738,6 +738,17 @@
           "docker": "npm --prefix frontend run test:docker: PASS (6 tests)",
           "build": "npm --prefix frontend run build: PASS"
         }
+      },
+      {
+        "at": "2026-11-17T08:00:00+01:00",
+        "iteration": 6,
+        "note": "Corrected the production endpoint edits to use focused keyboard select-all and typing, matching T009's keyboard evidence claim. Corrected the current lifecycle evidence to the mandatory hook's reproducible browser result.",
+        "verification": {
+          "hook": "C:\\Program Files\\Git\\bin\\bash.exe checks/run_companion_validation.sh: PASS; Playwright output: 2 skipped; 66 passed (35.1s); integrity output: Ran 13 tests in 0.400s, OK",
+          "production": "npm --prefix frontend run test:production: PASS; node:test output: tests 1, pass 1, fail 0, skipped 0, duration_ms 25580.9257",
+          "docker": "npm --prefix frontend run test:docker: PASS (6 tests)",
+          "build": "npm --prefix frontend run build: PASS"
+        }
       }
     ]
   }

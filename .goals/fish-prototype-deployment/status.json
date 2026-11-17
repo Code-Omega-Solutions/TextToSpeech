@@ -42,6 +42,12 @@
       "verdict": "FAIL",
       "summary": "Persistent UI, secure fallback, recreation, production preservation, and privacy pass, but artifact terms, consented Fish voices, live managed lifecycle qualification, and deterministic prototype startup remain incomplete.",
       "at": "2026-11-17T18:00:00+01:00"
+    },
+    {
+      "iteration": 7,
+      "verdict": "FAIL",
+      "summary": "Local fail-closed tests pass, but the authorized target still runs older unqualified configuration; artifact/reference binding, four Fish outputs, managed lifecycle, and deterministic startup remain incomplete.",
+      "at": "2026-11-17T18:45:14.0857574+01:00"
     }
   ]
 }

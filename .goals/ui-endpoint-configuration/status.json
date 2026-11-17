@@ -1,6 +1,6 @@
 {
   "goal_id": "ui-endpoint-configuration",
-  "status": "building",
+  "status": "inspecting",
   "iteration": 3,
   "builder_model": "GPT:5.6-Luna",
   "inspector_model": "GPT:5.6-Sol",
@@ -24,6 +24,12 @@
       "verdict": "FAIL",
       "summary": "Shipped image renders HTML as text; stale-response, feature-test, operator-boundary and Companion evidence gaps remain.",
       "at": "2026-11-17T05:45:00.000+01:00"
+    },
+    {
+      "iteration": 3,
+      "verdict": "FAIL",
+      "summary": "Late speech leaves generation stuck; production evidence and lifecycle claims still overstate committed assertions.",
+      "at": "2026-11-17T05:50:00.000+01:00"
     }
   ]
 }

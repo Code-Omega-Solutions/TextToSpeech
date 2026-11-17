@@ -66,6 +66,12 @@
       "verdict": "FAIL",
       "summary": "Authorized SSH, local gates, auth/privacy, stale quarantine, native UI, and production preservation pass, but the macOS zsh rollback trap is broken, the current launcher is undeployed, and artifact/reference/neural qualification remains open.",
       "at": "2026-11-17T21:44:49.0273988+01:00"
+    },
+    {
+      "iteration": 11,
+      "verdict": "FAIL",
+      "summary": "Portable zsh syntax, fake rollback tests, current launcher/UI hashes, auth/privacy, native fallback, and production preservation pass, but repeat live rollback fails on read-only restored plists; the runbook and deployment record are stale, Companion validation fails, and Fish artifact/reference/neural qualification remains open.",
+      "at": "2026-11-17T23:00:40.8846952+01:00"
     }
   ]
 }

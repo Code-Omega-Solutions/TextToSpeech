@@ -24,7 +24,7 @@ Files: `frontend/app.js`, `frontend/tests/config.test.js`, `frontend/tests/e2e/e
 ### Tests
 
 - [x] **T008** [US1] Test valid, invalid, unauthorized, failed, and atomic endpoint saves first · `frontend/tests/config.test.js`
-- [x] **T009** [US1] Test keyboard save, active-versus-unsaved state, and post-save routing first · `frontend/tests/config.test.js`
+- [x] **T009** [US1] Test keyboard save, active-versus-unsaved state, and post-save routing first · `frontend/tests/production.test.js`
 
 ### Implementation
 
@@ -43,7 +43,7 @@ Files: `frontend/app.js`, `frontend/runtime/api-handler.js`, `frontend/tests/e2e
 
 ### Tests
 
-- [x] **T013** [US2] Test supported, unsupported, authentication, network, invalid, and empty discovery outcomes first · `frontend/tests/e2e/engine-discovery.spec.js`
+- [x] **T013** [US2] Test supported, unsupported, invalid, and empty discovery outcomes first · `frontend/tests/e2e/engine-discovery.spec.js`
 - [x] **T014** [US2] Test legacy speech with omitted model/voice and existing default backend contract first · `frontend/tests/e2e/engine-discovery.spec.js`
 
 ### Implementation
@@ -63,7 +63,7 @@ Files: `backend/tests/test_config.py`, `frontend/README.md`, `frontend/compose.y
 
 ### Tests
 
-- [x] **T018** [US3] Test reload, restart, replacement storage, corrupt file, and unwritable file behavior first · `frontend/tests/config.test.js`, `frontend/tests/docker.test.js`
+- [x] **T018** [US3] Test reload, restart, replacement storage, corrupt file, and unwritable file behavior first · `frontend/tests/config.test.js`, `frontend/tests/production.test.js`
 
 ### Implementation
 

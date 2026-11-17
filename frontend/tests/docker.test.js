@@ -223,6 +223,11 @@ test(
             "nosniff",
           );
           assert.equal(response.headers.get("content-type"), "text/html; charset=utf-8");
+          const head = await fetch(url, { method: "HEAD" });
+          assert.equal(head.status, 200);
+          assert.equal(await head.text(), "");
+          const post = await fetch(url, { method: "POST", body: "unexpected" });
+          assert.equal(post.status, 405);
           assert.equal(response.headers.get("x-frame-options"), "DENY");
           assert.equal(response.headers.get("referrer-policy"), "no-referrer");
           assert.match(

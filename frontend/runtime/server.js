@@ -22,6 +22,9 @@ createServer(async (request, response) => {
   response.setHeader("Referrer-Policy", "no-referrer");
   response.setHeader("X-Frame-Options", "DENY");
   if (await api(request, response)) return;
+  if (request.method !== "GET" && request.method !== "HEAD") {
+    return response.writeHead(405, { Allow: "GET, HEAD" }).end();
+  }
   const pathname = normalize(new URL(request.url, "http://localhost").pathname);
   const file = pathname === "/" ? join(root, "index.html") : join(root, pathname);
   if (!file.startsWith(root) || !existsSync(file) || !statSync(file).isFile()) return response.writeHead(404).end();
@@ -29,5 +32,6 @@ createServer(async (request, response) => {
   response.writeHead(200, {
     "Content-Type": contentTypes[extension] || "application/octet-stream",
   });
+  if (request.method === "HEAD") return response.end();
   createReadStream(file).pipe(response);
 }).listen(Number(env.PORT || 8080), "0.0.0.0");

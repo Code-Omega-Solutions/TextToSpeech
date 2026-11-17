@@ -403,7 +403,6 @@ form.addEventListener("submit", async (event) => {
     serviceStatus.dataset.state = "offline";
     serviceStatus.lastChild.textContent = " SERVICE UNAVAILABLE";
   } finally {
-    if (speechRevision !== endpointRevision) return;
     generateButton.disabled = false;
     generateButton.firstElementChild.textContent = "Generate speech";
   }

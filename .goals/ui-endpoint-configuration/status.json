@@ -1,11 +1,18 @@
 {
   "goal_id": "ui-endpoint-configuration",
-  "status": "inspecting",
+  "status": "completed",
   "iteration": 7,
   "builder_model": "GPT:5.6-Luna",
   "inspector_model": "GPT:5.6-Sol",
   "initial_sha": "e63512c4023e0bc93986d7b127f3d1947bc52967",
   "created_at": "2026-11-17T03:44:30.630Z",
+  "delivery": {
+    "branch": "main",
+    "remote": "origin",
+    "merge_commit": "1d57be6318d7fbf3344b84382c961adc78ecfa4b",
+    "feature_pushed": true,
+    "remote_merge_verified": true
+  },
   "history": [
     {
       "iteration": 1,

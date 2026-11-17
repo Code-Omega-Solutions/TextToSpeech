@@ -1,6 +1,6 @@
 {
   "goal_id": "ui-endpoint-configuration",
-  "status": "building",
+  "status": "inspecting",
   "iteration": 4,
   "builder_model": "GPT:5.6-Luna",
   "inspector_model": "GPT:5.6-Sol",
@@ -30,6 +30,12 @@
       "verdict": "FAIL",
       "summary": "Late speech leaves generation stuck; production evidence and lifecycle claims still overstate committed assertions.",
       "at": "2026-11-17T05:50:00.000+01:00"
+    },
+    {
+      "iteration": 4,
+      "verdict": "FAIL",
+      "summary": "Production test fails; stale speech can unlock a newer request, and browser/lifecycle evidence still overstates coverage.",
+      "at": "2026-11-17T06:09:43.0745158+01:00"
     }
   ]
 }

@@ -54,6 +54,12 @@
       "verdict": "FAIL",
       "summary": "Local gates, native fallback, managed recreation, rollback, privacy, and production preservation pass, but exact Fish approvals, four qualified outputs, live managed lifecycle, and deterministic stale-startup disablement remain incomplete.",
       "at": "2026-11-17T19:58:35.9236503+01:00"
+    },
+    {
+      "iteration": 9,
+      "verdict": "FAIL",
+      "summary": "Stale-startup quarantine, local gates, secure native UI, privacy, and production preservation pass, but exact Fish approvals, four qualified outputs, live managed lifecycle, and deterministic recreation/rollback remain incomplete.",
+      "at": "2026-11-17T20:54:44.6334662+01:00"
     }
   ]
 }

@@ -38,6 +38,55 @@ authenticated before/after health and speech checks and was not restarted.
 The server-side proxy and Fish configuration reuse the protected backend bearer
 credential rather than requiring an additional operator or Fish secret.
 
+## Iteration 11 native deployment and rollback evidence
+
+The authorized Apple Silicon macOS target was reached with the existing strict,
+non-interactive SSH policy. No host-key trust, production launch agent,
+production plist, token file, or production process was changed. The stale
+prototype definition remains quarantined under a non-loadable name and
+disabled; no new startup definition was introduced.
+
+The current prototype-only deployment matched the checked-in SHA-256 values
+for the launcher, runbook, recreation helper, recreation test, and template:
+
+```text
+fish_worker_launcher.py       25df2f4489596853613e12f7518505fc1271f121af5db31b6251f06151f85b3e
+prototype-operations.md       9d1371c1e05e0ba2c51bf19d43f5a082efb394685b05f68aa30cef00fba7fb1c
+prototype-recreation.zsh      e562aaa397e31bea560bc84f927c63acf9543c6e29ed7500e9731aeef8a9cb42
+test_prototype_recreation.zsh a3ca799b113d4faeda59d9d4f2bd0f0b34a089af612c9663aa8c59857ad132ce
+prototype template            70981e28e355dc00937579c969f57f59a89594b6529a47b8f37ec3b71c02bb86
+```
+
+The generated private prototype plist was verified separately by hash
+(`1ab99657b2eac21bb94a8e807ff5fbfa871bd68645509fd91e2ff4c322f5d440`) without
+recording its private paths or credential value. Its live flags remained
+`TTS_FISH_ENABLED=false`, `TTS_FISH_ARTIFACTS_APPROVED=false`,
+`TTS_FISH_REFERENCES_APPROVED=false`, with no worker command.
+
+Native `zsh -n` passed for both scripts. The executable fake-launchctl test
+passed its success and forced-failure cases. The live helper then recreated
+only the prototype and UI labels. Baseline, post-recreation, and post-rollback
+production/prototype readiness returned HTTP 200. Authenticated WAV requests
+returned HTTP 200 from both services with `macos-say`, no fallback, a valid
+RIFF header, and 238,630-byte responses. The prototype rejected an
+unauthenticated speech request with HTTP 401. The protected verifier reported
+UI target discovery HTTP 200 with only opaque `Production` and `Prototype`
+choices, and unauthorized configuration returned HTTP 401.
+
+A live forced-failure verifier returned status 1; the protected prototype
+configuration hash was restored exactly and both prototype/UI services
+returned. Production readiness, authenticated WAV speech, and its launchd
+process identity remained unchanged. No production restart, replacement,
+credential readout, generated audio, or private target path was recorded.
+
+The deployed UI was opened in a browser. Selecting WAV and generating a
+synthetic sentence produced the visible `Ready to listen.` state and a
+downloadable audio blob. The expected legacy engine-discovery request returned
+404 and the UI reported that service defaults would be used; no credential or
+upstream origin appeared in the page data. The Fish artifact, codec, reference,
+and managed-neural qualification gates remain closed, so this evidence claims
+native fallback and deployment safety only, not Fish output or voice approval.
+
 ## Iteration 7 fail-closed deployment state
 
 The checked-in prototype launch template now keeps neural Fish disabled until

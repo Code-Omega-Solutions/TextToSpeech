@@ -196,6 +196,37 @@ These inputs block artifact installation, launcher/reference integration and
 native evaluation, not the model-independent policy in [plan.md](plan.md).
 The local design and task list deliberately leave those gated tasks open.
 
+## Iteration 11 research and native evidence
+
+The tagged Fish Speech v1.5.0 README and inference guide were re-reviewed from
+their public GitHub sources. They state that the source is Apache-licensed,
+model weights are CC BY-NC-SA 4.0, inference uses a separate Firefly decoder
+checkpoint, and reference audio is paired with reference text. The guide's
+workflow and the README's 10–30-second voice-sample guidance do not establish
+speaker consent, bilingual identity, or a release decision for any local
+recording. The authoritative exact model metadata remains unavailable from
+this environment; no access restriction was bypassed and no weight was
+downloaded.
+
+FFmpeg's official legal page was re-reviewed. It distinguishes the default
+LGPL terms from optional GPL/non-free components and lists source/build and
+distribution obligations for redistribution. This is general codec guidance,
+not an approval of the private target binary or a substitute for an immutable
+codec revision and terms record. OpenSLR SLR83 was also re-reviewed: it
+documents volunteer English dialect recordings, WAV/transcript data, and
+Attribution-ShareAlike 4.0 terms. That provenance and dataset license still do
+not establish cloning consent, bilingual identity, or the exact four
+Fish-consumed pairs required by this feature. No reference manifest, voice ID,
+or Fish output was created or advertised.
+
+The authorized target was checked using the current prototype-only launcher,
+native-only plist, and bounded zsh helper. Exact checked-in hashes and the
+generated private plist hash are recorded in the iteration-11 quickstart, not
+as artifact approval. The managed flags remain fail-closed and the worker
+command remains absent. Native authenticated WAV fallback, browser playback,
+protected-copy rollback, and production preservation passed; exact
+artifact/codec/reference and managed-neural gates remain open.
+
 ## Iteration 10 fail-closed hardening evidence
 
 The managed launcher now rejects any source checkout with tracked, untracked,

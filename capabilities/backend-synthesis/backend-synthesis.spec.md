@@ -221,7 +221,7 @@ identify the engine that generated it and any explicitly configured fallback.
 - **THEN** the service returns the requested audio format with the configured rate and preserved sentence and paragraph pauses.
 
 ### Optional neural synthesis yields to native speech and host headroom
-<!-- touches: backend/app/config.py, backend/app/fish_process.py, backend/app/memory.py, backend/app/fish_speech.py, backend/app/services.py, backend/app/routers.py, backend/app/main.py, backend/deployment/fish_worker_launcher.py, backend/deployment/prototype-operations.md, backend/tests/test_fish_process.py, backend/tests/test_config.py, backend/tests/test_engines.py, backend/tests/test_api.py -->
+<!-- touches: backend/app/config.py, backend/app/fish_process.py, backend/app/memory.py, backend/app/fish_speech.py, backend/app/services.py, backend/app/routers.py, backend/app/main.py, backend/deployment/fish_worker_launcher.py, backend/deployment/prototype-operations.md, backend/deployment/prototype-recreation.zsh, backend/deployment/test_prototype_recreation.zsh, backend/tests/test_fish_process.py, backend/tests/test_config.py, backend/tests/test_engines.py, backend/tests/test_api.py, backend/tests/test_fish_deployment_template.py -->
 
 `TTS_FISH_OPPORTUNISTIC=true` SHALL explicitly opt in to language-preserving
 native fallback for valid neural selections, including retired `vibevoice`,

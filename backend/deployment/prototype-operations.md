@@ -123,66 +123,42 @@ stop. Do not use a broad `kill`, process-name termination, or wildcard
 
 ## Deterministic prototype/UI recreation
 
-Set the following to the two repository-managed definitions after preflight.
-They must not be the production definition.
+Use the checked-in executable
+`backend/deployment/prototype-recreation.zsh` as the exact bounded sequence.
+It accepts only the two managed prototype labels and regular, non-symlink
+plist files. Set the values below after preflight; never replace the labels
+with production or a wildcard:
 
 ```sh
-BACKEND_LABEL="<MANAGED_PROTOTYPE_LABEL>"
-UI_LABEL="<MANAGED_UI_LABEL>"
-BACKEND_PLIST="<BACKEND_PLIST>"
-UI_PLIST="<UI_PLIST>"
-
-assert_regular_file "$BACKEND_PLIST"
-assert_regular_file "$UI_PLIST"
-PROTECTED_DIR="$(mktemp -d "${TMPDIR:-/tmp}/tts-prototype-rollback.XXXXXX")"
-cp -p "$BACKEND_PLIST" "$PROTECTED_DIR/backend.plist"
-cp -p "$UI_PLIST" "$PROTECTED_DIR/ui.plist"
-chmod u-w,g-w,o-w "$PROTECTED_DIR/backend.plist" "$PROTECTED_DIR/ui.plist"
-
-rollback() {
-  set +e
-  bootout_if_loaded "$BACKEND_LABEL" || return 1
-  bootout_if_loaded "$UI_LABEL" || return 1
-  cp -p "$PROTECTED_DIR/backend.plist" "$BACKEND_PLIST" || return 1
-  cp -p "$PROTECTED_DIR/ui.plist" "$UI_PLIST" || return 1
-  launchctl bootstrap "$DOMAIN" "$BACKEND_PLIST" || return 1
-  launchctl bootstrap "$DOMAIN" "$UI_PLIST" || return 1
-  wait_present "$BACKEND_LABEL" || return 1
-  wait_present "$UI_LABEL" || return 1
-  launchctl kickstart -k "$DOMAIN/$BACKEND_LABEL" || return 1
-  launchctl kickstart -k "$DOMAIN/$UI_LABEL" || return 1
-}
-
-rollback_required=1
-trap '
-  status=$?
-  if [ "$rollback_required" -eq 1 ]; then
-    rollback || status=1
-  fi
-  rm -rf "$PROTECTED_DIR"
-  exit "$status"
-' EXIT
-
-bootout_if_loaded "$BACKEND_LABEL"
-bootout_if_loaded "$UI_LABEL"
-launchctl bootstrap "$DOMAIN" "$BACKEND_PLIST"
-launchctl bootstrap "$DOMAIN" "$UI_PLIST"
-wait_present "$BACKEND_LABEL"
-wait_present "$UI_LABEL"
-launchctl kickstart -k "$DOMAIN/$BACKEND_LABEL"
-launchctl kickstart -k "$DOMAIN/$UI_LABEL"
+export BACKEND_LABEL="<MANAGED_PROTOTYPE_LABEL>"
+export UI_LABEL="<MANAGED_UI_LABEL>"
+export BACKEND_PLIST="<BACKEND_PLIST>"
+export UI_PLIST="<UI_PLIST>"
+zsh backend/deployment/prototype-recreation.zsh
 ```
 
-Run the approved bounded checks now: prototype readiness and authenticated
-native fallback, UI root and opaque target selection, unauthorized
-configuration rejection, and production health plus authenticated speech.
-Record only sanitized status and HTTP outcomes. A failed check must leave
-`rollback_required=1` and exit, which invokes the protected-copy rollback
-above. On successful checks, set `rollback_required=0` and let the shell exit:
+The helper captures owner-protected copies before booting out either managed
+label, waits for exact-label absence before each bootstrap, waits for both
+labels to return, and kickstarts only those labels. If `VERIFY_SCRIPT` is set
+to an executable regular file, it runs after both services return; any
+nonzero result leaves `rollback_required=1`, invokes protected-copy rollback,
+and preserves the original failure status. The `EXIT` trap uses the portable
+`exit_code` variable rather than zsh's read-only `status` parameter. On
+successful checks, the helper sets `rollback_required=0` and keeps the
+recreated prototype/UI configuration.
 
-```sh
-rollback_required=0
-```
+Run the approved bounded checks through a private, uncommitted executable
+`VERIFY_SCRIPT`: prototype readiness and authenticated native fallback, an
+explicit `response_format=wav` request with a RIFF/container check, UI root and
+opaque target selection, unauthorized configuration rejection, and production
+health plus authenticated speech. Record only sanitized status and HTTP
+outcomes. Never put credentials, target identities, paths, or generated audio
+in that verifier or this repository.
+
+The checked-in `test_prototype_recreation.zsh` runs both success and forced
+failure paths against fake launchctl state without touching launchd or
+production. Run it with `zsh backend/deployment/test_prototype_recreation.zsh`
+on a host with zsh before using the operational helper.
 
 Do not replace the native-only template with Fish settings unless the exact
 artifact terms and four-way consented references have independently been
@@ -191,11 +167,11 @@ output.
 
 ## Rollback
 
-The `EXIT` trap is the protected rollback path. It boots out only the two
-managed prototype labels, waits for both exact labels to disappear, restores
-the protected copies, bootstraps them again, waits for both labels to appear,
-and kickstarts only those labels. A wait timeout or restore/bootstrap failure
-returns nonzero and stops; production remains untouched throughout. If the
-shell is interrupted before the trap runs, repeat the same `bootout_if_loaded`,
-bounded wait, restore, bootstrap, and `wait_present` steps manually before
-doing any other operation.
+The helper's `EXIT` trap is the protected rollback path. It boots out only the
+two managed prototype labels, waits for both exact labels to disappear,
+restores the protected copies, bootstraps them again, waits for both labels to
+appear, and kickstarts only those labels. A wait timeout or
+restore/bootstrap failure returns nonzero and stops; production remains
+untouched throughout. If the shell is interrupted before the trap runs,
+repeat the same `bootout_if_loaded`, bounded wait, restore, bootstrap, and
+`wait_present` steps manually before doing any other operation.

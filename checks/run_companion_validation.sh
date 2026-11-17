@@ -30,3 +30,11 @@ TTS_API_KEY=validation-only-placeholder \
   npm --prefix frontend test
 
 python3 -m unittest discover -s checks/tests -v
+
+if command -v zsh >/dev/null 2>&1; then
+  zsh backend/deployment/test_prototype_recreation.zsh
+else
+  printf '%s\n' \
+    "native zsh recreation tests unavailable in this environment; run them on the authorized macOS target" \
+    >&2
+fi

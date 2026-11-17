@@ -1,4 +1,5 @@
 import plistlib
+import stat
 from pathlib import Path
 
 
@@ -31,8 +32,32 @@ def test_prototype_operations_quarantines_stale_startup_and_waits_boundedly():
     assert 'WAIT_SECONDS=0.25' in runbook
     assert "bootout_if_loaded" in runbook
     assert "wait_present" in runbook
-    assert 'PROTECTED_DIR="$(mktemp -d' in runbook
-    assert 'cp -p "$PROTECTED_DIR/backend.plist" "$BACKEND_PLIST"' in runbook
+    assert "prototype-recreation.zsh" in runbook
+    assert "VERIFY_SCRIPT" in runbook
     assert "rollback_required=1" in runbook
-    assert "trap '" in runbook
+    assert "exit_code" in runbook
     assert "Never continue after a wait timeout" in runbook
+
+
+def test_prototype_recreation_helper_has_portable_exit_trap_and_tests():
+    deployment = Path(__file__).parents[1] / "deployment"
+    helper = (deployment / "prototype-recreation.zsh").read_text(encoding="utf-8")
+    test = deployment / "test_prototype_recreation.zsh"
+    test_text = test.read_text(encoding="utf-8")
+
+    assert "exit_code=$?" in helper
+    assert 'exit "$exit_code"' in helper
+    assert "status=$?" not in helper
+    assert test_text.startswith("#!/bin/zsh")
+    assert "run_case success 0" in test_text
+    assert "run_case forced-failure 1" in test_text
+    assert test.stat().st_mode & stat.S_IXUSR
+
+
+def test_companion_validation_hook_runs_native_recreation_tests_when_available():
+    hook = (
+        Path(__file__).parents[2] / "checks" / "run_companion_validation.sh"
+    ).read_text(encoding="utf-8")
+
+    assert "command -v zsh" in hook
+    assert "zsh backend/deployment/test_prototype_recreation.zsh" in hook

@@ -47,6 +47,8 @@ capabilities:
         "backend/deployment/fish_worker_launcher.py",
         "backend/deployment/*.plist",
         "backend/deployment/prototype-operations.md",
+        "backend/deployment/prototype-recreation.zsh",
+        "backend/deployment/test_prototype_recreation.zsh",
         "backend/app/memory.py",
         "backend/app/language.py",
         "backend/app/main.py",

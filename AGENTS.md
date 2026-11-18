@@ -81,6 +81,20 @@ graphTB
 - Ensure LICENSE and NOTICE files remain unchanged (do NOT modify)
 - Validate against project licensing requirements in `/project-licensing.spec.md`
 
+### Troubleshooting and Deployment Blockers
+
+When a task is blocked by an unexpected error, unreachable host, missing
+deployment asset, or unclear prior decision, consult the general memory bank
+as well as the relevant project and host memory banks before concluding that
+information or access is unavailable.
+Search existing notes for the affected component, target, and recent operation;
+use `BASIC_MEMORY.md` to identify the configured memory scopes. Treat memory as
+context, not proof of current host state or authorization: verify important
+facts with read-only checks, preserve approval gates, and never infer permission
+to change a running service from a memory note. If a memory bank is unavailable
+or uninitialized, report that limitation and continue only with independently
+verified evidence.
+
 ---
 
 ## 🎯 Memory-Based Decision Making Across Monorepo Layers

@@ -6,6 +6,22 @@ below are one bounded, idempotent sequence: an already-unloaded label is not
 treated as an error, and no bootstrap is attempted until `launchctl print`
 confirms that the exact label is absent.
 
+## Capture fallback diagnostics
+
+For the serving launchd backend running `python -m app.main`, set
+`StandardOutPath` and `StandardErrorPath` in its plist to distinct files in an
+operator-owned `0700` directory. Precreate the files with mode `0600`. Back up
+the original plist privately and validate the edited plist before unloading and
+bootstrapping only the serving label. Preserve its environment and arguments.
+
+The application writes INFO request diagnostics to stderr. On successful
+fallback, match the response's `X-Request-ID` to the `speech request` line to
+see the requested engine, actual engine, and the same safe reason as
+`X-Speech-Fallback-Reason`. Check that a read-only health request appears in
+the log before relying on it. Protect and rotate the log files under the
+host's operator retention policy. To undo the change, restore the original
+plist and reload only that label.
+
 ## Safety preflight and bounded helpers
 
 Run the following in one POSIX shell with `set -eu`. Do not replace the exact

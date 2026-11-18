@@ -17,6 +17,7 @@ from app.services import SpeechService
 
 _MAX_REQUEST_BODY_BYTES = 32 * 1024
 _SAFE_HTTP_PATHS = {"/healthz", "/readyz", "/v1/audio/speech"}
+logger = logging.getLogger("app.main")
 
 
 class RequestBoundaryMiddleware:
@@ -114,7 +115,7 @@ class RequestBoundaryMiddleware:
             else:
                 await self.app(scope, receive, send_with_request_id)
         finally:
-            logging.getLogger(__name__).info(
+            logger.info(
                 "http request request_id=%s method=%s path=%s duration_ms=%d status=%d",
                 request_id,
                 scope.get("method", "UNKNOWN"),
@@ -164,4 +165,8 @@ app = create_app()
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host=app.state.settings.host, port=app.state.settings.port)
+    logging.basicConfig(format="%(asctime)s %(levelname)s %(name)s %(message)s")
+    logging.getLogger("app").setLevel(logging.INFO)
+    uvicorn.run(
+        app, host=app.state.settings.host, port=app.state.settings.port, access_log=False
+    )

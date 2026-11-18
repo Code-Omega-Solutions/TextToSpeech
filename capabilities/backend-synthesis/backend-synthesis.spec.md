@@ -221,7 +221,7 @@ identify the engine that generated it and any explicitly configured fallback.
 - **THEN** the service returns the requested audio format with the configured rate and preserved sentence and paragraph pauses.
 
 ### Optional neural synthesis yields to native speech and host headroom
-<!-- touches: backend/app/config.py, backend/app/fish_process.py, backend/app/memory.py, backend/app/fish_speech.py, backend/app/services.py, backend/app/routers.py, backend/app/main.py, backend/deployment/fish_worker_launcher.py, backend/deployment/prototype-operations.md, backend/deployment/prototype-recreation.zsh, backend/deployment/test_prototype_recreation.zsh, backend/tests/test_fish_process.py, backend/tests/test_config.py, backend/tests/test_engines.py, backend/tests/test_api.py, backend/tests/test_fish_deployment_template.py -->
+<!-- touches: backend/app/config.py, backend/app/fish_process.py, backend/app/memory.py, backend/app/fish_speech.py, backend/app/services.py, backend/app/routers.py, backend/app/main.py, backend/deployment/fish_worker_launcher.py, backend/deployment/prototype-operations.md, backend/deployment/prototype-recreation.zsh, backend/deployment/test_prototype_recreation.zsh, backend/tests/test_fish_process.py, backend/tests/test_config.py, backend/tests/test_engines.py, backend/tests/test_api.py, backend/tests/test_fish_deployment_template.py, backend/tests/test_speech_contract.py -->
 
 `TTS_FISH_OPPORTUNISTIC=true` SHALL explicitly opt in to language-preserving
 native fallback for valid neural selections, including retired `vibevoice`,
@@ -230,8 +230,10 @@ times out within its neural budget. Unknown models and invalid/unauthenticated
 requests SHALL remain rejected. Explicit native requests SHALL not start Fish.
 Fallback SHALL ignore neural voice preference, use the resolved locale's native
 default, preserve format/speed/output bounds and the original overall deadline,
-and report actual-engine/fallback metadata with a safe reason code. Cancellation,
-oversized output and native failures SHALL not become success-shaped fallbacks.
+and report `X-Speech-Backend`, `X-Speech-Fallback` and an allowlisted
+`X-Speech-Fallback-Reason` (or `unknown`). Non-fallback responses omit the reason
+header. Cancellation, oversized output and native failures SHALL not become
+success-shaped fallbacks.
 
 An enabled managed Fish service SHALL require a private, reviewed local argv
 launcher and at least two overall request permits. Its launcher SHALL require
@@ -327,11 +329,13 @@ readiness SHALL NOT construct or probe a VibeVoice worker.
 - **THEN** `/readyz` returns 503 while `/healthz` remains an independent liveness check.
 
 ### Errors and logs avoid speech text and credentials
-<!-- touches: backend/app/main.py, backend/app/routers.py, backend/tests/test_api.py -->
+<!-- touches: backend/app/main.py, backend/app/routers.py, backend/tests/test_api.py, backend/tests/test_speech_contract.py -->
 
 The service SHALL return safe validation and synthesis errors, identify the
 actual backend in successful response metadata, assign request IDs, and log
-backend, locale, response format, duration, and safe failure reason. Responses and logs SHALL exclude
+requested and actual backend, fallback status, locale, response format, duration,
+and safe failure reason. The standalone entry point emits these request
+diagnostics at INFO. Responses and logs SHALL exclude
 submitted speech text, bearer credentials, raw request bodies, raw subprocess
 output, query strings, and private machine paths.
 

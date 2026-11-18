@@ -244,6 +244,9 @@ for (const [language, format, speed] of [
     );
     await expect(page.locator("#download")).toHaveAttribute("href", /^blob:/);
     await expect(page.locator("#status")).toBeEmpty();
+    await expect(page.locator("#speech-engine-disclosure")).toHaveText(
+      "Actual engine: not reported. Fallback status not reported.",
+    );
     await expect(
       page.getByRole("button", { name: "Generate speech" }),
     ).toBeEnabled();
@@ -308,7 +311,17 @@ test("revokes old audio when regenerating, clearing and pasting", async ({
 test("reports blocked autoplay while keeping audio downloadable", async ({
   page,
 }) => {
-  await mockAudio(page);
+  await page.route(`**${speechPath}`, (route) =>
+    route.fulfill({
+      contentType: "audio/wav",
+      body: audio,
+      headers: {
+        "X-Speech-Backend": "macos-say",
+        "X-Speech-Fallback": "true",
+        "X-Speech-Fallback-Reason": "fish_worker_exited",
+      },
+    }),
+  );
   await open(page);
   await page.evaluate(() => {
     HTMLMediaElement.prototype.play = async function () {
@@ -320,9 +333,27 @@ test("reports blocked autoplay while keeping audio downloadable", async ({
     "Audio is ready, but your browser blocked automatic playback. Select play to listen.",
   );
   await expect(page.locator("#result")).toBeVisible();
+  await expect(page.locator("#speech-engine-disclosure")).toHaveText(
+    "Actual engine: macos-say. Fallback used (fish_worker_exited).",
+  );
   await expect(page.locator("#service-status")).toHaveAttribute(
     "data-state",
     "online",
+  );
+});
+
+test("discloses a successful engine without fallback", async ({ page }) => {
+  await page.route(`**${speechPath}`, (route) =>
+    route.fulfill({
+      contentType: "audio/wav",
+      body: audio,
+      headers: { "X-Speech-Backend": "fish-speech", "X-Speech-Fallback": "false" },
+    }),
+  );
+  await open(page);
+  await generate(page);
+  await expect(page.locator("#speech-engine-disclosure")).toHaveText(
+    "Actual engine: fish-speech. No fallback.",
   );
 });
 

@@ -29,7 +29,7 @@
 
 **Independent test**: Exercise explicit dispatch, transport, preload and failure with unchanged native fallback.
 
-- [ ] T009 [US2] Add candidate dispatch, transport, lifecycle and fallback tests in `backend/tests/test_fish_process.py` and `backend/tests/test_fish_worker_launcher.py` (dispatch, preload and queue tests added; candidate transport/fallback integration remains unverified)
+- [X] T009 [US2] Add candidate dispatch, transport, lifecycle and fallback tests in `backend/tests/test_fish_process.py` and `backend/tests/test_fish_worker_launcher.py` (mocked transport and failure; native WAV remains separately gated)
 - [X] T010 [US2] Bridge approved Fish tokenizer, prompt, references and Firefly codec to MLX generation and MessagePack/WAV transport in `backend/deployment/fish_mlx/`
 - [X] T011 [US2] Add explicit opt-in managed launch selection and candidate validation in `backend/app/config.py` and `backend/deployment/fish_worker_launcher.py`
 - [ ] T012 [US2] Validate approved-reference isolated native synthesis without touching production in `specs/008-fish-mlx-four-bit/quickstart.md`

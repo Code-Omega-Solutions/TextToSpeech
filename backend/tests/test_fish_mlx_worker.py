@@ -1,8 +1,10 @@
-from types import SimpleNamespace
 import queue
+import sys
+from types import ModuleType, SimpleNamespace
 
 import pytest
 
+from deployment.fish_mlx import worker
 from deployment.fish_mlx.worker import generation_queue, validate_reference_request
 
 
@@ -49,3 +51,77 @@ def test_generation_queue_forwards_contract_and_sanitizes_errors(caplog):
     assert str(failure.response) == "Fish MLX generation failed"
     assert "sensitive content" not in caplog.text
     requests.put(None)
+
+
+def test_serve_wires_original_api_queue_and_qualified_references(monkeypatch, tmp_path):
+    def module(name, **attributes):
+        result = ModuleType(name)
+        result.__dict__.update(attributes)
+        monkeypatch.setitem(sys.modules, name, result)
+        return result
+
+    seeded = []
+    mx = module(
+        "mlx.core", __version__="0.32.4", random=SimpleNamespace(seed=seeded.append),
+        load=lambda _path: {"synthetic": object()}, eval=lambda *_args: None,
+    )
+    module("mlx", core=mx)
+    runs = []
+    module("uvicorn", run=lambda *args, **kwargs: runs.append((args, kwargs)))
+
+    class Engine:
+        def inference(self, request):
+            yield request.reference_id
+
+    inference = module(
+        "tools.inference_engine", TTSInferenceEngine=Engine,
+        set_seed=lambda seed: seeded.append(("original", seed)),
+    )
+    upstream = module(
+        "tools.llama.generate", logger=SimpleNamespace(info=lambda *_args: None),
+        generate_long=lambda **_kwargs: iter(["synthetic-codes"]),
+        WrappedGenerateResponse=lambda **kwargs: SimpleNamespace(**kwargs),
+    )
+    manager = module("tools.server.model_manager", ModelManager=type("Manager", (), {}))
+    api = module("tools.api_server", API=lambda: SimpleNamespace(app="synthetic-app"))
+    module("tools.llama", generate=upstream)
+    module("tools.server", model_manager=manager)
+    module("tools", inference_engine=inference, api_server=api)
+    module(
+        "fish_speech.models.text2semantic.llama",
+        BaseModelArgs=SimpleNamespace(from_pretrained=lambda _path: "config"),
+    )
+    module("fish_speech.tokenizer", FishTokenizer=lambda _path: "tokenizer")
+
+    class Model:
+        def __init__(self, _mx, weights, tokenizer):
+            assert weights.keys() == {"synthetic"}
+            assert tokenizer == "tokenizer"
+
+    monkeypatch.setattr("deployment.fish_mlx.conversion.inspect_mlx_tensors", lambda _weights: None)
+    monkeypatch.setattr("deployment.fish_mlx.model.DualAR", Model)
+    monkeypatch.setattr(worker.importlib.metadata, "version", lambda _package: "0.32.4")
+    monkeypatch.setenv("TTS_FISH_CHECKPOINT_ROOT", str(tmp_path))
+    monkeypatch.setenv("TTS_FISH_MLX_CANDIDATE_ROOT", str(tmp_path))
+    monkeypatch.setenv("TTS_FISH_REFERENCE_ROOT", str(tmp_path))
+    monkeypatch.setattr(worker.os, "chdir", lambda _path: None)
+    monkeypatch.setattr(sys, "argv", [])
+    worker.serve("127.0.0.1", 8002)
+
+    assert runs == [(("synthetic-app",), {
+        "host": "127.0.0.1", "port": 8002, "workers": 1, "log_level": "info"
+    })]
+    assert "--half" in sys.argv and "--decoder-config-name" in sys.argv
+    inference.set_seed(42)
+    assert seeded == [("original", 42), 42]
+    assert list(Engine().inference(SimpleNamespace(references=[], reference_id="en-female"))) == [
+        "en-female"
+    ]
+    with pytest.raises(ValueError, match="qualified"):
+        list(Engine().inference(SimpleNamespace(references=[], reference_id="unknown")))
+    responses = queue.Queue()
+    requests = manager.launch_thread_safe_queue()
+    requests.put(SimpleNamespace(request={}, response_queue=responses))
+    assert responses.get(timeout=2).response == "synthetic-codes"
+    requests.put(None)
+    assert manager.ModelManager().warm_up(None) is None

@@ -62,6 +62,16 @@ dequantized weights exercised slow and fast inference and caches. This is not
 an audio or quality test. The generated review-required approval was rejected
 at startup as intended.
 
+With the approved Fish source and tokenizer, a separate no-audio test exercised
+the upstream prompt encoder and generation queue using synthetic codebook
+tokens, both with and without a synthetic prompt. Mocked tests also exercise
+managed dispatch, MessagePack request shape, startup exit and safe fallback
+headers; mocked WAV/codec behavior is not end-to-end WAV evidence. The
+optional `test_fish_mlx_upstream.py` requires explicitly setting
+`TTS_FISH_MLX_SYNTHETIC_BRIDGE_TEST=1` and the approved source/checkpoint
+paths in an isolated offline environment; it never loads reference audio or
+produces speech.
+
 No candidate end-to-end WAV, consented-reference speech, synchronized
 representative performance benchmark, English/German quality assessment,
 worst-case memory qualification, rights clearance for redistribution, or

@@ -8,12 +8,17 @@ import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import replace
+from types import SimpleNamespace
 
+import msgpack
 import pytest
+from fastapi.testclient import TestClient
 
 from app import fish_process
 from app.fish_process import FishProcess, FishResourceUnavailable
+from app.main import create_app
 from app.memory import process_group_resident_memory_bytes
+from app.services import SynthesisResult
 
 
 class Process:
@@ -134,6 +139,101 @@ def test_mlx_worker_refuses_untrusted_bootstrap(worker):
     with pytest.raises(FishResourceUnavailable, match="fish_unavailable"):
         run(managed)
     assert not starts
+
+
+@pytest.mark.parametrize("case", ["success", "malformed", "exited"])
+def test_mlx_managed_request_preserves_transport_and_fallback(
+    worker, settings_factory, monkeypatch, case
+):
+    valid_transport = case == "success"
+    managed, _observations, starts = worker
+    settings = settings_factory(
+        fish_enabled=True, fish_opportunistic=True, fish_runtime="mlx4",
+        fish_references_approved=True,
+        fish_worker_command=("/approved/python", "-I", "-S", "-B", fish_process._MLX_BOOTSTRAP),
+        fish_server_url="http://127.0.0.1:8002", fish_api_key="test-key",
+        fish_worker_peak_memory_bytes=100, fish_memory_reserve_bytes=50,
+    )
+    managed.settings = settings
+    app = create_app(settings)
+    service = app.state.speech_service
+    service.fish_process = managed
+    service.fish_reference_voices = {"en-US": ("en-female",)}
+    seen = []
+
+    class Response:
+        headers = SimpleNamespace(
+            get_content_type=lambda: "audio/wav" if valid_transport else "text/plain"
+        )
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def read(self, _limit):
+            return b"transport-sentinel"
+
+    def open_request(request, timeout):
+        seen.append((request, timeout))
+        return Response()
+
+    class FakeWav:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def getnchannels(self):
+            return 1
+
+        def getframerate(self):
+            return 44100
+
+    monkeypatch.setattr(service.fish_speech, "_opener", open_request)
+    if case == "exited":
+        monkeypatch.setattr(Process, "poll", lambda _self: 1)
+    monkeypatch.setattr("app.fish_speech.wave.open", lambda *_args: FakeWav())
+    monkeypatch.setattr(
+        service, "_transcode_wav",
+        lambda *_args, **_kwargs: SynthesisResult(
+            b"fish-result", "audio/wav", "speech.wav", actual_backend="fish-speech"
+        ),
+    )
+    monkeypatch.setattr(
+        service, "_synthesize_macos",
+        lambda *_args, **_kwargs: SynthesisResult(b"native-result", "audio/wav", "speech.wav"),
+    )
+    with TestClient(app) as client:
+        response = client.post(
+            "/v1/audio/speech",
+            json={
+                "input": "synthetic input", "model": "fish-speech", "language": "en-US",
+                "voice": "en-female", "response_format": "wav",
+            },
+            headers={"Authorization": f"Bearer {settings.api_key}"},
+        )
+    assert response.status_code == 200
+    assert response.headers["x-speech-backend"] == ("fish-speech" if valid_transport else "macos-say")
+    assert response.headers["x-speech-fallback"] == ("false" if valid_transport else "true")
+    if not valid_transport:
+        assert response.headers["x-speech-fallback-reason"] == (
+            "fish_worker_exited" if case == "exited" else "fish_unavailable"
+        )
+    assert len(starts) == 1
+    if case == "exited":
+        assert not seen
+        assert starts[0][0].terminated.is_set()
+        return
+    request, timeout = seen[0]
+    assert request.full_url == "http://127.0.0.1:8002/v1/tts?format=msgpack"
+    assert request.get_header("Authorization") == "Bearer test-key"
+    assert msgpack.unpackb(request.data, raw=False) == {
+        "text": "synthetic input", "format": "wav", "reference_id": "en-female"
+    }
+    assert timeout > 0
 
 
 def test_preload_reserves_one_slot_reuses_worker_and_retains_it_while_idle(

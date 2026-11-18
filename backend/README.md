@@ -180,6 +180,12 @@ existing healthy speech service as part of this prototype.
 
 ### Opt-in headroom-first native fallback
 
+When `TTS_DEFAULT_BACKEND=fish-speech` and reference approval is enabled,
+requests without a voice use the approved `de-female` or `en-female` profile
+for `de-DE` or `en-US`, respectively. Explicit voice choices still take
+precedence. With native fallback enabled, an unavailable profile or a locale
+unsupported by Fish (such as `en-GB`) can use `say`.
+
 `TTS_FISH_OPPORTUNISTIC=true` changes valid neural selections to best effort.
 If Fish is disabled, busy, resource-denied, unavailable, or times out within
 its attempt budget, native `say` uses the resolved language and its configured

@@ -79,6 +79,15 @@ or start a backend.
 The origin must be reachable **from inside the container**. For a service on
 the Docker Desktop host, use `http://host.docker.internal:8000`, not `localhost`.
 Use the authorized machine's reachable origin if the backend runs elsewhere.
+For a Fish-default backend with native `say` fallback, point at the authenticated
+speech API on its deployed port (for example `http://speech-service.example:8000`),
+not the loopback Fish inference worker or a retired prototype port. Engine
+selection and fallback remain backend responsibilities; the UI proxy keeps
+using the existing backend bearer credential.
+The current UI initially selects `macos-say` when it is available. Select
+`fish-speech` in the Speech Engine menu to request Fish from the UI; the
+backend's default applies only to requests that omit `model`.
+
 Compose accepts only the protected file form for the container credential:
 `TTS_API_KEY_FILE` points to a local, protected source file and Compose mounts it
 read-only as a secret. The container rejects `TTS_API_KEY`; do not bake a
@@ -118,6 +127,15 @@ after a successful save, the file takes precedence. A corrupt or unwritable
 file is reported and never replaced with an unsaved value. The included
 Compose example uses the named `tts_endpoint_config` volume. It is synthetic
 and does not authorize any particular private address.
+
+When replacing a prototype with the production API, update both
+`TTS_UPSTREAM_URL` and `TTS_ALLOWED_UPSTREAMS`, remove retired prototype targets
+from the deployment environment, and update the persisted origin through
+`PUT /api/configuration` using the authorized server-side administration workflow.
+Changing Compose environment variables alone does not migrate a saved origin.
+Recreate only the frontend service, retain its credential and settings volume,
+then verify `/api/readyz`, `/api/v1/audio/engines`, and an actual speech request
+through the proxy.
 
 Configuration reads and writes require `Authorization: Bearer
 <the same backend token configured by TTS_API_KEY_FILE>`. This credential must

@@ -271,6 +271,13 @@ SHALL not be represented as hard physical/Metal memory isolation or native
 qualification. Exact runtime/artifact/reference and deployment approval remain
 separate gates.
 
+#### Scenario: a request omits the voice when Fish is the configured default
+
+- **WHEN** a request selects Fish as the configured default without a voice
+- **THEN** the service selects `de-female` for `de-DE` or `en-female` for `en-US`
+  only if that profile is in the approved catalog; unsupported locales can
+  use the native fallback under the headroom-first policy.
+
 #### Scenario: a valid optional selection cannot run
 
 - **WHEN** the headroom-first policy is enabled and Fish is disabled, busy, unavailable or resource-denied, or a valid legacy neural selection is made

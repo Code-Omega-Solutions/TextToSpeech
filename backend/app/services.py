@@ -253,6 +253,12 @@ class SpeechService:
         deadline: float | None = None,
     ) -> SynthesisResult:
         selected_backend = backend or self.settings.default_backend
+        if (
+            voice is None
+            and selected_backend == self.settings.default_backend == "fish-speech"
+            and self.settings.fish_references_approved
+        ):
+            voice = {"de-DE": "de-female", "en-US": "en-female"}.get(language)
         if self.settings.fish_opportunistic and selected_backend in {"fish-speech", "vibevoice"}:
             return self._synthesize_opportunistic(
                 text,

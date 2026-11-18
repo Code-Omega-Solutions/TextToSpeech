@@ -215,6 +215,42 @@ def test_neural_success_preserves_selected_reference_and_engine(settings_factory
     assert result.actual_backend == "fish-speech" and not result.fallback
 
 
+@pytest.mark.parametrize(
+    ("language", "requested_voice", "reference"),
+    [("en-US", None, "en-female"), ("de-DE", None, "de-female"),
+     ("en-US", "en-male", "en-male"), ("en-GB", None, None)],
+)
+def test_fish_default_uses_qualified_locale_voice(
+    settings_factory, monkeypatch, language, requested_voice, reference
+):
+    service = SpeechService(settings_factory(
+        default_backend="fish-speech", fish_enabled=True,
+        fish_references_approved=True, fish_opportunistic=True,
+    ))
+    service.fish_reference_voices = {
+        "de-DE": ("de-female", "de-male"), "en-US": ("en-female", "en-male"),
+    }
+
+    def run(callback, **_kwargs):
+        assert reference is not None
+        return callback()
+
+    def fish(*args, **_kwargs):
+        assert args[5] == reference
+        return SynthesisResult(b"fish", "audio/wav", "speech.wav", actual_backend="fish-speech")
+
+    def native(*_args, **_kwargs):
+        assert reference is None
+        return SynthesisResult(b"native", "audio/wav", "speech.wav")
+
+    monkeypatch.setattr(service.fish_process, "run", run)
+    monkeypatch.setattr(service, "_synthesize_fish", fish)
+    monkeypatch.setattr(service, "_synthesize_macos", native)
+    result = service.synthesize_reserved("Hello", language, 1, "wav", voice=requested_voice)
+    assert result.actual_backend == ("fish-speech" if reference else "macos-say")
+    assert result.fallback == (reference is None)
+
+
 def test_fallback_does_not_restart_expired_overall_deadline(settings_factory, monkeypatch):
     service = SpeechService(settings_factory(fish_enabled=True, fish_opportunistic=True))
     clock = [100.0]

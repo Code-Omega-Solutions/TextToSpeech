@@ -4,8 +4,8 @@
     "userPromptSubmitted": [
       {
         "type": "command",
-        "bash": "python3 .specify/extensions/companion/scripts/write-context.py --event user_prompt_submit",
-        "powershell": "& 'python' '.specify/extensions/companion/scripts/write-context.py' '--event' 'user_prompt_submit'",
+        "bash": "python3 .specify/events.py speckit.companion.on-prompt user_prompt_submit 10 additionalContext",
+        "powershell": "& 'python' '.specify/events.py' 'speckit.companion.on-prompt' 'user_prompt_submit' '10' 'additionalContext'",
         "timeoutSec": 15,
         "__speckit_event__": true
       }
@@ -13,8 +13,8 @@
     "agentStop": [
       {
         "type": "command",
-        "bash": "python3 .specify/extensions/companion/scripts/write-context.py --event stop",
-        "powershell": "& 'python' '.specify/extensions/companion/scripts/write-context.py' '--event' 'stop'",
+        "bash": "python3 .specify/events.py speckit.companion.on-stop stop 10",
+        "powershell": "& 'python' '.specify/events.py' 'speckit.companion.on-stop' 'stop' '10'",
         "timeoutSec": 15,
         "__speckit_event__": true
       }

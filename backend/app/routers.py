@@ -35,6 +35,26 @@ from app.voices import (
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
+_FALLBACK_REASONS = {
+    "fish_busy",
+    "fish_cancelled",
+    "fish_cleanup_failed",
+    "fish_cooldown",
+    "fish_endpoint_unverified",
+    "fish_external_service",
+    "fish_idle",
+    "fish_memory_reserve",
+    "fish_memory_unreadable",
+    "fish_platform_unqualified",
+    "fish_request_aborted",
+    "fish_shutdown",
+    "fish_start_failed",
+    "fish_timeout",
+    "fish_unavailable",
+    "fish_worker_budget",
+    "fish_worker_exited",
+}
+
 
 def _authenticate(authorization: str | None, settings: Settings) -> None:
     if not settings.auth_enabled:
@@ -80,6 +100,7 @@ def build_router(settings: Settings, speech_service: SpeechService) -> APIRouter
         selected_language: str | None = None
         selected_backend = payload.model or settings.default_backend
         actual_backend = selected_backend
+        fallback = False
         failure_reason = "none"
         status_code = 500
         try:
@@ -125,7 +146,15 @@ def build_router(settings: Settings, speech_service: SpeechService) -> APIRouter
                 speech_service.release_permit()
             status_code = 200
             actual_backend = result.actual_backend
-            failure_reason = result.failure_reason or "none"
+            fallback = result.fallback
+            diagnostic_headers = {}
+            if fallback:
+                failure_reason = (
+                    result.failure_reason
+                    if result.failure_reason in _FALLBACK_REASONS
+                    else "unknown"
+                )
+                diagnostic_headers["X-Speech-Fallback-Reason"] = failure_reason
             return Response(
                 content=result.audio,
                 media_type=result.media_type,
@@ -133,7 +162,8 @@ def build_router(settings: Settings, speech_service: SpeechService) -> APIRouter
                     "Content-Disposition": f'inline; filename="{result.filename}"',
                     "X-Content-Type-Options": "nosniff",
                     "X-Speech-Backend": result.actual_backend,
-                    "X-Speech-Fallback": str(result.fallback).lower(),
+                    "X-Speech-Fallback": str(fallback).lower(),
+                    **diagnostic_headers,
                 },
             )
         except HTTPException as exc:
@@ -179,10 +209,12 @@ def build_router(settings: Settings, speech_service: SpeechService) -> APIRouter
             raise HTTPException(status_code=500, detail="An internal error occurred.") from exc
         finally:
             logger.info(
-                "speech request request_id=%s duration_ms=%d backend=%s locale=%s format=%s reason=%s status=%d",
+                "speech request request_id=%s duration_ms=%d requested_backend=%s backend=%s fallback=%s locale=%s format=%s reason=%s status=%d",
                 request.state.request_id,
                 round((time.monotonic() - started) * 1000),
+                selected_backend,
                 actual_backend,
+                str(fallback).lower(),
                 selected_language or "unresolved",
                 payload.response_format,
                 failure_reason,

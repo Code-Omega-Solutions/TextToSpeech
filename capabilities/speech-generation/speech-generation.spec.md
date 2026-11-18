@@ -77,10 +77,15 @@ Successful nonempty audio SHALL be presented through a browser object URL for
 playback and download. Replacing, clearing or pasting text revokes previous audio
 as implemented; text and audio are not written to browser persistent storage.
 
+#### Scenario: engine or fallback metadata is reported
+
+- **WHEN** generation returns nonempty audio
+- **THEN** the result shows the actual engine and fallback status from the response, plus a reported reason code when fallback occurred. Missing metadata is marked as unreported, not inferred from the requested engine.
+
 #### Scenario: autoplay is blocked
 
 - **WHEN** generation succeeds but automatic playback is denied
-- **THEN** audio and its download remain available, with an instruction to select play.
+- **THEN** audio, its download and engine disclosure remain available, with an instruction to select play.
 
 #### Scenario: audio is replaced
 

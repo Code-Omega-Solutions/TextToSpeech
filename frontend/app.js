@@ -12,6 +12,7 @@ const generateButton = document.querySelector("#generate");
 const statusMessage = document.querySelector("#status");
 const discoveryStatus = document.querySelector("#discovery-status");
 const result = document.querySelector("#result");
+const speechEngineDisclosure = document.querySelector("#speech-engine-disclosure");
 const audioPlayer = document.querySelector("#audio-player");
 const downloadLink = document.querySelector("#download");
 const serviceStatus = document.querySelector("#service-status");
@@ -88,6 +89,7 @@ function clearAudio() {
   audioPlayer.removeAttribute("src");
   downloadLink.removeAttribute("href");
   result.hidden = true;
+  speechEngineDisclosure.textContent = "";
   if (audioUrl) {
     URL.revokeObjectURL(audioUrl);
     audioUrl = undefined;
@@ -369,7 +371,7 @@ form.addEventListener("submit", async (event) => {
       throw new Error(message);
     }
     const audio = await response.blob();
-    if (speechRevision !== endpointRevision) return;
+    if (speechRevision !== endpointRevision || currentSpeechRequest !== speechRequest) return;
     if (audio.size === 0)
       throw new Error("The service returned an empty audio file.");
 
@@ -378,17 +380,32 @@ form.addEventListener("submit", async (event) => {
     const format = document.querySelector("#format").value;
     downloadLink.href = audioUrl;
     downloadLink.download = `speech.${format}`;
+    const backend = response.headers.get("X-Speech-Backend");
+    const fallback = response.headers.get("X-Speech-Fallback");
+    const reason = response.headers.get("X-Speech-Fallback-Reason");
+    const actualEngine = /^[a-z0-9-]{1,40}$/.test(backend ?? "") ? backend : "not reported";
+    const fallbackReason = /^fish_[a-z_]{1,40}$/.test(reason ?? "")
+      ? reason
+      : "reason not reported";
+    speechEngineDisclosure.textContent =
+      `Actual engine: ${actualEngine}. ` +
+      (fallback === "true"
+        ? `Fallback used (${fallbackReason}).`
+        : fallback === "false"
+          ? "No fallback."
+          : "Fallback status not reported.");
     result.hidden = false;
     serviceStatus.dataset.state = "online";
     serviceStatus.lastChild.textContent = " SERVICE CONNECTED";
     try {
       await audioPlayer.play();
     } catch {
+      if (speechRevision !== endpointRevision || currentSpeechRequest !== speechRequest) return;
       statusMessage.textContent =
         "Audio is ready, but your browser blocked automatic playback. Select play to listen.";
     }
   } catch (error) {
-    if (speechRevision !== endpointRevision) return;
+    if (speechRevision !== endpointRevision || currentSpeechRequest !== speechRequest) return;
     statusMessage.textContent =
       isNetworkError(error)
         ? "Could not reach the speech service. Check the service connection and try again."

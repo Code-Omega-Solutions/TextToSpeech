@@ -204,7 +204,10 @@ class FishProcess:
             self._deny("fish_memory_unreadable")
         required = self.settings.fish_memory_reserve_bytes
         if starting:
-            required += self.settings.fish_worker_peak_memory_bytes
+            startup = self.settings.fish_startup_memory_bytes
+            required += (
+                self.settings.fish_worker_peak_memory_bytes if startup is None else startup
+            )
         if available < required:
             self._deny("fish_memory_reserve")
         if resident > self.settings.fish_worker_peak_memory_bytes:

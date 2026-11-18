@@ -23,6 +23,24 @@ def test_auth_is_enabled_by_default(settings):
     assert settings.auth_enabled is True
 
 
+@pytest.mark.parametrize("value", ["0", "-1", "invalid", str(16 * 1024**3 + 1)])
+def test_fish_startup_allowance_must_be_positive_and_within_worker_budget(monkeypatch, value):
+    monkeypatch.setenv("TTS_API_KEY", "unit-test-api-key")
+    monkeypatch.setenv("TTS_FISH_STARTUP_MEMORY_BYTES", value)
+    with pytest.raises(ValidationError):
+        Settings.from_env()
+
+
+def test_fish_startup_allowance_is_opt_in_and_independent_of_runtime_budget(monkeypatch):
+    monkeypatch.setenv("TTS_API_KEY", "unit-test-api-key")
+    assert Settings.from_env().fish_startup_memory_bytes is None
+    monkeypatch.setenv("TTS_FISH_STARTUP_MEMORY_BYTES", str(4 * 1024**3))
+    settings = Settings.from_env()
+    assert settings.fish_startup_memory_bytes == 4 * 1024**3
+    assert settings.fish_worker_peak_memory_bytes == 16 * 1024**3
+    assert settings.fish_memory_reserve_bytes == 12 * 1024**3
+
+
 @pytest.mark.parametrize(
     ("name", "value"),
     [

@@ -85,6 +85,17 @@ read-only as a secret. The container rejects `TTS_API_KEY`; do not bake a
 credential into the image or commit the secret file. No credential values or
 machine-specific private addresses are included in the source.
 
+To offer both existing production and approved prototype backends, also set
+`TTS_PROTOTYPE_UPSTREAM_URL` and include **both exact origins** in
+`TTS_ALLOWED_UPSTREAMS`. The Compose file already passes these variables; no
+backend/model service or weight/reference mount is needed in this UI container.
+Origins contain no `/v1` suffix. A remote backend bound to its own loopback
+cannot be reached using its LAN name alone: provision an authorized protected
+tunnel or authenticated TLS ingress first. `host.docker.internal` means the
+Docker host, not another Mac, and Linux Engine may need an explicit
+`host-gateway` mapping plus a listener reachable through that interface.
+Do not expose an unauthenticated Fish worker to make connectivity work.
+
 Compose publishes the frontend on `127.0.0.1:8081`; this is a loopback
 reachability boundary, not user authentication or authorization. The frontend
 does not implement TLS termination or client access control. Do not expose its
@@ -96,8 +107,10 @@ authenticates proxy-to-backend requests only and does not authenticate browser
 users.
 
 The authorized operator can change the upstream origin with the authenticated
-server-side configuration API. The browser Configuration tab is informational:
-it never asks for, stores, or sends the backend credential. The shared setting is stored at
+server-side configuration API. The browser Configuration tab selects an
+operator-approved Production/Prototype target for its session; it never asks
+for, stores, or sends the backend credential or changes the shared default.
+The shared setting is stored at
 `/var/lib/private-speech-studio/endpoint.json` inside the container. Mount that
 directory as writable storage, owned by the serving user, with directory mode
 0700 and file mode 0600. The first start initializes from `TTS_UPSTREAM_URL`;

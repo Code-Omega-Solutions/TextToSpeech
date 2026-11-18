@@ -1,8 +1,23 @@
 {
 	"mcpServers": {
 		"orchestrator": {
-			"url": "http://127.0.0.1:4500/mcp",
+			"url": "http://192.168.0.118:4500/mcp",
 			"type": "http"
+		},
+		"basic-memory-general": {
+			"type": "stdio",
+			"command": "C:\\Users\\pgfelle0\\.local\\bin\\basic-memory.exe",
+			"args": ["mcp", "--project", "general"]
+		},
+		"basic-memory-project-TextToSpeech": {
+			"type": "stdio",
+			"command": "C:\\Users\\pgfelle0\\.local\\bin\\basic-memory.exe",
+			"args": ["mcp", "--project", "project-TextToSpeech"]
+		},
+		"basic-memory-machine-TextToSpeech-win-1d43f440fc53216981b319eb1fbbb678b56f2db428e274546ca0171044cadf1a": {
+			"type": "stdio",
+			"command": "C:\\Users\\pgfelle0\\.local\\bin\\basic-memory.exe",
+			"args": ["mcp", "--project", "machine-TextToSpeech-win-1d43f440fc53216981b319eb1fbbb678b56f2db428e274546ca0171044cadf1a"]
 		}
 	}
 }

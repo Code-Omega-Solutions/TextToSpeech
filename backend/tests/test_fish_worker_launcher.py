@@ -1,6 +1,9 @@
+import hashlib
+import io
 import json
 import os
 import subprocess
+import wave
 
 import pytest
 
@@ -69,6 +72,70 @@ def _approval_manifest(source, checkpoint, decoder, model_files):
     }
 
 
+def _reference_assets(tmp_path):
+    root = tmp_path / "reference-data"
+    records = []
+    for language, gender, reference_id in (
+        ("de-DE", "male", "de-male"),
+        ("de-DE", "female", "de-female"),
+        ("en-US", "male", "en-male"),
+        ("en-US", "female", "en-female"),
+    ):
+        dataset_id = (
+            "cmu5mc2sn00s5mi07udtq2864"
+            if language == "de-DE"
+            else "cmu5nqn1h00vwmi07b4dbk085"
+        )
+        reference_dir = root / "references" / reference_id
+        reference_dir.mkdir(parents=True)
+        wav = reference_dir / f"{reference_id}.wav"
+        output = io.BytesIO()
+        with wave.open(output, "wb") as writer:
+            writer.setnchannels(1)
+            writer.setsampwidth(2)
+            writer.setframerate(24000)
+            writer.writeframes(b"\0\0" * 12)
+        wav.write_bytes(output.getvalue())
+        lab = reference_dir / f"{reference_id}.lab"
+        lab.write_text("Test transcript", encoding="utf-8")
+        records.append(
+            {
+                "id": reference_id,
+                "language": language,
+                "gender": gender,
+                "dataset_id": dataset_id,
+                "dataset_release": "sps-corpus-5.0-2026-09-11",
+                "audio_path": f"references/{reference_id}/{reference_id}.wav",
+                "lab_path": f"references/{reference_id}/{reference_id}.lab",
+                "audio_sha256": hashlib.sha256(wav.read_bytes()).hexdigest(),
+                "lab_sha256": hashlib.sha256(lab.read_bytes()).hexdigest(),
+                "source_url": f"https://example.test/datasets/{dataset_id}",
+                "source_revision": "sps-corpus-5.0-2026-09-11",
+                "source_license": "CC0-1.0",
+                "terms_url": "https://example.test/terms",
+                "terms_revision": "accepted-dataset-agreement",
+                "permission_basis": "dataset-terms-accepted",
+                "terms_status": "approved",
+                "intended_use": "private-noncommercial",
+            }
+        )
+    manifest = tmp_path / "references.json"
+    manifest.write_text(
+        json.dumps({"status": "approved", "references": records}),
+        encoding="utf-8",
+    )
+    manifest.chmod(0o600)
+    return root, manifest
+
+
+def _set_reference_environment(monkeypatch, tmp_path):
+    root, manifest = _reference_assets(tmp_path)
+    monkeypatch.setenv("TTS_FISH_REFERENCE_ROOT", str(root))
+    monkeypatch.setenv("TTS_FISH_REFERENCE_MANIFEST", str(manifest))
+    monkeypatch.setenv("TTS_FISH_REFERENCES_APPROVED", "true")
+    return root
+
+
 def test_launcher_requires_local_artifacts(monkeypatch, tmp_path):
     monkeypatch.delenv("TTS_FISH_SOURCE_ROOT", raising=False)
     monkeypatch.setenv("TTS_FISH_CHECKPOINT_ROOT", str(tmp_path))
@@ -77,12 +144,36 @@ def test_launcher_requires_local_artifacts(monkeypatch, tmp_path):
         fish_worker_launcher.main()
 
 
+def test_launcher_requires_references_outside_source_checkout(monkeypatch, tmp_path):
+    source = tmp_path / "source"
+    checkpoint = tmp_path / "checkpoint"
+    source.mkdir()
+    checkpoint.mkdir()
+    _git_source(source)
+    _set_reference_environment(monkeypatch, tmp_path)
+    monkeypatch.setenv("TTS_FISH_SOURCE_ROOT", str(source))
+    monkeypatch.setenv("TTS_FISH_CHECKPOINT_ROOT", str(checkpoint))
+    monkeypatch.setenv("TTS_FISH_REFERENCE_ROOT", str(source))
+
+    with pytest.raises(SystemExit, match="separate from the source checkout"):
+        fish_worker_launcher.main()
+
+
+def test_launcher_requires_reference_approval(monkeypatch, tmp_path):
+    reference_root = _set_reference_environment(monkeypatch, tmp_path)
+    monkeypatch.delenv("TTS_FISH_REFERENCES_APPROVED")
+
+    with pytest.raises(SystemExit, match="pending reference approval"):
+        fish_worker_launcher._approved_references(reference_root)
+
+
 def test_launcher_executes_offline_loopback_api(monkeypatch, tmp_path):
     source = tmp_path / "source"
     checkpoint = tmp_path / "checkpoint"
     source.mkdir()
     checkpoint.mkdir()
     _git_source(source)
+    reference_root = _set_reference_environment(monkeypatch, tmp_path)
     decoder = checkpoint / "firefly-gan-vq-fsq-8x1024-21hz-generator.pth"
     decoder.write_bytes(b"artifact")
     model = checkpoint / "model.bin"
@@ -129,7 +220,9 @@ def test_launcher_executes_offline_loopback_api(monkeypatch, tmp_path):
     assert arguments[arguments.index("--decoder-checkpoint-path") + 1].endswith(
         "firefly-gan-vq-fsq-8x1024-21hz-generator.pth"
     )
-    assert os.getcwd() == str(source)
+    assert os.getcwd() == str(reference_root)
+    assert os.environ["PYTHONPATH"].split(os.pathsep)[0] == str(source)
+    assert os.environ["PYTHONDONTWRITEBYTECODE"] == "1"
 
 
 def test_launcher_requires_exact_approval_manifest(monkeypatch, tmp_path):
@@ -137,6 +230,7 @@ def test_launcher_requires_exact_approval_manifest(monkeypatch, tmp_path):
     checkpoint = tmp_path / "checkpoint"
     source.mkdir()
     checkpoint.mkdir()
+    _set_reference_environment(monkeypatch, tmp_path)
     (checkpoint / "firefly-gan-vq-fsq-8x1024-21hz-generator.pth").write_bytes(b"artifact")
     monkeypatch.setenv("TTS_FISH_SOURCE_ROOT", str(source))
     monkeypatch.setenv("TTS_FISH_CHECKPOINT_ROOT", str(checkpoint))
@@ -153,6 +247,7 @@ def test_launcher_rejects_forged_source_revision(monkeypatch, tmp_path):
     source.mkdir()
     checkpoint.mkdir()
     _git_source(source)
+    _set_reference_environment(monkeypatch, tmp_path)
     decoder = checkpoint / "firefly-gan-vq-fsq-8x1024-21hz-generator.pth"
     decoder.write_bytes(b"codec")
     model = checkpoint / "model.bin"
@@ -179,6 +274,7 @@ def test_launcher_rejects_dirty_source_checkout(monkeypatch, tmp_path):
     source.mkdir()
     checkpoint.mkdir()
     _git_source(source)
+    _set_reference_environment(monkeypatch, tmp_path)
     decoder = checkpoint / "firefly-gan-vq-fsq-8x1024-21hz-generator.pth"
     decoder.write_bytes(b"codec")
     model = checkpoint / "model.bin"
@@ -213,6 +309,7 @@ def test_launcher_rejects_runtime_entrypoint_mismatch(monkeypatch, tmp_path):
     source.mkdir()
     checkpoint.mkdir()
     _git_source(source)
+    _set_reference_environment(monkeypatch, tmp_path)
     decoder = checkpoint / "firefly-gan-vq-fsq-8x1024-21hz-generator.pth"
     decoder.write_bytes(b"codec")
     model = checkpoint / "model.bin"
@@ -242,6 +339,7 @@ def test_launcher_rejects_omitted_model_or_codec_files(monkeypatch, tmp_path):
     source.mkdir()
     checkpoint.mkdir()
     _git_source(source)
+    _set_reference_environment(monkeypatch, tmp_path)
     decoder = checkpoint / "firefly-gan-vq-fsq-8x1024-21hz-generator.pth"
     decoder.write_bytes(b"codec")
     model = checkpoint / "model.bin"

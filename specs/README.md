@@ -49,16 +49,28 @@ runtime prerequisites, a separately approved port, and service approval; the
 existing healthy service is not replaced.
 
 The [gated Fish backend enablement feature](007-fish-backend-enablement/spec.md)
-continues that work for private, noncommercial use with two consented bilingual
-speakers providing male and female German/English voice choices. Read-only
-capacity assessment and local headroom-first policy work are authorized. The
-backend now has an opt-in managed-worker/native-fallback policy, defaulting to a
-12 GiB reserve and 16 GiB monitored worker budget. Smaller Fish variants are
-screened before considering the conditional 8 GiB reserve. Exact runtime/artifact
-terms, speaker evidence, native qualification, installation and live enablement
-remain separate gates. The checked-in prototype template fails closed on exact
-artifact and four-way reference approval, and the feature does not claim Fish is
-running or qualified.
+continues that work for private, noncommercial use with four language-specific
+Common Voice references: one female and one male per German/English language.
+The backend has an opt-in managed-worker/native-fallback policy with a 12 GiB
+reserve and 16 GiB monitored worker budget. The separately authorized private
+prototype uses a 4 GiB startup allowance instead of reserving the full worker
+budget at cold start; the running reserve and RSS ceiling are unchanged.
+All four short managed Fish requests succeeded privately after exact
+artifact/reference approval. This is not broad native lifecycle, subjective
+quality or redistribution qualification; remaining gates and sampled results
+are recorded in the feature's [quickstart](007-fish-backend-enablement/quickstart.md).
+The checked-in generic prototype template still fails closed pending each
+installation's own artifact and four-way reference approval.
+
+The [local Fish voice-preparation guide](../backend/voice-preparation.md)
+documents authorized acquisition and WAV/transcript preparation without
+distributing assets. An optional private companion repository holds sanitized
+documentation, public source metadata and explicitly authorized non-sensitive
+checkpoint backups with source/license/hash records; voice datasets, personal
+material, credentials and approvals stay in authorized local private storage
+outside both checkouts. Private hosting does not
+clear dataset re-hosting, voice-use or generated-output privacy restrictions,
+and does not close feature 007's remaining gates.
 
 The [UI endpoint configuration feature](006-ui-endpoint-configuration/ui-endpoint-configuration.spec.md)
 proposes a configuration tab, capability-aware engine and voice controls, legacy

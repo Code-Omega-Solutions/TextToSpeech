@@ -6,6 +6,7 @@ import sys
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import replace
 
 import pytest
 
@@ -115,6 +116,36 @@ def test_exact_budget_and_reserve_boundaries_are_admitted(worker, monkeypatch):
     monkeypatch.setattr(managed, "_restart_after", time.monotonic() - 1)
     assert run(managed) == b"audio"
     assert len(starts) == 2
+
+
+@pytest.mark.parametrize("available", [74, 75])
+def test_opt_in_startup_allowance_retains_runtime_reserve_and_ceiling(worker, available):
+    managed, observations, starts = worker
+    managed.settings = replace(managed.settings, fish_startup_memory_bytes=25)
+    observations["available"] = available
+    if available < 75:
+        with pytest.raises(FishResourceUnavailable, match="reserve"):
+            run(managed)
+        assert not starts
+        return
+    assert run(managed) == b"audio"
+    observations.update(available=50, resident=100)
+    assert run(managed) == b"audio"
+    observations["resident"] = 101
+    with pytest.raises(FishResourceUnavailable, match="budget"):
+        run(managed)
+    assert starts[0][0].terminated.is_set()
+
+
+def test_aggressive_startup_still_yields_when_reserve_is_breached(worker):
+    managed, observations, starts = worker
+    managed.settings = replace(managed.settings, fish_startup_memory_bytes=25)
+    observations["available"] = 75
+    assert run(managed) == b"audio"
+    observations["available"] = 49
+    with pytest.raises(FishResourceUnavailable, match="reserve"):
+        run(managed)
+    assert starts[0][0].terminated.is_set()
 
 
 @pytest.mark.parametrize("phase", ["loading", "active", "idle"])

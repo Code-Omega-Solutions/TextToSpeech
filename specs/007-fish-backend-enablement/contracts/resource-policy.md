@@ -23,3 +23,19 @@ It must not adopt an externally managed Fish process. An existing listener or
 an uncertain TCP connection probe denies launch without waiting for HTTP health. No secret may be
 placed in argv; use a reviewed protected launcher and server-side credential
 configuration. Command configuration is private operator data, not API input.
+
+Cold start defaults to available memory >= reserve + full worker budget.
+An explicit `TTS_FISH_STARTUP_MEMORY_BYTES` sets a smaller positive startup
+allowance no greater than that budget. It does not change loading/active/idle
+reserve checks, the RSS ceiling, cooldown or native fallback. The authorized
+private trial uses 4 GiB startup + 12 GiB reserve, retaining the 16 GiB runtime
+ceiling. Sampled monitoring is not hard physical/Metal isolation and can yield
+only after pressure is observed.
+
+The Fish catalog may expose only the four approved local Common Voice profiles
+(`de-male`, `de-female`, `en-male`, `en-female`) after exact private reference
+and artifact approvals. It must not expose contributor IDs or dataset paths.
+Any downstream generated-audio sharing must identify the output as
+machine-generated and remain disabled unless the output complies with all
+applicable terms, including the MDC personal-data restriction. A user's
+permission attestation does not override that restriction.

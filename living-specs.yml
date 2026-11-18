@@ -83,6 +83,7 @@ capabilities:
         "SOURCE_OFFER.md",
         "THIRD_PARTY_NOTICES.md",
         "backend/README.md",
+        "backend/voice-preparation.md",
         "backend/uv.lock",
         "backend/vibevoice_worker/pyproject.toml",
         "backend/vibevoice_worker/uv.lock",

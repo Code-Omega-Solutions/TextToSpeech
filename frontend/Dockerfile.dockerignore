@@ -14,6 +14,8 @@
 !frontend/vite.config.js
 !frontend/config/
 !frontend/config/**
+!frontend/runtime/
+!frontend/runtime/*.js
 !frontend/public/
 !frontend/public/**
 !frontend/docker/

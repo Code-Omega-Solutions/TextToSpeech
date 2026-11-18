@@ -5,7 +5,7 @@
 
 ## Phase 1: Setup
 
-- [x] T001 Record the approved 12 GiB reserve/16 GiB budget and smaller-family evidence, including conflicting tagged license statements, in specs/007-fish-backend-enablement/research.md.
+- [x] T001 Record the approved 12 GiB reserve/16 GiB budget and exact smaller-family artifact evidence, including the model-weight license and noncommercial gate, in specs/007-fish-backend-enablement/research.md.
 
 ## Phase 2: Foundation
 
@@ -14,19 +14,19 @@
 
 ## Phase 3: US1 - Approve a Feasible Runtime (P1)
 
-**Independent test**: Exact artifacts/terms, authenticated launcher, capacity and
-operator approval documented before installation. This gate can remain blocked
-without blocking model-independent US3 policy work.
+**Independent test**: Exact artifacts/terms, authenticated launcher, capacity
+and operator approval documented before managed inference. This gate can remain
+blocked without blocking model-independent US3 policy work.
 
-- [ ] T004 [US1] Resolve exact pinned smaller Fish checkpoint/codec/runtime terms and macOS compatibility in specs/007-fish-backend-enablement/research.md; do not download or enable before approval.
+- [x] T004 [US1] Review the exact Fish source commit and its two local modifications; verify the model/decoder files, runtime entrypoint and terms against the pinned revisions; produce a clean, hash-bound private approval manifest only after targeted tests pass. Record findings in specs/007-fish-backend-enablement/research.md; do not start a managed worker until complete.
 
-## Phase 4: US2 - Bilingual Voices (P1)
+## Phase 4: US2 - Language-Specific Voices (P1)
 
 **Independent test**: Four approved combinations pass reference and listening
 review, independent of lifecycle mocks.
 
-- [ ] T005 [US2] Review local bilingual male/female reference provenance and permissions, including Thorsten's original WAV/transcript candidate, in specs/007-fish-backend-enablement/research.md; keep private recordings/consent outside git.
-- [ ] T006 [US2] After T004/T005, integrate the approved launcher and references with backend/app/fish_speech.py, verify the authenticated MessagePack/WAV contract, and expose only qualified voices in backend/app/services.py.
+- [x] T005 [US2] Select one exact German and one exact English Common Voice Spontaneous 5.0 clip for each dataset-declared gender category; review audio quality, transcript, duration and applicable terms; prepare private WAV/`.lab` pairs and hash-bound approvals without retaining contributor IDs in logs or Git.
+- [x] T006 [US2] After T004/T005, integrate the approved launcher and four references with backend/app/fish_speech.py, verify the authenticated MessagePack/WAV contract, and expose only qualified voices in backend/app/services.py and the frontend catalog UI. The UI's four friendly voice labels and machine-generated disclosure are implemented, but no unapproved voice is advertised. All four short authenticated selections now return actual managed Fish WAV without fallback under the separately approved startup allowance. Keep generated-output sharing disabled until the MDC personal-data condition is resolved.
 
 ## Phase 5: US3 - Preserve Native Speech and Headroom (P2)
 
@@ -36,36 +36,38 @@ fallback, terminate only owned processes and preserve strict default behavior.
 - [x] T007 [US3] Write failing lifecycle tests in backend/tests/test_fish_process.py for admission, busy requests, loading/active/idle pressure, probe failure, cancellation, cooldown, idle expiry, verified cleanup and shutdown; implement backend/app/fish_process.py with one neural permit, 0.25-second monitor, low-priority owned process session, 30-second idle/cooldown and offline child environment.
 - [x] T008 [US3] Write failing fallback tests in backend/tests/test_engines.py for German/English, disabled/legacy/busy engine, ignored voice, shared deadline, cancellation, size errors and explicit native dispatch; integrate backend/app/services.py, backend/app/routers.py and shutdown cleanup in backend/app/main.py.
 - [x] T009 [US3] Add API-level fallback/authentication/invalid-input checks in backend/tests/test_api.py and run focused backend tests.
-- [ ] T010 [US3] After T004/T006 and separate rollout approval, follow specs/007-fish-backend-enablement/quickstart.md on the isolated native prototype; measure real memory, deadline and all four voices, verify existing services and rollback without modifying production. Iterations 9/10 preserve exact-label stale disablement plus non-`.plist` quarantine and now document an idempotent guarded recreation with protected-copy rollback, but the corrected sequence still needs authorized native execution. Exact Fish approvals, live neural lifecycle, and four outputs remain open.
+- [ ] T010 [US3] After T004/T006 and separate rollout approval, follow specs/007-fish-backend-enablement/quickstart.md on the isolated native prototype; measure real memory, deadline and all four voices, verify existing services and rollback without modifying production. Keep shared output disabled unless the MDC personal-data condition is resolved. The authorized private cutover, four catalog entries, native fallback and UI/production preservation checks pass. Four actual short Fish outputs, sampled reserve/RSS and idle listener/child-session absence now pass under the approved optimistic startup trial. Broader native pressure/cancellation/restart/quality and exact-current rollback qualification remain open.
 
 ## Phase 6: Documentation and Integration
 
 - [x] T011 Update backend/README.md, capabilities/backend-synthesis/backend-synthesis.spec.md, capabilities/backend-synthesis/backend-synthesis.coverage.md, living-specs.yml and specs/README.md for the implemented opt-in policy and explicit deployment gates.
 - [x] T012 Run focused and directly affected regression checks from backend/tests/, inspect git diff for private data/unrelated edits, and record actual results in specs/007-fish-backend-enablement/quickstart.md without claiming native qualification.
+- [x] T013 Implement the operator-authorized optional startup allowance in backend/app/config.py and backend/app/fish_process.py with focused configuration/boundary tests; retain conservative defaults and unchanged runtime reserve/RSS monitoring, deploy 4 GiB startup allowance privately, and record actual short-request inference observations in quickstart.md.
 
-**Open gates**: T004 has fixed historical private prototype hashes and a
-recorded local runtime/codec probe, but the exact approval manifest and
-authoritative artifact-term acceptance remain open. The repository launcher
-now fails closed without that manifest. T005 has no approved bilingual identity
-or cloning consent, so no reference IDs are advertised. T006 has a tested
-MessagePack/WAV adapter and lifecycle boundary, but qualified reference
-approval and actual Fish output remain open. T010 has historical admission denial and language-preserving native fallback
-evidence. Iterations 9/10 additionally preserve exact stale-definition
-quarantine and persisted disablement, add bounded/idempotent managed
-prototype/UI recreation and protected-copy rollback procedures, and retain the
-prior production-preservation evidence. The corrected procedure has not yet
-been re-run on the authorized target, so deterministic live recreation,
-neural success, full native lifecycle qualification, and the four consented
-voices remain unverified. Keep these four tasks open; the feature is not
-complete.
+**Open gates**: T004/T005 are complete for operator-authorized private
+evaluation: the exact clean patched source and five checkpoint files pass the
+launcher binding, 132 targeted tests now pass natively, and the operator approved
+all four converted references after listening and transcript review. The private
+prototype/UI now advertise the four approved IDs and use the shared protected
+backend credential. T006 now has actual four-way authenticated managed Fish WAV
+evidence. T013 changes only startup admission under explicit operator approval:
+4 GiB allowance plus 12 GiB reserve, retaining 16 GiB runtime RSS ceiling.
+T010 remains open for broader native lifecycle and subjective quality,
+long-input peaks and current rollback. Short-request sampling observed at least
+13.08 GiB available and peak 3.00 GiB owned-group RSS; it is not hard physical
+memory isolation or a measured worst-case peak. Generated-output sharing
+remains separately gated on the MDC personal-data restriction. The feature
+remains incomplete; no running reserve/RSS ceiling or unrelated workload was changed.
 
 ## Dependencies and Execution Order
 
 T001 -> T002/T003 -> T007 -> T008 -> T009 -> T011 -> T012.
-T004 depends on T001 and exact external artifact evidence; T005 can be researched
-independently. T006 depends on T004/T005. T010 depends on T004/T006 and T012
-plus separate deployment approval. Unresolved installation gates must stay open;
-do not mark the feature complete.
+T004 depends on T001 and exact external artifact evidence; T005 can proceed
+independently using the accepted dataset terms and private archives. T006
+depends on T004/T005. T010 depends on T004/T006 and T012 plus separate
+deployment approval. Unresolved installation or output-sharing gates must stay
+open; do not mark the feature complete.
+T013 follows T007/T004/T005 and the explicit operator startup-policy revision.
 
 ## Parallel Opportunities
 
@@ -75,7 +77,9 @@ does not install either and can proceed while these are blocked.
 
 ## Implementation Strategy
 
-Deliver bounded native-fallback policy locally first. Retain the current strict
-default and keep Fish disabled on live services. Complete artifact and reference
-review before launcher integration, then seek/observe deployment authorization
-and native evaluation. This is deliberately not a claim that US1/US2 are done.
+Deliver bounded native-fallback policy locally first and retain the strict
+default for existing deployments. Artifact/reference review and separate
+authorization now permit the isolated private prototype's opt-in configuration,
+not changes to production. Complete native evaluation only with admitted
+headroom; keep external output sharing gated until its terms are resolved.
+Configuration and reference approval do not establish US2 neural-output quality.

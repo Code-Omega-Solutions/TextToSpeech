@@ -1,5 +1,127 @@
 # Resource Policy Validation
 
+## Current optimistic startup trial: 2026-11-18
+
+The operator authorized a lower cold-start threshold, revisable with experience.
+The private prototype now persists `TTS_FISH_STARTUP_MEMORY_BYTES=4294967296`
+(4 GiB), so admission requires 16 GiB available instead of 28 GiB.
+The 12 GiB monitored reserve, 16 GiB running-worker RSS ceiling, low priority,
+single neural worker, timeout/fallback and idle/cooldown policies are unchanged.
+Other deployments retain reserve plus full worker budget unless explicitly
+configured. To restore conservative admission, remove the startup override
+and restart only the authorized prototype using the protected service procedure.
+
+The eight new startup/configuration cases failed before implementation.
+All **132** targeted native configuration, lifecycle, engine, launcher and
+adapter tests passed in a separate candidate tree before deployment.
+The Windows test invocation could not use the pre-existing virtualenv because
+its `lib64` entry was inaccessible; no environment deletion or dependency
+replacement was attempted. Native checks used the installed locked environment.
+
+After deployment, all four short synthetic requests produced valid Fish WAV:
+
+| Private live selection | Actual backend | WAV duration | Elapsed |
+| --- | --- | --- | --- |
+| German female | fish-speech, no fallback | 4.64 s | 27.01 s |
+| German male | fish-speech, no fallback | 2.32 s | 8.07 s |
+| English female | fish-speech, no fallback | 5.11 s | 17.04 s |
+| English male | fish-speech, no fallback | 3.20 s | 10.89 s |
+
+Across 181 approximately half-second samples, available memory stayed at or
+above **13.08 GiB**, and sampled owned-group RSS peaked at **3.00 GiB**.
+One worker group was observed, its loopback listener was absent after the idle
+window, and a final check found no owned worker child session. The prototype
+configuration remained protected (`0600`) and the service remained loaded.
+Production's listener identity and readiness were unchanged.
+
+These are real short-request inference observations, not proof of long-input
+memory peaks, instantaneous preemption, complete Metal memory accounting or
+subjective voice quality. Loading/active pressure, cancellation/restart and
+the exact-current live rollback still need broader native qualification (T010).
+Keep external output sharing gated. The earlier 28 GiB admission denial below
+is historical, not the current prototype threshold.
+
+## Earlier private prototype deployment: 2026-11-18 (superseded)
+
+This supersedes the pending preparation and historical deployment statuses below.
+The operator approved all four WAV/transcript pairs after listening and review.
+The clean patched source, exact five-file checkpoint set, runtime entrypoint
+and approved reference catalog passed launcher validation against owner-only
+private manifests. The original source and previous deployment remain intact.
+Native focused checks passed with **124 tests**:
+
+```sh
+uv run --locked --group dev pytest tests/test_fish_speech.py tests/test_fish_worker_launcher.py tests/test_config.py tests/test_fish_process.py tests/test_engines.py
+```
+
+Only the isolated prototype and persistent UI were recreated. The exact legacy
+Fish launch agent was disabled, unloaded and moved to a non-`.plist` quarantine
+name; it was not adopted by the managed supervisor. Protected copies of the
+three affected definitions were saved before changes. Failure rollback was
+armed but not triggered or independently exercised for this exact cutover.
+Production's listener process identity and configuration hashes stayed
+unchanged; before/after readiness and authenticated synthetic WAV returned 200.
+The prototype rejected unauthenticated catalog access with 401.
+
+The authenticated catalog now offers `de-female`, `de-male`, `en-female`, and
+`en-male`. The UI retains the Production default. For private evaluation select
+**Configuration -> Prototype**, then **Speech -> fish-speech**, an explicit
+German or English language, and its female/male voice. Browser verification
+confirmed both language-specific voice pairs, a playable/downloadable WAV,
+the machine-generated disclosure, opaque target names without upstream origins,
+and 401 for unauthorized operator configuration. The browser proxy's actual
+response was `macos-say` with `X-Speech-Fallback: true`, not neural synthesis.
+
+| Private live selection | Actual backend | WAV duration | Elapsed |
+| --- | --- | --- | --- |
+| German female | macos-say, fallback | 4.08 s | 2.39 s |
+| German male | macos-say, fallback | 4.08 s | 2.20 s |
+| English female | macos-say, fallback | 3.46 s | 1.56 s |
+| English male | macos-say, fallback | 3.46 s | 1.61 s |
+
+Available memory remained 17.30-17.33 GiB after legacy-worker retirement.
+The deployed admission check explicitly returned `fish_memory_reserve`:
+28 GiB is required for a cold start (12 GiB reserve plus 16 GiB worker budget).
+The backend uses a 60-second neural budget within a 70-second overall deadline,
+below the unchanged UI proxy's 75-second speech timeout. No reserve or budget
+was reduced, no unrelated process was terminated, and the managed endpoint was
+still absent after 33 seconds. Since no worker started, endpoint absence is
+**not** evidence of successful idle unload or termination.
+
+T004/T005 are complete for private evaluation. T006/T010 remain open for
+actual managed Fish audio, native lifecycle/memory measurements, listening
+quality and current-deployment rollback qualification. No current Fish success
+or external-output sharing clearance is claimed. Private manifests, local
+paths, credentials and generated samples stay out of public Git.
+
+## Earlier private enablement preparation: 2026-11-18 (superseded)
+
+The operator authorized isolated private Fish enablement. Read-only inspection
+confirmed the existing production and prototype listeners remain ready; the
+production process identity was unchanged throughout preparation. The external
+legacy Fish worker still occupies the intended loopback worker endpoint, so it
+must be explicitly retired during an approved managed-worker cutover, not
+silently adopted by the supervisor.
+
+The installed Python/PyTorch runtime reports MPS available, and the matching
+token-dtype `torch.isin` smoke check passed on MPS. This is not a full test of
+the patched Fish runtime or a clean source-tree approval.
+
+Four candidates were transferred directly to the authorized private Mac and
+converted with native `afconvert` to mono, 44.1 kHz PCM16 WAV with same-stem
+UTF-8 transcripts. Verified durations are 15.768 seconds (German female),
+10.512 (German male), 14.976 (English female), and 15.552 (English male).
+The reference files are owner-only and a hash-bound draft manifest remains
+`pending`; listening and transcript review have not occurred. No approval was
+fabricated, no voices were advertised, and no service configuration changed.
+
+The existing available-memory probe measured 17.34 GiB, below the unchanged
+28 GiB cold-start requirement (12 GiB reserve plus 16 GiB budget), while the
+external worker remained resident. Reassess after any authorized cutover;
+do not lower the reserve or terminate unrelated workloads to force admission.
+Reference review, exact clean runtime binding and managed-worker qualification
+remain prerequisites. T004/T005/T006/T010 remain open.
+
 ## Local checks
 
 Run from `backend/` in an existing supported development environment:
@@ -38,7 +160,28 @@ authenticated before/after health and speech checks and was not restarted.
 The server-side proxy and Fish configuration reuse the protected backend bearer
 credential rather than requiring an additional operator or Fish secret.
 
-## Iteration 11 native deployment and rollback evidence
+## Iteration 12 local rollback correction and deployment status
+
+The managed recreation helper now binds only the explicit prototype/UI label
+and plist-name pair documented in `backend/deployment/prototype-operations.md`.
+Rollback restores through a same-directory temporary file with owner-only
+writable mode (`0600`) and an atomic rename, so repeated forced failures can
+replace a destination that an earlier rollback left read-only. The fake
+`launchctl` test exercises one success, two consecutive forced failures,
+content/mode restoration, and rejection of an unapproved label pair. The
+Companion Python assertion checks the Git executable mode rather than asking
+Windows for a POSIX executable bit; the native zsh executable check remains in
+place.
+
+No current native deployment or live rollback claim is recorded here. This
+Windows builder session has no authorized SSH target/path or deployment
+credential available, so it did not contact production, the prototype, or the
+UI and did not update any private launchd definition. Current local hashes
+must be recorded as deployed hashes only after an independent authorized live
+run succeeds. The exact artifact, codec, reference, managed-neural lifecycle,
+and four-output gates therefore remain open.
+
+## Historical iteration 11 native deployment evidence (superseded)
 
 The authorized Apple Silicon macOS target was reached with the existing strict,
 non-interactive SSH policy. No host-key trust, production launch agent,
@@ -46,8 +189,10 @@ production plist, token file, or production process was changed. The stale
 prototype definition remains quarantined under a non-loadable name and
 disabled; no new startup definition was introduced.
 
-The current prototype-only deployment matched the checked-in SHA-256 values
-for the launcher, runbook, recreation helper, recreation test, and template:
+The prior prototype-only deployment matched the checked-in SHA-256 values for
+the launcher, recreation helper, recreation test, and template. The runbook
+was deployed at a different historical revision, so its value is retained
+only as historical evidence:
 
 ```text
 fish_worker_launcher.py       25df2f4489596853613e12f7518505fc1271f121af5db31b6251f06151f85b3e
@@ -336,3 +481,48 @@ terms must be approved before enabling the worker. Mocked lifecycle tests cover
 admission, one-worker ownership, pressure/probe failure, cancellation,
 deadline, cooldown, idle unload, cleanup, and native fallback; live neural
 lifecycle and four-output qualification remain open gates.
+
+## Current artifact and reference preparation
+
+This update supersedes earlier statements that the exact model card was
+inaccessible or that no Common Voice archive had been downloaded. The exact
+Fish 1.5 model revision and model-weight license are recorded in
+[research.md](research.md); the operator confirmed noncommercial use. The model
+and decoder hashes match that revision. The installed source checkout still
+has two local modifications and has not been reviewed, tested, or bound to the
+managed-launcher approval manifest. The managed worker therefore remains
+disabled.
+
+The account holder confirmed checking the displayed MDC agreement flags for
+both the German and English Common Voice Spontaneous Speech 5.0 datasets before
+download. The private archives are outside the repository. Metadata screening
+found potential male and female groups in both languages, and four preliminary
+candidate MP3/`.lab` pairs (one per language and dataset-declared gender) were
+extracted into session-private storage. They have not been auditioned,
+transcript-reviewed, converted to WAV, or approved by hash. Contributor IDs
+and private archive contents must not be copied into this repository.
+
+Generated audio must be disclosed as machine-generated. The MDC consumer terms
+also require outputs not to contain personal data. Because a cloned voice may
+retain identifiable speaker characteristics, sharing generated audio remains
+disabled until that condition has been reviewed; user consent and a
+noncommercial purpose alone do not resolve it. No Fish synthesis, voice-quality
+approval, or native managed-worker qualification is claimed by this
+preparation record.
+
+## Current local regression results
+
+The reference-root launcher changes, authenticated reference-manifest checks,
+and browser voice labels/disclosure passed focused local verification:
+
+- Backend: 71 focused Fish speech, launcher, and config tests passed; 4
+  platform-specific tests were skipped.
+- Backend integration: 27 catalog, service, and deployment-template tests
+  passed.
+- Frontend: production build succeeded and the engine-discovery Playwright
+  suite passed all 18 desktop/mobile cases.
+- `git diff --check` passed.
+
+These are local code checks only. They do not establish native macOS
+qualification, an approved Fish source tree or reference set, or clearance to
+share generated voice-conditioned audio. The managed worker remains disabled.

@@ -22,6 +22,12 @@ const configurationPanel = document.querySelector("#configuration-panel");
 const targetSelect = document.querySelector("#target");
 
 const supportedLanguages = new Set(["de-DE", "en-US", "en-GB"]);
+const voiceDisplayNames = new Map([
+  ["de-male", "Male (German)"],
+  ["de-female", "Female (German)"],
+  ["en-male", "Male (English)"],
+  ["en-female", "Female (English)"],
+]);
 let availableEngines = [];
 let audioUrl;
 let endpointRevision = 0;
@@ -187,12 +193,17 @@ function normalizeCatalog(catalog) {
   });
 }
 
-function setOptions(select, values, preferredValue) {
+function setOptions(
+  select,
+  values,
+  preferredValue,
+  labelForValue = (value) => value || "Engine default",
+) {
   select.replaceChildren(
     ...values.map((value) => {
       const option = document.createElement("option");
       option.value = value;
-      option.textContent = value || "Engine default";
+      option.textContent = labelForValue(value);
       return option;
     }),
   );
@@ -208,7 +219,12 @@ function renderVoices(engine, preferredVoice = voiceSelect.value) {
     return;
   }
   const voices = [...new Set(engine.voices[language] || [])];
-  setOptions(voiceSelect, ["", ...voices], preferredVoice);
+  setOptions(
+    voiceSelect,
+    ["", ...voices],
+    preferredVoice,
+    (voice) => voiceDisplayNames.get(voice) || voice || "Engine default",
+  );
   voiceSelect.disabled = voices.length === 0;
 }
 

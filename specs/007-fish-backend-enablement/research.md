@@ -1,7 +1,91 @@
 # Fish Enablement Research
 
 **Reviewed**: 2026-11-17
-**Status**: Local policy design implemented; native runtime/artifact acceptance blocked
+**Status**: Private four-voice managed inference observed with opt-in startup
+allowance; broader lifecycle/quality qualification remains open
+
+## Optimistic startup follow-up
+
+The operator authorized a more aggressive, revisable cold-start threshold
+relying on continued monitoring and yielding. The new positive
+`TTS_FISH_STARTUP_MEMORY_BYTES` overrides only cold-start allowance and cannot
+exceed the runtime worker budget. Unset retains conservative admission.
+The isolated private prototype now uses 4 GiB startup allowance plus the
+unchanged 12 GiB reserve (16 GiB total admission threshold), keeping the
+16 GiB worker RSS ceiling, 0.25-second monitor and 30-second idle/cooldown.
+This is an optimistic trial rather than a measured guarantee against spikes.
+
+All four short synthetic reference selections now returned valid Fish WAV
+with `X-Speech-Backend: fish-speech` and no fallback. The cold request took
+27.01 seconds; subsequent requests took 8.07, 17.04 and 10.89 seconds.
+Across 181 approximately half-second samples, minimum available memory was
+13.08 GiB and peak owned-group RSS was 3.00 GiB. One worker group was observed;
+after the idle window its listener and owned child session were absent.
+These sampled values do not include a proven Metal allocation peak or qualify
+long inputs, pressure termination, restart/cancellation, or subjective quality.
+Production retained its listener identity and readiness.
+
+The eight new cases failed before implementation; all 132 targeted native
+tests then passed in a separate candidate tree before deployment. The local
+Windows runner was blocked by an existing virtualenv `lib64` access error;
+native verification used the already-installed locked environment instead.
+Deployment initially encountered launchd's asynchronous unload/bootstrap
+transition; the old prototype was restored, and the final cutover waited for
+the exact old listener/label to disappear and bounded the bootstrap retry.
+Only the designated prototype was restarted; no production definition changed.
+
+## Earlier private enablement result (superseded by startup follow-up)
+
+This supersedes the pending preparation state below. The operator listened to
+all four converted WAVs, checked their transcripts, and explicitly approved
+private evaluation. The exact four-profile reference manifest now validates;
+assets and approval records remain private.
+
+The two-file MPS patch was reviewed as token-tensor dtype matching. A separate
+clean source snapshot preserves every tracked original working-tree file
+byte-for-byte, including those changes, while leaving the original checkout
+untouched. Its local revision is
+`3a2287807c8379c13cd5a0eee30d8054eb6a3efe`, with upstream provenance
+`7902e408c85b37193ce3f3c2361ca3c76be0d533`. The launcher validated the
+deterministic source digest, all five previously recorded checkpoint hashes,
+the runtime entrypoint and fixed MPS/half/offline loopback contract against an
+owner-only approval manifest. Source terms remain Apache-2.0; the pinned model
+card records CC BY-NC-SA 4.0 for model/decoder weights. The operator attests
+requirements are fulfilled for private noncommercial use; this is not an
+independent legal or redistribution clearance. The fresh card-access 403
+limitation recorded earlier remains.
+
+Native targeted tests passed (124 tests), and the clean source's API entrypoint
+import/options check passed without starting inference. The authorized isolated
+prototype and UI were switched to the staged build, retaining the shared backend
+credential. Only the exact legacy prototype Fish service was disabled, unloaded
+and quarantined; production retained its process identity, configuration hashes,
+readiness and authenticated speech.
+
+After legacy retirement, the deployed probe still measured about 17.3 GiB
+available. Its real configured admission check returned `fish_memory_reserve`
+against the unchanged 12 GiB reserve plus 16 GiB budget. Four authenticated
+reference selections produced valid native WAV with fallback metadata, not
+Fish output. Neither weights-inference compatibility, managed lifecycle nor
+neural voice quality is qualified. Do not bypass this gate or stop unrelated
+workloads. Detailed bounded results are in [quickstart.md](quickstart.md).
+
+## Earlier private enablement preparation follow-up (superseded)
+
+On 2026-11-18 the operator authorized enabling Fish in the isolated private
+environment. The existing runtime passed an MPS token-dtype `torch.isin`
+smoke check. Four candidate pairs were converted privately on the authorized
+Mac into mono 44.1 kHz PCM16 WAV/UTF-8 transcript pairs and bound by hashes
+in a draft manifest. Format, duration and owner-only permissions passed;
+human listening/transcript review is still pending, so the manifest remains
+unapproved and the catalog was not changed.
+
+Both backend readiness checks remained HTTP 200 and production retained its
+original process identity. No service or credential changes occurred. The
+external legacy Fish listener remains present; it cannot be adopted by the
+managed worker. Available memory with that worker resident was 17.34 GiB,
+below the fixed 28 GiB cold-start admission threshold. Preparation does not
+qualify a managed runtime or justify weakening the headroom policy.
 
 ## Headroom-First Follow-Up
 
@@ -226,6 +310,26 @@ as artifact approval. The managed flags remain fail-closed and the worker
 command remains absent. Native authenticated WAV fallback, browser playback,
 protected-copy rollback, and production preservation passed; exact
 artifact/codec/reference and managed-neural gates remain open.
+
+## Iteration 12 rollback and deployment evidence boundary
+
+The prototype-only helper was corrected locally to bind the exact managed
+prototype/UI labels and plist names, validate each plist `Label`, and restore
+protected copies through an atomic same-directory rename with owner-only
+writable mode. Its fake-launchctl test now runs two consecutive forced
+rollbacks and checks restored content and modes. The Companion validation
+assertion uses the Git executable mode on Windows while retaining the native
+zsh executable check.
+
+No live deployment is claimed for this iteration. The current builder session
+does not expose the authorized SSH target/path or deployment credential, so no
+remote service, token, launchd definition, or production process was touched.
+The historical iteration-11 runbook hash is explicitly superseded because it
+does not identify the current checked-in runbook. Current hashes and rollback
+evidence must be refreshed only after an independent authorized live run.
+Exact runtime/model/codec terms, clean approved artifacts, four consented
+reference pairs, Fish outputs, and managed-neural lifecycle evidence remain
+unresolved; no access restriction or consent gap was bypassed.
 
 ## Iteration 10 fail-closed hardening evidence
 
@@ -477,3 +581,165 @@ prototype service. After restoring its original external-worker policy,
 readiness and authenticated Fish speech returned HTTP 200. Production stayed
 untouched. These results establish deployment and rollback evidence, not
 completion of the remaining artifact, reference, or managed-lifecycle gates.
+
+## Iteration 12: Exact artifacts and Common Voice datasets
+
+The operator clarified four language-specific speakers (one female and one
+male for each language), noncommercial use, private model/reference artifacts,
+and noncommercial sharing of generated speech. The operator attests permission
+for that intended voice use. The original two-bilingual-speaker preference is
+superseded; no cross-language speaker identity is to be inferred.
+
+### Fish artifact terms
+
+The authorized Mac is reachable over the existing pinned SSH key. The installed
+model and decoder hashes match the files listed by the exact Hugging Face model
+revision
+[`275a984d33c33659e39eed41ff5bcd6e67517f4c`](https://huggingface.co/fishaudio/fish-speech-1.5/tree/275a984d33c33659e39eed41ff5bcd6e67517f4c).
+The revision's model card labels the model `CC-BY-NC-SA-4.0`, states the
+noncommercial-only usage condition in its gated-use field, and applies its
+license to the model weights. The Firefly decoder file is a weight in this
+same pinned model repository and has the recorded hash below. This supports
+reviewing it under the same model-weight terms; it is not an independent codec
+license file.
+
+- Fish source commit: `7902e408c85b37193ce3f3c2361ca3c76be0d533`
+  (Apache-2.0 source).
+- Model revision: `275a984d33c33659e39eed41ff5bcd6e67517f4c`;
+  `model.pth` SHA-256:
+  `918dc960372cc1b77bbafb14c48ef7a1634ecf75d4eb85b78607223b780d6001`.
+- Firefly decoder SHA-256:
+  `01b81dbf753224a156c3fe139b88bf0b9a0f54b11bee864f95e66511c3ccd754`.
+- Exact card:
+  [pinned model README](https://huggingface.co/fishaudio/fish-speech-1.5/blob/275a984d33c33659e39eed41ff5bcd6e67517f4c/README.md).
+- Exact artifact listing:
+  [pinned model revision files](https://huggingface.co/api/models/fishaudio/fish-speech-1.5/revision/275a984d33c33659e39eed41ff5bcd6e67517f4c).
+
+The user confirmed use will be noncommercial. Model and decoder files remain
+private and are not to be redistributed. CC BY-NC-SA requires attribution and
+ShareAlike for adaptations that are shared. Whether voice-conditioned speech
+outputs are adaptations is not established by the model card; do not make a
+public licensing conclusion from the model license alone.
+
+The installed Fish source checkout is at the pinned commit but has two local
+modifications that cast semantic-token ID tensors to the existing tensor dtype
+for MPS compatibility. Those changes are user work and were not reverted. The
+exact source tree must be reviewed, tested, and hash-bound in the private
+approval manifest before a managed worker can start.
+
+### Common Voice reference data
+
+The account holder reviewed and checked the same dataset-agreement flags for
+both dataset downloads in MDC. Each card identifies CC0-1.0, has no additional
+conditions and no special constraints, and forbids attempts to identify
+speakers or re-host/re-share the dataset. The consumer terms additionally
+require generated output to be disclosed as machine-generated and not to
+contain personal data. Do not retain speaker identifiers in the approval
+records, correlate a contributor with an external identity, or redistribute
+dataset clips.
+
+The selected source is the small spontaneous-speech release rather than the
+34.82 GB German or 88.43 GB English scripted releases:
+
+| Language | Dataset card | Release / format | Card summary |
+| --- | --- | --- | --- |
+| German | [Common Voice Spontaneous Speech 5.0](https://mozilladatacollective.com/datasets/cmu5mc2sn00s5mi07udtq2864) | `sps-corpus-5.0-2026-09-11`, MP3, 38.71 MB | 382 clips, 30 speakers, 108 transcribed and validated |
+| English | [Common Voice Spontaneous Speech 5.0](https://mozilladatacollective.com/datasets/cmu5nqn1h00vwmi07b4dbk085) | `sps-corpus-5.0-2026-09-11`, MP3, 519.05 MB | 5,898 clips, 642 speakers, 2,474 transcribed and validated |
+
+Both authorized archives are stored outside the repository in session-private
+storage. The dataset files expose a `client_id` described as a hashed UUID and
+optional self-declared gender. Local screening grouped clips only by that
+dataset-provided pseudonymous field to find same-speaker segments; no IDs,
+transcripts, or audio were emitted in logs or committed.
+
+Initial non-identifying metadata screening found enough potential material in
+each category. For candidates with a transcript, a positive transcript vote,
+and a 5-to-30-second clip duration, the German archive has 4 female and 9 male
+speaker groups; the English archive has 69 female and 51 male groups. These
+are screening counts, not voice selections or quality approval. Exact clips
+still need audio-quality/listening review, transcript matching, conversion to
+the Fish WAV/`.lab` layout, and private hash records. Four preliminary
+candidate MP3/`.lab` pairs (one per language and dataset-declared gender) have
+since been extracted into session-private storage using duration, transcript
+vote, and quality-tag metadata only. They have not been auditioned, transcript
+reviewed, converted, or approved; they are not yet qualified references.
+
+### Remaining release boundary
+
+The user's permission attestation and dataset CC0 do not resolve whether a
+voice-conditioned output is "personal data" under the MDC consumer terms.
+Because Fish reference cloning intentionally carries speaker characteristics,
+noncommercial sharing remains gated pending a defensible terms review. Local
+private evaluation may prepare the references and test the isolated managed
+runtime only after their exact per-clip approval record and model/source
+manifest are complete; do not release or externally share generated samples
+until that output constraint is resolved. Browser confirmations establish only
+that the account holder checked the displayed agreements; they do not establish
+broader rights or override the platform terms.
+
+## Current implementation follow-up
+
+The managed launcher now requires the reference root to be outside the pinned
+Fish source checkout, revalidates the exact four-profile manifest at launch,
+and runs Fish from the reference root with the approved source on `PYTHONPATH`.
+This preserves Fish's relative reference lookup without placing private audio
+in the source tree. The browser UI maps the four intended IDs to language and
+gender labels and displays a machine-generated-audio disclosure; it does not
+advertise those voices unless the authenticated backend catalog qualifies them.
+
+The installed Fish checkout is at the pinned source commit. Its only tracked
+changes are the two reported MPS-related patches: they construct semantic-token
+ID tensors with the dtype of the existing token tensors in the embedding and
+generation paths. The diff was reviewed, but no Fish-runtime or MPS test was
+run; the modified checkout remains dirty and no source approval manifest was
+created.
+
+Local regression checks passed: 71 focused backend tests passed with 4
+platform-specific skips, 27 additional catalog/service/deployment tests
+passed, and the engine-discovery browser suite passed all 18 desktop/mobile
+cases after a successful frontend build. These checks do not qualify the
+modified upstream Fish source, approve the preliminary references, resolve the
+MDC output restriction, or establish native macOS deployment or neural
+qualification. T004, T005, T006, and T010 remain open.
+
+## Documentation and local-asset separation
+
+The operator approved a private companion repository for sanitized documentation
+and public source metadata only, with restricted assets kept in local private
+storage outside both checkouts. The companion was created privately with Actions,
+issues, wiki and forking disabled; its initial tracked contents are an allowlist
+ignore file, a preparation/storage README and an unapproved public-source index.
+No recordings, transcripts, model weights, credentials or runtime approval files
+were uploaded. The public [preparation guide](../../backend/voice-preparation.md)
+explains authorized acquisition, local conversion and the existing approval gates.
+
+The German dataset card was rechecked and still labels the data CC0-1.0 while
+prohibiting re-hosting/re-sharing and attempts to identify speakers. Private
+hosting therefore is not assumed to permit a dataset mirror. The local-only
+asset boundary reduces accidental public disclosure and avoids a new dataset
+upload, but does not settle voice-use rights, the MDC generated-output
+personal-data condition, model terms, or native qualification. Existing runtime
+and sharing gates remain unchanged.
+
+### Authorized private checkpoint archival
+
+The operator subsequently requested durable off-workstation archival and states
+that license requirements are fulfilled for their private use. This is recorded
+as an operator intended-use assessment, not an independent rights-clearance
+verdict. Five non-sensitive checkpoint files (model, decoder, config, special
+tokens and tokenizer) were copied unchanged to a private companion Release.
+They total 1,466,157,080 bytes. Source-host and transfer-copy SHA-256 values match;
+all seven Release assets, including checksum and archival-manifest files, also
+match GitHub's server-reported SHA-256 digests and sizes. The private repository
+contains exact upstream source/revision links, recorded licenses, attribution,
+modification status, hashes, review limitations and restore instructions.
+
+The exact model card/API returned HTTP 403 to this session during archival, so
+the recorded weight-license basis remains the earlier exact-revision review.
+No access restriction was bypassed. The model/decoder hashes match that prior
+evidence; support-file hashes identify the installed bytes and were not newly
+compared against upstream. This exception permits the explicitly authorized
+checkpoint backup, not a dataset mirror. No voice data, transcripts, consent
+records, credentials, actual approval manifest or private host configuration
+was uploaded. Fish activation, complete voice restoration and native
+qualification remain open; the archive is not an approved runtime.

@@ -2,11 +2,12 @@
 
 **Created**: 2026-11-17
 **Status**: Draft; local resource/fallback policy implemented, runtime/reference approval and native qualification pending
-**Input**: Enable Fish in the parallel speech prototype for private,
-noncommercial home automation and Open WebUI. Provide male and female voices
-in German and English using two consented bilingual speakers. Inspect the two
-operator-authorized hosts read-only and propose a runtime and resource limits
-before any installation.
+**Input**: Enable Fish in the isolated speech prototype for noncommercial home
+automation and Open WebUI, with one male and one female voice in each of German
+and English. Use four language-specific Common Voice reference speakers; keep
+model artifacts and source recordings private. The operator also intends to
+share generated speech noncommercially, subject to the applicable model,
+dataset, and speaker-use terms.
 
 ## Clarifications
 
@@ -14,30 +15,50 @@ before any installation.
 
 - The operator approved read-only inspection of the existing backend and
   frontend hosts, not package installation or deployment.
-- Use two consented bilingual speakers, one male and one female, rather than
-  downloading four unrelated voices. Their recordings and consent evidence
-  have not yet been supplied or verified.
+- The initial scope preferred two consented bilingual speakers. This preference
+  was superseded by the later operator clarification accepting four
+  language-specific speakers; no bilingual identity is required.
 - Intended use is private, noncommercial home automation and Open WebUI.
   Propose resource limits after inspection; no spending is authorized.
 - Preserve the existing production service and the working macOS prototype.
   Earlier documentary approval gates are not waived by this request.
 - Subsequent operator clarification fixes the inference target to the existing
   Apple Silicon Mac with 32 GiB unified memory; another machine is not the
-  proposed deployment target. Research community voice candidates before
-  requiring operator-supplied recordings. Candidate discovery does not approve
-  downloads or establish speaker consent, bilingual quality, or local usability.
+  proposed deployment target. Candidate discovery does not itself approve
+  downloads or establish voice quality or local usability.
 - The operator subsequently authorized proceeding with headroom-first,
   low-priority neural TTS. Use a 12 GiB higher-priority memory reserve and a
   16 GiB neural-worker budget first; screen smaller Fish variants before
   considering an 8 GiB reserve and roughly 24 GB candidate.
+- The operator subsequently authorized more aggressive cold-start admission
+  relying on continued monitoring and yielding. Use an opt-in 4 GiB startup
+  allowance plus the unchanged 12 GiB reserve for private evaluation; retain
+  the 16 GiB running-worker ceiling. This is provisional, not a measured peak
+  or a guarantee against transient memory pressure.
+- The operator accepts four language-specific reference speakers instead of
+  requiring two bilingual speakers, and identifies the German and English
+  Mozilla Common Voice datasets as the desired source. Male/female selection
+  must use the dataset's self-declared metadata, never inference from audio.
+- The operator states that permission covers noncommercial sharing of
+  generated audio. This operator assurance does not replace the exact
+  dataset-specific license, the speaker-use constraints, or the MDC consumer
+  terms. The applicable terms must permit the intended use; unresolved
+  personal-data or share-alike implications keep shared-output release gated.
+- Common Voice data is accessed through MDC. The account holder must accept
+  the exact dataset agreement before download. Never identify contributors,
+  re-host or re-share the dataset, or put reference assets, transcripts,
+  generated audio, account credentials, or consent evidence in git. Any shared
+  generated output must be disclosed as machine-generated and must comply with
+  the dataset terms.
 - Native `say` is the required baseline. Resource denial overrides any valid
   request's engine and voice preference; preserve the resolved requested
   language and the audio response contract. Report the actual engine and
   fallback rather than disguising substitution.
-- Thorsten's original neutral recordings with transcripts are the first German
-  reference candidate. This is not permission to load Piper/Coqui weights into
-  Fish or proof of English quality. Exact artifact and runtime review remains
-  required before downloads or live enablement.
+- Thorsten's original neutral recordings with transcripts were an earlier
+  German reference candidate. The current request selects Common Voice
+  language-specific references; this does not authorize loading Piper/Coqui
+  weights into Fish. Exact artifact and dataset review remains required before
+  Fish enablement.
 
 ## User Scenarios & Testing
 
@@ -65,27 +86,33 @@ prerequisite must leave Fish disabled without changing working services.
    deployment limits, **When** evaluation is authorized separately,
    **Then** only the approved isolated evaluation proceeds.
 
-### User Story 2 - Choose bilingual male and female voices (Priority: P1)
+### User Story 2 - Choose male and female voices by language (Priority: P1)
 
-As a private speech user, I want a consistent male or female voice in German
-and English without selecting a different model for each voice.
+As a private speech user, I want one male and one female voice in each of
+German and English without selecting a different model for each voice.
 
 **Why this priority**: The requested four language/voice combinations depend on
-speaker references, not four independent model installations.
+speaker references, not four independent model installations. Four
+language-specific speakers are acceptable; cross-language voice identity is
+not required.
 
-**Independent Test**: With approved recordings from two bilingual speakers,
-verify all four language/voice combinations are advertised and produce speech
-using the selected speaker and language.
+**Independent Test**: With four approved language-specific recordings, verify
+all four language/voice combinations are advertised and produce speech using
+the selected speaker and language.
 
 **Acceptance Scenarios**:
 
-1. **Given** approved bilingual speaker references, **When** German or English
-   is selected, **Then** both the male and female voice are available.
+1. **Given** approved German and English speaker references, **When** either
+   language is selected, **Then** its male and female voices are available.
 2. **Given** missing recordings or unresolved speaker consent, **When** voices
    are configured, **Then** the affected combinations are not advertised as
    usable and no substitute speaker is silently selected.
 3. **Given** a requested advertised combination, **When** speech is generated,
    **Then** the response identifies Fish as the actual engine.
+4. **Given** an applicable dataset term or speaker-use restriction that does
+   not permit the selected voice reference or intended sharing, **When** the
+   catalog is prepared, **Then** the affected voice or sharing mode remains
+   disabled and the restriction is reported.
 
 ### User Story 3 - Evaluate without disrupting existing speech (Priority: P2)
 
@@ -142,9 +169,10 @@ listener acceptance, then verify existing service health and rollback.
   exact runtime/model/codec revisions, per-file hashes, applicable terms for
   the stated use, voice provenance, resource budget, and service/network
   changes. An exact approval manifest MUST be available before neural exec.
-- **FR-004**: Evaluation MUST use two consented bilingual speakers and expose
-  exactly the four German/English male/female combinations only after each
-  exact WAV/transcript reference and intended-use permission has been verified.
+- **FR-004**: Evaluation MUST expose exactly one male and one female
+  language-specific voice in German and in English, only after each exact
+  WAV/transcript reference and its intended-use permission have been verified.
+  Cross-language speaker identity MUST NOT be inferred or required.
 - **FR-005**: The model and speaker references MUST be treated as separate
   assets; neither private use nor model availability establishes voice rights.
 - **FR-006**: Fish MUST remain unavailable until its approved inference service,
@@ -184,14 +212,24 @@ listener acceptance, then verify existing service health and rollback.
 - **FR-016**: Resource recovery MUST require sufficient start-up headroom and
   a cooldown before a new neural start. No polling, discovery, or startup may
   download model or voice assets. The stricter existing policy remains default.
+- **FR-017**: Before a Common Voice reference is downloaded or used, the
+  account holder MUST accept its exact MDC dataset agreement. The system MUST
+  not identify contributors or re-host or re-share dataset material. Shared
+  model-generated audio MUST be disclosed as machine-generated and MUST remain
+  disabled unless its content and use comply with the applicable dataset,
+  model, and speaker-use terms, including any personal-data restriction.
+- **FR-018**: Fish model artifacts and source references MUST remain private
+  and non-redistributed. The exact pinned source, model and decoder artifacts,
+  hashes, terms, and noncommercial-use conditions MUST be recorded before the
+  managed Fish process can start.
 
 ### Key Entities
 
 - **Candidate artifact set**: Exact model, codec, runtime revisions and applicable
   terms reviewed together for the intended use.
-- **Bilingual voice profile**: A public voice identifier associated with approved
-  German and English references from one consenting speaker; private evidence
-  is retained separately.
+- **Language-specific voice profile**: A public voice identifier associated
+  with one approved language-specific reference and transcript; contributor
+  identities and private permission evidence are not exposed.
 - **Evaluation authorization**: Approved runtime, resource limits, synthetic
   material, acceptance thresholds, and rollback boundary.
 
@@ -200,7 +238,8 @@ listener acceptance, then verify existing service health and rollback.
 ### Measurable Outcomes
 
 - **SC-001**: All required model, codec, runtime, voice, and deployment approvals
-  are recorded before the first installation or synthesis operation.
+  are recorded before the first Fish installation or synthesis operation; any
+  dataset agreement is accepted by the account holder before its data is used.
 - **SC-002**: Both requested voice choices work in both languages: four of four
   combinations produce playable speech accepted by the operator.
 - **SC-003**: Every evaluated combination meets the resource and timing
@@ -215,16 +254,21 @@ listener acceptance, then verify existing service health and rollback.
 - **SC-007**: Simulated loading, active and idle memory pressure, memory-probe
   failure, shutdown and cancellation stop only the owned process. Tests also
   establish cooldown, single-neural admission, and remaining-deadline behavior.
+- **SC-008**: All shared generated audio is identified downstream as
+  machine-generated, and no shared output is released unless the applicable
+  dataset/model/speaker terms permit it and the output satisfies their
+  restrictions.
 
 ## Assumptions
 
 - S2-Pro remains an unapproved candidate. Newly found community MLX Drama 3
   quantization evidence also warrants screening for the confirmed Mac target;
   neither checkpoint/runtime combination is approved or qualified.
-- Two consented bilingual speakers remain the desired outcome. Community voice
-  research may identify language-specific alternatives, but those alternatives
-  do not satisfy the bilingual requirement without review and operator acceptance.
-  No recordings or consent have been verified.
+- Four language-specific Common Voice speakers are the requested outcome.
+  The operator asserts permission for private reference use and noncommercial
+  sharing of generated speech. No particular recording has yet been obtained,
+  associated with that permission, or reviewed; no contributor identity may be
+  sought to establish the association.
 - Proposed profile names are `de-male`, `de-female`, `en-male`, and `en-female`;
   these are configuration proposals, not downloadable model identifiers.
 - Runtime selection and numeric budgets belong to the technical plan after

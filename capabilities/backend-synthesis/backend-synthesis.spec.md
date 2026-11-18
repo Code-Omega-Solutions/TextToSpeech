@@ -240,15 +240,25 @@ and deterministic source-tree digest, with no tracked, untracked, or ignored
 files, every runtime model file, the codec file, immutable artifact revisions,
 per-file hashes, applicable terms, and the tracked runtime entrypoint hash plus
 fixed loopback serving contract before exec. The approval manifest itself SHALL
-not be group- or world-writable on POSIX. The reference approval SHALL bind each advertised ID to exactly
-`references/<id>/<stem>.wav` and its matching `.lab` under the Fish source
-tree, reject symlinks and extra Fish-consumed files, and record provenance,
-consent, and intended use. It SHALL
-lazily create one
+not be group- or world-writable on POSIX. The reference approval SHALL bind
+each advertised ID to exactly `references/<id>/<stem>.wav` and its matching
+`.lab` under a separate private reference-data root, reject symlinks and extra
+Fish-consumed files, and record the exact CC0 dataset/release, accepted-term
+permission basis, hashes, and private noncommercial intended use without
+recording contributor identity. The managed launcher SHALL revalidate this
+reference manifest before exec and run the Fish API with the reference-data
+root as its working directory and the clean source checkout on `PYTHONPATH`.
+It SHALL lazily create one
 low-priority owned process session, admit one neural request, and leave native
 admission independent of waiting neural requests. Defaults SHALL be a 16 GiB
 worker process-group RSS budget, 12 GiB available-memory reserve, and 30-second
-idle/cooldown limits. A cold start SHALL require both reserve and peak budget;
+idle/cooldown limits. A cold start SHALL require both reserve and peak budget
+by default. An explicit `TTS_FISH_STARTUP_MEMORY_BYTES` override SHALL replace
+only the startup allowance, MUST be positive and no greater than the worker
+budget, and SHALL NOT reduce the loaded reserve or runtime RSS ceiling.
+The private operator may tune this optimistic allowance from observed behavior;
+sampled monitoring cannot guarantee instantaneous yielding or prevent transient
+memory pressure during load. With either admission policy,
 a loaded worker SHALL not have its resident memory credited toward the reserve.
 
 The supervisor SHALL monitor loading, active and idle workers, reject invalid
@@ -275,6 +285,11 @@ separate gates.
 
 - **WHEN** available memory equals reserve plus peak budget at cold start, or equals reserve while the worker is loaded and RSS is no greater than budget
 - **THEN** memory admission succeeds; dropping below reserve or exceeding budget denies neural work.
+
+#### Scenario: an operator opts in to optimistic cold-start admission
+
+- **WHEN** a positive startup allowance below the worker budget is configured and available memory equals reserve plus that allowance
+- **THEN** cold start is admitted, but loading, active and idle monitoring still enforce the unchanged reserve and worker budget, stopping only the owned worker on breach.
 
 #### Scenario: cancellation, idle expiry or shutdown occurs
 
@@ -318,7 +333,23 @@ output, query strings, and private machine paths.
 - **WHEN** validation or synthesis fails for a request containing speech text, credentials, or a query string
 - **THEN** the response and correlated logs contain a request ID and safe diagnostics without those values, raw subprocess output, or private paths.
 
-### Iteration 5 private prototype evidence
+### Current private prototype evidence
+
+The operator-authorized private prototype now has a hash-bound clean patched
+Fish source, exact approved checkpoints/runtime binding and four converted,
+operator-auditioned German/English female/male references. Its authenticated
+catalog and UI expose these approved choices; production is unchanged. Current
+live requests first yielded to native WAV under the default conservative
+28 GiB threshold. A separately authorized 4 GiB startup allowance plus 12 GiB
+reserve now admits the private worker: all four short selections returned actual
+Fish WAV without fallback. Sampled minimum available memory was 13.08 GiB and
+peak owned-group RSS 3.00 GiB. This does not qualify worst-case/Metal memory,
+subjective voice quality or the complete native pressure/cancellation lifecycle.
+See feature 007's
+[current deployment evidence](../../specs/007-fish-backend-enablement/quickstart.md).
+External-output sharing remains separately gated.
+
+### Iteration 5 private prototype evidence (historical)
 
 The designated Apple Silicon prototype has been deployed on a separate backend
 port using the existing backend bearer mechanism and a loopback Fish service.

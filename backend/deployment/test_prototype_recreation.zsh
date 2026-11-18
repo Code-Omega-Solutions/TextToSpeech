@@ -66,6 +66,16 @@ write_plist() {
   print -r -- '<key>Label</key>' >> "$path"
   print -r -- '<string>'"$label"'</string>' >> "$path"
   print -r -- '</dict></plist>' >> "$path"
+  chmod 600 "$path"
+}
+
+file_mode() {
+  local mode
+  mode="$(stat -f '%Lp' "$1" 2>/dev/null || :)"
+  case "$mode" in
+    ''|*[!0-9]*) stat -c '%a' "$1" ;;
+    *) print -r -- "$mode" ;;
+  esac
 }
 
 run_case() {
@@ -76,8 +86,8 @@ run_case() {
   local state_file="$case_root/state"
   local log_file="$case_root/launchctl.log"
   local failed_file="$case_root/failed"
-  local backend_plist="$case_root/backend.plist"
-  local ui_plist="$case_root/ui.plist"
+  local backend_plist="$case_root/com.example.private-speech-studio-backend.plist"
+  local ui_plist="$case_root/com.example.private-speech-studio-ui.plist"
   local verifier="$case_root/verify.sh"
   local original_backend original_ui result
 
@@ -93,42 +103,75 @@ run_case() {
   if [ "$verifier_exit" -eq 0 ]; then
     print -r -- 'exit 0' >> "$verifier"
   else
-    print -r -- 'printf "%s\n" "mutated" > "$BACKEND_PLIST"' >> "$verifier"
+    print -r -- 'temporary="${BACKEND_PLIST}.changed.$$"' >> "$verifier"
+    print -r -- 'printf "%s\n" "mutated" > "$temporary"' >> "$verifier"
+    print -r -- 'chmod 600 "$temporary"' >> "$verifier"
+    print -r -- 'mv -f "$temporary" "$BACKEND_PLIST"' >> "$verifier"
     print -r -- 'exit 1' >> "$verifier"
   fi
   chmod +x "$verifier"
   write_fake_launchctl "$fake_bin" "$state_file" "$log_file" "$failed_file"
 
+  local attempt
+  local attempts=1
+  [ "$verifier_exit" -eq 0 ] || attempts=2
+  attempt=1
+  while [ "$attempt" -le "$attempts" ]; do
+    set +e
+    PATH="$fake_bin:$PATH" \
+      FAKE_LAUNCHCTL_STATE="$state_file" \
+      FAKE_LAUNCHCTL_LOG="$log_file" \
+      FAKE_LAUNCHCTL_FAIL_KICKSTART=0 \
+      FAKE_LAUNCHCTL_FAILED="$failed_file" \
+      BACKEND_LABEL="com.example.private-speech-studio-prototype" \
+      UI_LABEL="com.example.private-speech-studio-ui" \
+      BACKEND_PLIST="$backend_plist" \
+      UI_PLIST="$ui_plist" \
+      PROTECTED_DIR="$case_root/protected" \
+      VERIFY_SCRIPT="$verifier" \
+      zsh "$RECREATION_SCRIPT"
+    result=$?
+    set -e
+
+    if [ "$verifier_exit" -eq 0 ]; then
+      [ "$result" -eq 0 ] || return 1
+    else
+      [ "$result" -ne 0 ] || return 1
+    fi
+    [ ! -e "$case_root/protected" ] || return 1
+    [ "$(cat "$backend_plist")" = "$original_backend" ] || return 1
+    [ "$(cat "$ui_plist")" = "$original_ui" ] || return 1
+    [ "$(file_mode "$backend_plist")" = "600" ] || return 1
+    [ "$(file_mode "$ui_plist")" = "600" ] || return 1
+    grep -Fx "com.example.private-speech-studio-prototype" "$state_file" >/dev/null
+    grep -Fx "com.example.private-speech-studio-ui" "$state_file" >/dev/null
+    if [ "$verifier_exit" -ne 0 ]; then
+      assert_file_contains "$log_file" "bootout gui/"
+      assert_file_contains "$log_file" "bootstrap gui/"
+    fi
+    if [ "$attempt" -lt "$attempts" ]; then
+      chmod 400 "$backend_plist" "$ui_plist"
+    fi
+    attempt=$((attempt + 1))
+  done
+}
+
+run_rejects_unmanaged_labels() {
+  local case_root="$TEST_ROOT/rejected-labels"
+  local backend_plist="$case_root/com.example.private-speech-studio-backend.plist"
+  local ui_plist="$case_root/com.example.private-speech-studio-ui.plist"
+  mkdir -p "$case_root"
+  write_plist "$backend_plist" "com.example.private-speech-studio-prototype-other"
+  write_plist "$ui_plist" "com.example.private-speech-studio-ui"
   set +e
-  PATH="$fake_bin:$PATH" \
-    FAKE_LAUNCHCTL_STATE="$state_file" \
-    FAKE_LAUNCHCTL_LOG="$log_file" \
-    FAKE_LAUNCHCTL_FAIL_KICKSTART=0 \
-    FAKE_LAUNCHCTL_FAILED="$failed_file" \
-    BACKEND_LABEL="com.example.private-speech-studio-prototype" \
+  BACKEND_LABEL="com.example.private-speech-studio-prototype-other" \
     UI_LABEL="com.example.private-speech-studio-ui" \
     BACKEND_PLIST="$backend_plist" \
     UI_PLIST="$ui_plist" \
-    PROTECTED_DIR="$case_root/protected" \
-    VERIFY_SCRIPT="$verifier" \
     zsh "$RECREATION_SCRIPT"
   result=$?
   set -e
-
-  if [ "$verifier_exit" -eq 0 ]; then
-    [ "$result" -eq 0 ] || return 1
-  else
-    [ "$result" -ne 0 ] || return 1
-  fi
-  [ ! -e "$case_root/protected" ] || return 1
-  [ "$(cat "$backend_plist")" = "$original_backend" ] || return 1
-  [ "$(cat "$ui_plist")" = "$original_ui" ] || return 1
-  grep -Fx "com.example.private-speech-studio-prototype" "$state_file" >/dev/null
-  grep -Fx "com.example.private-speech-studio-ui" "$state_file" >/dev/null
-  if [ "$verifier_exit" -ne 0 ]; then
-    assert_file_contains "$log_file" "bootout gui/"
-    assert_file_contains "$log_file" "bootstrap gui/"
-  fi
+  [ "$result" -ne 0 ] || return 1
 }
 
 [ -x "$RECREATION_SCRIPT" ] || {
@@ -138,4 +181,5 @@ run_case() {
 zsh -n "$RECREATION_SCRIPT"
 run_case success 0
 run_case forced-failure 1
+run_rejects_unmanaged_labels
 printf '%s\n' "prototype recreation zsh success/forced-failure tests passed"

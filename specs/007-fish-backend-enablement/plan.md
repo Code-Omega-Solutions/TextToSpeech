@@ -1,22 +1,29 @@
 # Implementation Plan: Headroom-First Fish Enablement
 
 **Date**: 2026-11-17 | **Spec**: [spec.md](spec.md)
-**Status**: Local resource-policy design ready; artifact and deployment gates open
+**Status**: Local resource-policy design ready; private noncommercial artifact terms reviewed; reference, output-sharing, and deployment gates open
 
 ## Summary
 
 Implement an opt-in low-priority policy in the existing Python speech backend.
 Keep strict selection as the default. Under the new policy, independently
 supervise an operator-configured local Fish process, lazy-start only with a
-16 GiB peak budget plus 12 GiB free reserve, admit one neural request, and
+16 GiB peak budget plus 12 GiB free reserve by default, admit one neural request, and
 stop the owned process when its budget or host reserve is breached.
+The separately authorized private override uses a positive 4 GiB startup
+allowance (16 GiB total admission threshold), leaving the 12 GiB reserve,
+16 GiB runtime RSS ceiling and monitoring unchanged. Other deployments retain
+full-budget cold-start admission unless explicitly configured.
 Return native speech in the resolved language when neural resources are absent,
 ignoring neural engine/voice preference but preserving the response contract.
 
 Separate model-independent policy implementation from gated runtime installation.
-No inference launcher or model is bundled. Downloads, native qualification and
-live service changes remain blocked until exact artifacts and voice references
-are reviewed. Do not mark the feature complete merely because policy tests pass.
+The model and Common Voice archives are installed/downloaded only in private
+storage on the authorized host and session; no assets are bundled in Git. The
+exact model revision and noncommercial terms are recorded, but the installed
+source checkout has unreviewed local modifications, exact references are not
+selected, generated-output sharing remains gated, and native qualification is
+incomplete. Do not mark the feature complete merely because policy tests pass.
 
 ## Technical Context
 
@@ -43,22 +50,27 @@ and unrelated services are never terminated by this supervisor.
 | Safe bounded behavior | PASS: fail-closed admission, monitored limits, finite cooldown/idle/deadline. |
 | Operational boundaries | PASS for local code; deployment is separately gated; terminate only created process group. |
 | Observable outcomes | PASS for design: tests require actual fallback metadata and remaining deadline. |
-| Platform and rights claims | PASS only with downloads and deployment gated; no artifact approval inferred. |
+| Platform and rights claims | PASS for the reviewed private noncommercial model terms; voice-reference use, output sharing and native qualification remain explicit gates. |
 
 Post-design review retains these boundaries. No exceptions are accepted.
 
 ## Phase 0: Runtime and Reference Screening
 
-See [research.md](research.md). Fish Speech v1.5.0's tagged README claims German,
-English, cross-language reference voices, and macOS support. Its exact weight
-metadata remains inaccessible; it is a smaller-family screening lead, not a
-measured sub-16-GiB candidate. Do not assert it meets latency or memory limits.
+See [research.md](research.md). Fish Speech v1.5's exact gated model revision,
+model-weight terms, local model/decoder hashes, and macOS prototype outputs are
+recorded there. The user confirmed noncommercial use. The decoder is a weight
+in the same model repository; its license is supported by the model card's
+model-weight license statement, not by a separate codec license file. The
+installed source checkout contains two local MPS-related modifications, so the
+managed worker must not start until those changes are reviewed, tested, and
+bound to an exact clean source revision.
 
-Drama 3 MLX 3-bit's reported 22.5-24 GB peak is outside the initial worker
-budget. The operator permits considering the weaker 8 GiB reserve only if no
-suitable smaller Fish candidate is found. Do not lower limits automatically.
-Thorsten original neutral WAV/transcript references remain the first German
-candidate; no Piper or Coqui weights are interchangeable with Fish.
+The 16 GiB neural-worker budget and 12 GiB reserve remain unchanged; historical
+Drama 3 MLX 3-bit estimates do not justify weakening them. Four
+language-specific Common Voice Spontaneous Speech 5.0 references replace the
+former bilingual/Thorsten candidate. Initial metadata screening found enough
+self-declared female and male groups in both languages, but no exact clip has
+yet passed audio, transcript, and listener review.
 
 ## Phase 1: Design
 
@@ -74,6 +86,11 @@ candidate; no Piper or Coqui weights are interchangeable with Fish.
   unrelated backend/operator credentials and enforce offline model access in
   the child environment. Reject an already listening external endpoint rather
   than adopting or stopping it.
+- Keep the Fish source checkout clean and pinned. Store the four approved
+  references in a separate private data root; run the Fish API with that root as
+  its working directory and the clean source checkout on `PYTHONPATH`, so
+  Fish's relative `references/<id>` lookup does not contaminate the source tree.
+  Bind and revalidate the reference manifest before each worker launch.
 - Keep independent request and process-state locks. A second neural request
   falls back immediately rather than occupying the remaining native permit.
 - Sample memory while loading, active, and idle. On probe failure, reserve breach,
@@ -118,8 +135,11 @@ specs/007-fish-backend-enablement/
 
 ## Deployment Stop Gates
 
-Resolve exact pinned checkpoint/codec/runtime permissions and compatible
-authenticated launcher, approve reference assets, then measure native memory,
-headroom, timing and listening quality. Verify both existing listeners before
-and after an approved prototype-only rollout. Until then the code remains
-undeployed, no model is installed, and native `say` is the available baseline.
+Bind the exact reviewed source tree and private model/decoder files to the
+approval manifest, select and validate four private references, and resolve
+whether shared voice-conditioned outputs satisfy the MDC personal-data
+restriction. Keep shared output disabled while that interpretation is open.
+Then measure native memory, headroom, timing and listening quality on the
+isolated prototype. Verify both existing listeners before and after any
+approved prototype-only rollout; production remains untouched and native
+`say` remains the always-available baseline.

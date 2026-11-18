@@ -28,6 +28,29 @@ def wav_bytes():
     return output.getvalue()
 
 
+def reference_record(language, gender, reference_id):
+    dataset_id = (
+        "cmu5mc2sn00s5mi07udtq2864"
+        if language == "de-DE"
+        else "cmu5nqn1h00vwmi07b4dbk085"
+    )
+    return {
+        "id": reference_id,
+        "language": language,
+        "gender": gender,
+        "dataset_id": dataset_id,
+        "dataset_release": "sps-corpus-5.0-2026-09-11",
+        "source_url": f"https://mozilladatacollective.com/datasets/{dataset_id}",
+        "source_revision": "sps-corpus-5.0-2026-09-11",
+        "source_license": "CC0-1.0",
+        "terms_url": "https://example.test/terms",
+        "terms_revision": "accepted-dataset-agreement",
+        "permission_basis": "dataset-terms-accepted",
+        "terms_status": "approved",
+        "intended_use": "private-noncommercial",
+    }
+
+
 class FishFixture:
     def __init__(self):
         self.payloads = []
@@ -216,24 +239,13 @@ def test_reference_catalog_requires_all_exact_consent_records(tmp_path):
         transcript.write_text(f"Transcript for {reference_id}", encoding="utf-8")
         records.append(
             {
-                "id": reference_id,
-                "language": language,
-                "gender": gender,
+                **reference_record(language, gender, reference_id),
                 "audio_path": f"references/{reference_id}/{reference_id}.wav",
                 "lab_path": f"references/{reference_id}/{reference_id}.lab",
                 "audio_sha256": hashlib.sha256(wav.read_bytes()).hexdigest(),
                 "lab_sha256": hashlib.sha256(
                     transcript.read_bytes()
                 ).hexdigest(),
-                "source_url": "https://example.test/source",
-                "source_revision": "source-revision",
-                "source_license": "CC0",
-                "terms_url": "https://example.test/terms",
-                "terms_revision": "terms-revision",
-                "consent_status": "speaker-consent",
-                "speaker_category": "non-celebrity",
-                "terms_status": "approved",
-                "intended_use": "private-noncommercial",
             }
         )
     manifest = tmp_path / "references.json"
@@ -256,6 +268,20 @@ def test_reference_catalog_requires_all_exact_consent_records(tmp_path):
         "en-US": ("en-female", "en-male"),
     }
 
+    records[0]["permission_basis"] = "speaker-consent"
+    manifest.write_text(
+        json.dumps({"status": "approved", "references": records}),
+        encoding="utf-8",
+    )
+    assert load_qualified_reference_catalog(str(manifest), str(source_root)) == {}
+    records[0]["permission_basis"] = "dataset-terms-accepted"
+    records[0]["dataset_id"] = "unreviewed-dataset"
+    manifest.write_text(
+        json.dumps({"status": "approved", "references": records}),
+        encoding="utf-8",
+    )
+    assert load_qualified_reference_catalog(str(manifest), str(source_root)) == {}
+
     records.pop()
     manifest.write_text(
         json.dumps({"status": "approved", "references": records}),
@@ -274,22 +300,11 @@ def test_reference_catalog_rejects_paths_not_consumed_by_fish(tmp_path):
     lab.write_text("Guten Morgen", encoding="utf-8")
     records = [
         {
-            "id": "de-male",
-            "language": "de-DE",
-            "gender": "male",
+            **reference_record("de-DE", "male", "de-male"),
             "audio_path": str(wav),
             "lab_path": str(lab),
             "audio_sha256": hashlib.sha256(wav.read_bytes()).hexdigest(),
             "lab_sha256": hashlib.sha256(lab.read_bytes()).hexdigest(),
-            "source_url": "https://example.test/source",
-            "source_revision": "source-revision",
-            "source_license": "CC0",
-            "terms_url": "https://example.test/terms",
-            "terms_revision": "terms-revision",
-            "consent_status": "speaker-consent",
-            "speaker_category": "non-celebrity",
-            "terms_status": "approved",
-            "intended_use": "private-noncommercial",
         }
     ]
     manifest = tmp_path / "references.json"
@@ -309,22 +324,11 @@ def test_reference_catalog_rejects_extra_files_fish_would_load(tmp_path):
     lab.write_text("Guten Morgen", encoding="utf-8")
     extra.write_bytes(wav_bytes())
     record = {
-        "id": "de-male",
-        "language": "de-DE",
-        "gender": "male",
+        **reference_record("de-DE", "male", "de-male"),
         "audio_path": "references/de-male/de-male.wav",
         "lab_path": "references/de-male/de-male.lab",
         "audio_sha256": hashlib.sha256(wav.read_bytes()).hexdigest(),
         "lab_sha256": hashlib.sha256(lab.read_bytes()).hexdigest(),
-        "source_url": "https://example.test/source",
-        "source_revision": "source-revision",
-        "source_license": "CC0",
-        "terms_url": "https://example.test/terms",
-        "terms_revision": "terms-revision",
-        "consent_status": "speaker-consent",
-        "speaker_category": "non-celebrity",
-        "terms_status": "approved",
-        "intended_use": "private-noncommercial",
     }
     manifest = tmp_path / "references.json"
     manifest.write_text(

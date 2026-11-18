@@ -125,26 +125,38 @@ stop. Do not use a broad `kill`, process-name termination, or wildcard
 
 Use the checked-in executable
 `backend/deployment/prototype-recreation.zsh` as the exact bounded sequence.
-It accepts only the two managed prototype labels and regular, non-symlink
-plist files. Set the values below after preflight; never replace the labels
-with production or a wildcard:
+It accepts only this explicit managed identity pair:
+
+```text
+backend label: com.example.private-speech-studio-prototype
+backend plist: com.example.private-speech-studio-backend.plist
+UI label:      com.example.private-speech-studio-ui
+UI plist:      com.example.private-speech-studio-ui.plist
+```
+
+The helper also reads each plist's `Label` key and rejects a mismatch. Set the
+values below after preflight; never replace the labels with production, a
+different label, or a wildcard:
 
 ```sh
-export BACKEND_LABEL="<MANAGED_PROTOTYPE_LABEL>"
-export UI_LABEL="<MANAGED_UI_LABEL>"
+export BACKEND_LABEL="com.example.private-speech-studio-prototype"
+export UI_LABEL="com.example.private-speech-studio-ui"
 export BACKEND_PLIST="<BACKEND_PLIST>"
 export UI_PLIST="<UI_PLIST>"
 zsh backend/deployment/prototype-recreation.zsh
 ```
 
-The helper captures owner-protected copies before booting out either managed
-label, waits for exact-label absence before each bootstrap, waits for both
-labels to return, and kickstarts only those labels. If `VERIFY_SCRIPT` is set
-to an executable regular file, it runs after both services return; any
+The helper captures owner-only protected copies before booting out either
+managed label, waits for exact-label absence before each bootstrap, waits for
+both labels to return, and kickstarts only those labels. If `VERIFY_SCRIPT` is
+set to an executable regular file, it runs after both services return; any
 nonzero result leaves `rollback_required=1`, invokes protected-copy rollback,
-and preserves the original failure status. The `EXIT` trap uses the portable
-`exit_code` variable rather than zsh's read-only `status` parameter. On
-successful checks, the helper sets `rollback_required=0` and keeps the
+and preserves the original failure status. Rollback copies each protected plist
+to a temporary file, restores owner-only writable mode `0600`, and atomically
+renames it over the destination, so a second forced rollback can replace a
+destination left read-only by an older version. The `EXIT` trap uses the
+portable `exit_code` variable rather than zsh's read-only `status` parameter.
+On successful checks, the helper sets `rollback_required=0` and keeps the
 recreated prototype/UI configuration.
 
 Run the approved bounded checks through a private, uncommitted executable
@@ -155,10 +167,12 @@ health plus authenticated speech. Record only sanitized status and HTTP
 outcomes. Never put credentials, target identities, paths, or generated audio
 in that verifier or this repository.
 
-The checked-in `test_prototype_recreation.zsh` runs both success and forced
-failure paths against fake launchctl state without touching launchd or
-production. Run it with `zsh backend/deployment/test_prototype_recreation.zsh`
-on a host with zsh before using the operational helper.
+The checked-in `test_prototype_recreation.zsh` runs the success path, two
+consecutive forced-failure/rollback paths, mode and content checks, and an
+unapproved-label rejection against fake launchctl state without touching
+launchd or production. Run it with
+`zsh backend/deployment/test_prototype_recreation.zsh` on a host with zsh
+before using the operational helper.
 
 Do not replace the native-only template with Fish settings unless the exact
 artifact terms and four-way consented references have independently been

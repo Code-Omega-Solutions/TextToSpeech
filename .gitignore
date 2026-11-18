@@ -1,11 +1,69 @@
-# Local data, logs, and tooling state
-/data/
-/logs/
-/.specify/
+# Dependencies, virtual environments, builds, and test output (all packages).
+node_modules/
+.venv*/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+dist/
+build/
+*.egg-info/
+coverage/
+playwright-report/
+test-results/
+.playwright-mcp/
 *.log
 
-# The project constitution is durable; other Spec Kit scaffolding is local.
-!/.specify/
+# Local configuration, credentials, and machine-specific diagnostics.
+.env
+.env.*
+!.env.example
+/.basic-memory/
+/.github/copilot-memories.jsonl
+/setup_manual.md
+/logs/
+*.key
+*.pem
+
+# Restricted reference/model data belongs outside every Git checkout.
+/downloads/
+/datasets/
+/references/
+/checkpoints/
+/secrets/
+/credentials/
+*.wav
+*.mp3
+*.flac
+*.ogg
+*.m4a
+*.lab
+*.pth
+*.pt
+*.ckpt
+*.safetensors
+*.onnx
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.7z
+TextToSpeech-recovery-inputs-*
+reference-manifest*.json
+artifact-manifest*.json
+selection-summary.json
+
+# Local data is excluded except the existing opt-in memory-sync export format.
+/data/*
+!/data/memory-store/
+/data/memory-store/*
+!/data/memory-store/*/
+/data/memory-store/*/*
+!/data/memory-store/*/memories.db
+!/data/memory-store/*/memories.json
+
+# Share selected Spec Kit policy/design files, not generated local scaffolding.
 /.specify/*
 !/.specify/companion.yml
 !/.specify/memory/
@@ -17,47 +75,13 @@
 !/.specify/companion/nodes/code-pins.md
 !/.specify/companion/nodes/states.md
 !/.specify/companion/nodes/screens.md
-
-# Keep the recovered Fish Speech idea portable without tracking local state.
 !/.specify/assessments/
 /.specify/assessments/*
 !/.specify/assessments/fish-speech/
 /.specify/assessments/fish-speech/*
 !/.specify/assessments/fish-speech/*.md
 
-# Dependencies, builds, and test output
-__pycache__/
-*.py[cod]
-.pytest_cache/
-node_modules/
-dist/
-playwright-report/
-test-results/
-
-# Local environment configuration
-.env
-.env.*
-!.env.example
-
-# Operating system metadata
+# Operating system metadata.
 .DS_Store
 Thumbs.db
 desktop.ini
-
-# memory-sync: rebuildable index and SQLite side files stay local
-data/rag-index/
-/.basic-memory/project-TextToSpeech/
-data/memory-store/*/*.db-wal
-data/memory-store/*/*.db-shm
-data/memory-store/*.db
-data/memory-store/*.db-wal
-data/memory-store/*.db-shm
-logs/mcp-diagnostics.log
-
-# memory-sync: keep the committed memory store out of broader ignore rules
-!data/
-!data/memory-store/
-!data/memory-store/*/
-!data/memory-store/*/memories.db
-!data/memory-store/*/memories.json
-!.memory-store.json

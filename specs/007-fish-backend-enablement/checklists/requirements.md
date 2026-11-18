@@ -34,9 +34,11 @@ implementation, licensing clearance, consent, or platform qualification.
 ## Notes
 
 Specification review includes the operator's 12 GiB reserve/16 GiB worker
-budget and explicit language-preserving native fallback. Technical planning
-and model-independent policy implementation may proceed, but
-installation, downloads, synthesis, and service changes remain blocked pending
-exact artifact/voice review, a feasible runtime, numeric budgets, and separate
-operator approval. Neither selected speakers nor their consent evidence have
-been verified.
+budget and explicit language-preserving native fallback. The exact model
+revision and dataset terms are now recorded, and the two dataset agreements
+were accepted before download. Exact references still require private clip,
+transcript, audio, and hash review; the installed source modifications and
+managed approval manifest also remain open. Generated-output sharing remains
+gated on the MDC personal-data restriction. This checklist describes
+requirement quality only and does not establish licensing clearance, consent,
+or platform qualification.

@@ -22,6 +22,10 @@ _REFERENCE_PROFILES = {
     ("en-US", "male"): "en-male",
     ("en-US", "female"): "en-female",
 }
+_REFERENCE_DATASETS = {
+    "de-DE": ("cmu5mc2sn00s5mi07udtq2864", "sps-corpus-5.0-2026-09-11"),
+    "en-US": ("cmu5nqn1h00vwmi07b4dbk085", "sps-corpus-5.0-2026-09-11"),
+}
 _REFERENCE_AUDIO_SUFFIX = ".wav"
 
 
@@ -76,7 +80,7 @@ def _reference_files_are_exact(
 def load_qualified_reference_catalog(
     path: str | None, reference_root: str | None = None
 ) -> dict[str, tuple[str, ...]]:
-    """Load exactly four locally pinned, consented reference records.
+    """Load exactly four locally pinned, dataset-terms-approved references.
 
     Invalid or incomplete manifests intentionally collapse to an empty catalog
     so an unqualified voice can never become publicly discoverable.
@@ -125,19 +129,22 @@ def load_qualified_reference_catalog(
             language = str(record.get("language", ""))
             gender = str(record.get("gender", ""))
             reference_id = _REFERENCE_PROFILES.get((language, gender))
+            dataset = _REFERENCE_DATASETS.get(language)
             if (
                 reference_id is None
+                or dataset is None
                 or record.get("id") != reference_id
                 or reference_id in seen
-                or record.get("consent_status") != "speaker-consent"
-                or record.get("speaker_category") != "non-celebrity"
+                or record.get("dataset_id") != dataset[0]
+                or record.get("dataset_release") != dataset[1]
+                or record.get("permission_basis") != "dataset-terms-accepted"
                 or record.get("terms_status") != "approved"
                 or record.get("intended_use") != "private-noncommercial"
                 or not str(record.get("source_revision", "")).strip()
                 or not str(record.get("terms_revision", "")).strip()
                 or not str(record.get("source_url", "")).startswith("https://")
                 or not str(record.get("terms_url", "")).startswith("https://")
-                or not str(record.get("source_license", "")).strip()
+                or record.get("source_license") != "CC0-1.0"
             ):
                 return {}
             wav = _safe_reference_path(

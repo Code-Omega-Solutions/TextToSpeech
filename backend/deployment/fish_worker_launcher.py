@@ -19,11 +19,17 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from app.fish_speech import load_qualified_reference_catalog
+
 
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _REVISION = re.compile(r"^[0-9a-f]{40}$")
 _RUNTIME_ENTRYPOINT = "tools/api_server.py"
 _RUNTIME_DECODER = "firefly-gan-vq-fsq-8x1024-21hz-generator.pth"
+_REFERENCE_CATALOG = {
+    "de-DE": ("de-female", "de-male"),
+    "en-US": ("en-female", "en-male"),
+}
 
 
 def _required_directory(name: str) -> Path:
@@ -264,6 +270,20 @@ def _approved_artifacts(checkpoint: Path, decoder: Path) -> dict[str, Any]:
     return document
 
 
+def _approved_references(reference_root: Path) -> None:
+    if os.environ.get("TTS_FISH_REFERENCES_APPROVED", "").lower() not in {
+        "1",
+        "true",
+        "yes",
+    }:
+        raise SystemExit("Fish neural deployment is disabled pending reference approval")
+    manifest = os.environ.get("TTS_FISH_REFERENCE_MANIFEST")
+    if not manifest or load_qualified_reference_catalog(
+        manifest, str(reference_root)
+    ) != _REFERENCE_CATALOG:
+        raise SystemExit("Fish reference assets do not match their approval manifest")
+
+
 def _runtime_binding(document: dict[str, Any], source: Path, decoder: Path) -> None:
     runtime = document.get("runtime")
     if not isinstance(runtime, dict):
@@ -298,6 +318,9 @@ def _runtime_binding(document: dict[str, Any], source: Path, decoder: Path) -> N
 def main() -> None:
     source = _required_directory("TTS_FISH_SOURCE_ROOT")
     checkpoint = _required_directory("TTS_FISH_CHECKPOINT_ROOT")
+    reference_root = _required_directory("TTS_FISH_REFERENCE_ROOT")
+    if source in reference_root.parents or source == reference_root:
+        raise SystemExit("Fish reference root must be separate from the source checkout")
     host = os.environ.get("TTS_FISH_WORKER_HOST", "127.0.0.1")
     port = os.environ.get("TTS_FISH_WORKER_PORT", "8002")
     if host != "127.0.0.1" or not port.isdecimal() or not 1 <= int(port) <= 65535:
@@ -313,9 +336,14 @@ def main() -> None:
     if document.get("source_tree_sha256") != source_tree_sha256:
         raise SystemExit("Fish source checkout does not match approval")
     _runtime_binding(document, source, decoder)
+    _approved_references(reference_root)
 
-    os.chdir(source)
-    sys.path.insert(0, str(source))
+    os.chdir(reference_root)
+    pythonpath = os.environ.get("PYTHONPATH")
+    os.environ["PYTHONPATH"] = os.pathsep.join(
+        part for part in (str(source), pythonpath) if part
+    )
+    os.environ["PYTHONDONTWRITEBYTECODE"] = "1"
     arguments = [
         sys.executable,
         "-m",

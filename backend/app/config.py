@@ -44,6 +44,7 @@ class _SettingsValues(BaseModel):
     fish_opportunistic: bool = False
     fish_worker_command: tuple[str, ...] | None = Field(default=None, repr=False)
     fish_worker_peak_memory_bytes: int = Field(default=16 * 1024**3, ge=1)
+    fish_startup_memory_bytes: int | None = Field(default=None, ge=1)
     fish_memory_reserve_bytes: int = Field(default=12 * 1024**3, ge=1)
     fish_idle_timeout_seconds: int = Field(default=30, ge=1, le=600)
     fish_cooldown_seconds: int = Field(default=30, ge=1, le=600)
@@ -74,6 +75,11 @@ class _SettingsValues(BaseModel):
 
     @model_validator(mode="after")
     def fish_requires_loopback_service_and_credential(self) -> _SettingsValues:
+        if (
+            self.fish_startup_memory_bytes is not None
+            and self.fish_startup_memory_bytes > self.fish_worker_peak_memory_bytes
+        ):
+            raise ValueError("Fish startup allowance must not exceed the worker memory budget")
         if self.default_backend == "fish-speech" and not self.fish_enabled and not self.fish_opportunistic:
             raise ValueError("TTS_DEFAULT_BACKEND=fish-speech requires TTS_FISH_ENABLED=true")
         if self.fish_enabled and (
@@ -96,7 +102,7 @@ class _SettingsValues(BaseModel):
         if self.fish_enabled and not self.fish_reference_manifest:
             raise ValueError("Fish Speech requires a qualified reference manifest")
         if self.fish_enabled and not self.fish_reference_root:
-            raise ValueError("Fish Speech requires the Fish source reference root")
+            raise ValueError("Fish Speech requires the approved reference data root")
         if self.fish_opportunistic:
             if self.fish_enabled and self.fish_worker_command is None:
                 raise ValueError("Opportunistic Fish requires a managed worker command")
@@ -243,6 +249,7 @@ class Settings:
     fish_opportunistic: bool = False
     fish_worker_command: tuple[str, ...] | None = field(default=None, repr=False)
     fish_worker_peak_memory_bytes: int = 16 * 1024**3
+    fish_startup_memory_bytes: int | None = None
     fish_memory_reserve_bytes: int = 12 * 1024**3
     fish_idle_timeout_seconds: int = 30
     fish_cooldown_seconds: int = 30
@@ -279,6 +286,7 @@ class Settings:
             "TTS_FISH_OPPORTUNISTIC": "fish_opportunistic",
             "TTS_FISH_WORKER_COMMAND": "fish_worker_command",
             "TTS_FISH_WORKER_PEAK_MEMORY_BYTES": "fish_worker_peak_memory_bytes",
+            "TTS_FISH_STARTUP_MEMORY_BYTES": "fish_startup_memory_bytes",
             "TTS_FISH_MEMORY_RESERVE_BYTES": "fish_memory_reserve_bytes",
             "TTS_FISH_IDLE_TIMEOUT_SECONDS": "fish_idle_timeout_seconds",
             "TTS_FISH_COOLDOWN_SECONDS": "fish_cooldown_seconds",

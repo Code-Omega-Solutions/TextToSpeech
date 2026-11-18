@@ -68,7 +68,7 @@ offer.
   traceable runtime package versions and OCI source/revision/notice metadata.
 
 ### Optional model and worker terms remain a release gate
-<!-- touches: THIRD_PARTY_NOTICES.md, backend/README.md, backend/vibevoice_worker/pyproject.toml, backend/vibevoice_worker/uv.lock, backend/tests/test_vibevoice.py -->
+<!-- touches: THIRD_PARTY_NOTICES.md, backend/README.md, backend/voice-preparation.md, backend/vibevoice_worker/pyproject.toml, backend/vibevoice_worker/uv.lock, backend/tests/test_vibevoice.py -->
 
 The VibeVoice source, model artifacts, voice presets, and isolated runtime
 SHALL be reviewed separately. MIT license labels SHALL NOT be treated as
@@ -89,6 +89,34 @@ disabled outside the private research scope and keep production release blocked.
 
 - **WHEN** the exact dependency, model artifact, voice provenance, intended use, or required notices remain unresolved
 - **THEN** production use and redistribution remain blocked, regardless of private research authorization.
+
+For Fish voice preparation, public material SHALL contain instructions and
+synthetic examples rather than private assets. An optional private companion
+repository SHALL contain only reviewed, sanitized documentation, public source
+metadata and explicitly authorized non-sensitive checkpoint backups with exact
+source, license and hash records. Recordings, transcripts, voice datasets,
+credentials, personal data and actual approval manifests SHALL remain in
+authorized local private storage outside both checkouts. This storage policy
+SHALL NOT be represented as license clearance,
+permission to re-host a dataset, voice-use approval, or resolution of generated
+output privacy conditions.
+
+An operator-managed local recovery archive MAY preserve authorized downloaded
+inputs for their separate private encrypted backup system. It SHALL remain
+outside both repositories, include source/review limitations and integrity
+verification, and be described as unencrypted before backup protection.
+Documentation SHALL identify this archive as an external recovery prerequisite,
+not a complete offline runtime or voice approval.
+
+#### Scenario: a private companion repository is created
+
+- **WHEN** an operator separates voice-preparation documentation from locally stored assets
+- **THEN** the public guide explains direct authorized acquisition and local preparation, while private hosting does not close the artifact, reference, output-sharing or native qualification gates.
+
+#### Scenario: a checkpoint is archived for private restoration
+
+- **WHEN** an operator explicitly authorizes backup of permitted non-sensitive model, decoder and support files
+- **THEN** the private archive records exact sources, licenses, modifications, hashes and review limitations, excludes voice/personal data and credentials, and does not count as runtime or voice approval.
 
 ## Uncovered
 

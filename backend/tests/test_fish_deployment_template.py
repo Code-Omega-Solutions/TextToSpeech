@@ -1,6 +1,11 @@
+import os
 import plistlib
 import stat
+import subprocess
 from pathlib import Path
+
+
+ROOT = Path(__file__).parents[2]
 
 
 def test_prototype_template_is_native_only_until_fish_gates_are_closed():
@@ -36,6 +41,10 @@ def test_prototype_operations_quarantines_stale_startup_and_waits_boundedly():
     assert "VERIFY_SCRIPT" in runbook
     assert "rollback_required=1" in runbook
     assert "exit_code" in runbook
+    assert "com.example.private-speech-studio-prototype" in runbook
+    assert "com.example.private-speech-studio-ui" in runbook
+    assert "atomic" in runbook
+    assert "0600" in runbook
     assert "Never continue after a wait timeout" in runbook
 
 
@@ -51,7 +60,29 @@ def test_prototype_recreation_helper_has_portable_exit_trap_and_tests():
     assert test_text.startswith("#!/bin/zsh")
     assert "run_case success 0" in test_text
     assert "run_case forced-failure 1" in test_text
-    assert test.stat().st_mode & stat.S_IXUSR
+    tracked_mode = subprocess.run(
+        [
+            "git",
+            "ls-files",
+            "--stage",
+            "--",
+            str(test.relative_to(ROOT)).replace("\\", "/"),
+        ],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.split(maxsplit=1)[0]
+    assert tracked_mode == "100755"
+    if os.name != "nt":
+        assert test.stat().st_mode & stat.S_IXUSR
+    assert "MANAGED_BACKEND_LABEL" in helper
+    assert "MANAGED_UI_LABEL" in helper
+    assert "MANAGED_BACKEND_PLIST_NAME" in helper
+    assert "MANAGED_UI_PLIST_NAME" in helper
+    assert "production labels" not in helper
+    assert "restore_plist" in helper
+    assert 'mv -f "$temporary" "$destination"' in helper
 
 
 def test_companion_validation_hook_runs_native_recreation_tests_when_available():

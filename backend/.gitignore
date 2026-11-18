@@ -1,8 +1,3 @@
-.env
-.venv/
-__pycache__/
-.pytest_cache/
-.ruff_cache/
-*.py[cod]
+# Backend-local data; shared tooling rules live in the repository .gitignore.
 data/memory-store/
 data/rag-index/

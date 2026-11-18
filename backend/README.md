@@ -216,17 +216,23 @@ it records the `tools/api_server.py` SHA-256, `tts` mode, loopback host, one
 worker, MPS device, half precision, offline mode, maximum text length, decoder
 configuration, and decoder-relative path. The launcher compares every value
 with its fixed argv and environment before starting the process.
+The approved reference root is separate from the clean Fish source checkout.
+The launcher revalidates its four WAV/`.lab` pairs and runs Fish with that root
+as its working directory, while the pinned source checkout is supplied through
+`PYTHONPATH`; this preserves Fish's relative reference lookup without adding
+private reference files to the source tree.
 
 | Setting | Default | Meaning |
 | --- | --- | --- |
 | `TTS_FISH_OPPORTUNISTIC` | `false` | Explicit opt-in; strict behavior otherwise unchanged |
 | `TTS_FISH_ARTIFACT_MANIFEST` | unset | Operator-only exact source/artifact/terms manifest path |
-| `TTS_FISH_REFERENCE_MANIFEST` | unset | Operator-only four-way WAV/transcript/consent manifest path |
-| `TTS_FISH_REFERENCE_ROOT` | unset | Fish source checkout containing exact `references/<id>` files |
+| `TTS_FISH_REFERENCE_MANIFEST` | unset | Operator-only four-way WAV/transcript/dataset-terms manifest path |
+| `TTS_FISH_REFERENCE_ROOT` | unset | Private reference-data root containing exact `references/<id>` files; separate from the clean Fish source checkout |
 | `TTS_FISH_ARTIFACTS_APPROVED` | `false` | Exact approval manifest gate; keep false until terms and hashes are reviewed |
-| `TTS_FISH_REFERENCES_APPROVED` | `false` | Four-way consented reference gate; keep false until WAV/transcript evidence is complete |
+| `TTS_FISH_REFERENCES_APPROVED` | `false` | Four-way dataset-terms reference gate; keep false until WAV/transcript hashes and permission basis are complete |
 | `TTS_FISH_WORKER_COMMAND` | unset | Operator-only local argv; no shell expansion |
 | `TTS_FISH_WORKER_PEAK_MEMORY_BYTES` | `17179869184` | 16 GiB monitored process-group RSS budget |
+| `TTS_FISH_STARTUP_MEMORY_BYTES` | unset | Cold-start allowance added to reserve; defaults to full worker budget. A positive override no greater than the worker budget permits more aggressive startup without changing runtime limits |
 | `TTS_FISH_MEMORY_RESERVE_BYTES` | `12884901888` | 12 GiB available-memory reserve while loaded |
 | `TTS_FISH_IDLE_TIMEOUT_SECONDS` | `30` | Unload idle worker |
 | `TTS_FISH_COOLDOWN_SECONDS` | `30` | Delay restart after unload/failure |
@@ -252,6 +258,15 @@ downloads; this is not network sandboxing.
 
 See [feature 007](../specs/007-fish-backend-enablement/plan.md) for the separation
 between implemented policy and pending model/reference/native deployment gates.
+
+For documentation-only distribution and local asset preparation, see
+[Prepare private Fish voice references](voice-preparation.md). The optional
+private companion repository contains sanitized documentation/source metadata
+and explicitly authorized non-sensitive checkpoint backups with provenance,
+license and hash records, not voice datasets, recordings, transcripts,
+credentials or approvals.
+Private GitHub visibility is not permission to re-host data or clearance to
+share generated voice-conditioned audio.
 
 ## Qualification and release gates
 

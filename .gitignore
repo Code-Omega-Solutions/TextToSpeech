@@ -16,6 +16,7 @@ test-results/
 *.log
 
 # Local configuration, credentials, and machine-specific diagnostics.
+/.goals/
 .env
 .env.*
 !.env.example

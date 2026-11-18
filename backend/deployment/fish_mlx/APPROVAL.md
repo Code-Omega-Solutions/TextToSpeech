@@ -1,25 +1,20 @@
-# Experimental candidate approval contract
+# Experimental candidate approval
 
-This is a proposed contract, not an implemented approval mechanism. Do not
-start a candidate based on this document alone.
+The candidate uses a separate owner-controlled approval document; it does not
+alter or replace the existing Fish source, model, codec or reference approvals.
+The isolated bootstrap first revalidates those approvals, then binds the derived
+weights and conversion metadata, converter and serving code, backend and launcher,
+Python interpreter and standard library, Fish dependencies, MLX installation,
+requirements, and operating-system version by hash or exact version.
 
-A separate private, owner-controlled approval document must bind all of:
+`--review-output` writes a new private document with `status: review-required`.
+It does not approve the candidate. A human must review the exact binding,
+artifact provenance, terms, reference consent and intended private,
+noncommercial use before changing the status to `approved`. Runtime startup
+recomputes the binding and rejects changed files, an unapproved document,
+unsafe POSIX ownership or write permissions, symlinks, extra candidate files
+and overlapping protected trees. Any changed binding requires a new review.
+See the feature quickstart for preparation and activation.
 
-- The existing approved source revision and complete source-tree digest; the
-  approved original semantic-model tree and decoder digests; and the existing
-  source, model and codec terms and private noncommercial intended use.
-- The complete approved reference manifest and each of the four qualified
-  reference pairs, including their existing consent and dataset terms. Reference
-  paths, transcripts and contents must remain private.
-- The exact converter and inference source trees and installed runtime files,
-  including the MLX and MLX Metal distributions and their platform-specific
-  hashes. A version string alone is not a runtime integrity check.
-- Every derived file and digest, exact source checkpoint digest, configuration,
-  tensor inventory and shapes, 4-bit affine group size 64, excluded matrices,
-  converter version and runtime version.
-
-Verification must independently validate the existing approval documents,
-check the candidate document's approved status and ownership/permissions, and
-recompute all file digests. Reject missing or additional files, symlinks,
-overlap with approved source/checkpoint trees, changed terms, incompatible
-configuration, and mismatched inventory. No production manifest is rewritten.
+An approved binding is not evidence of speech quality, performance, native
+qualification, distribution rights, or authorization to deploy.

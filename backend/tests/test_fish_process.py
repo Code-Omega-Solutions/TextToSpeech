@@ -103,6 +103,39 @@ def test_worker_is_lazy_low_priority_offline_and_reused(worker, monkeypatch):
     assert kwargs["env"]["HF_HUB_OFFLINE"] == "1"
 
 
+def test_mlx_worker_uses_isolated_bootstrap_and_sanitized_environment(worker, monkeypatch):
+    managed, _observations, starts = worker
+    managed.settings = replace(
+        managed.settings, fish_runtime="mlx4",
+        fish_worker_command=("/approved/python", "-I", "-S", "-B", fish_process._MLX_BOOTSTRAP),
+        fish_preload=True,
+    )
+    monkeypatch.setenv("DYLD_INSERT_LIBRARIES", "/unexpected/library")
+    monkeypatch.setenv("PYTHONPATH", "/unexpected/modules")
+    monkeypatch.setenv("TTS_FISH_MLX_APPROVAL_MANIFEST", "/private/candidate.json")
+    monkeypatch.setenv("TTS_FISH_MLX_APPROVED", "true")
+    managed.start_preload()
+    managed._preload_thread.join(timeout=2)
+    assert len(starts) == 1
+    env = starts[0][2]["env"]
+    assert "DYLD_INSERT_LIBRARIES" not in env
+    assert "PYTHONPATH" not in env
+    assert env["TTS_FISH_MLX_APPROVAL_MANIFEST"] == "/private/candidate.json"
+    assert run(managed) == b"audio"
+    assert len(starts) == 1
+
+
+def test_mlx_worker_refuses_untrusted_bootstrap(worker):
+    managed, _observations, starts = worker
+    managed.settings = replace(
+        managed.settings, fish_runtime="mlx4",
+        fish_worker_command=("/approved/python", "-I", "-S", "-B", "/other/bootstrap.py"),
+    )
+    with pytest.raises(FishResourceUnavailable, match="fish_unavailable"):
+        run(managed)
+    assert not starts
+
+
 def test_preload_reserves_one_slot_reuses_worker_and_retains_it_while_idle(
     worker, monkeypatch, caplog
 ):

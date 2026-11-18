@@ -349,3 +349,25 @@ def test_opportunistic_policy_allows_native_only_default_fallback(monkeypatch):
     monkeypatch.setenv("TTS_FISH_PRELOAD", "true")
     with pytest.raises(ValidationError, match="preload requires enabled opportunistic Fish"):
         Settings.from_env()
+
+
+def test_mlx_runtime_is_explicit_and_requires_isolated_managed_command(monkeypatch):
+    assert Settings.from_env().fish_runtime == "pytorch"
+    monkeypatch.setenv("TTS_FISH_RUNTIME", "mlx4")
+    monkeypatch.setenv("TTS_FISH_ENABLED", "true")
+    monkeypatch.setenv("TTS_FISH_SERVER_URL", "http://127.0.0.1:8080")
+    monkeypatch.setenv("TTS_FISH_API_KEY", "synthetic-fish-key")
+    monkeypatch.setenv("TTS_FISH_ARTIFACT_MANIFEST", "/approved/artifacts.json")
+    monkeypatch.setenv("TTS_FISH_REFERENCE_MANIFEST", "/approved/references.json")
+    monkeypatch.setenv("TTS_FISH_REFERENCE_ROOT", "/approved/references")
+    monkeypatch.setenv("TTS_FISH_ARTIFACTS_APPROVED", "true")
+    monkeypatch.setenv("TTS_FISH_REFERENCES_APPROVED", "true")
+    monkeypatch.setenv("TTS_FISH_WORKER_COMMAND", '["/runtime/python"]')
+    with pytest.raises(ValidationError, match="isolated managed"):
+        Settings.from_env()
+    monkeypatch.setenv("TTS_FISH_OPPORTUNISTIC", "true")
+    monkeypatch.setenv(
+        "TTS_FISH_WORKER_COMMAND",
+        '["/runtime/python", "-I", "-S", "-B", "/backend/deployment/fish_mlx/bootstrap.py"]',
+    )
+    assert Settings.from_env().fish_runtime == "mlx4"

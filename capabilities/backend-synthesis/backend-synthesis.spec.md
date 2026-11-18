@@ -221,7 +221,7 @@ identify the engine that generated it and any explicitly configured fallback.
 - **THEN** the service returns the requested audio format with the configured rate and preserved sentence and paragraph pauses.
 
 ### Optional neural synthesis yields to native speech and host headroom
-<!-- touches: backend/app/config.py, backend/app/fish_process.py, backend/app/memory.py, backend/app/fish_speech.py, backend/app/services.py, backend/app/routers.py, backend/app/main.py, backend/deployment/fish_worker_launcher.py, backend/deployment/prototype-operations.md, backend/deployment/prototype-recreation.zsh, backend/deployment/test_prototype_recreation.zsh, backend/tests/test_fish_process.py, backend/tests/test_config.py, backend/tests/test_engines.py, backend/tests/test_api.py, backend/tests/test_fish_deployment_template.py, backend/tests/test_speech_contract.py -->
+<!-- touches: backend/app/config.py, backend/app/fish_process.py, backend/app/memory.py, backend/app/fish_speech.py, backend/app/services.py, backend/app/routers.py, backend/app/main.py, backend/deployment/fish_worker_launcher.py, backend/deployment/fish_mlx/approval.py, backend/deployment/fish_mlx/bootstrap.py, backend/deployment/fish_mlx/conversion.py, backend/deployment/fish_mlx/generation.py, backend/deployment/fish_mlx/model.py, backend/deployment/fish_mlx/prepare.py, backend/deployment/fish_mlx/validation.py, backend/deployment/fish_mlx/worker.py, backend/deployment/fish_mlx-requirements.txt, backend/deployment/prototype-operations.md, backend/deployment/prototype-recreation.zsh, backend/deployment/test_prototype_recreation.zsh, backend/tests/test_fish_mlx_approval.py, backend/tests/test_fish_mlx_conversion.py, backend/tests/test_fish_mlx_worker.py, backend/tests/test_fish_mlx_native.py, backend/tests/test_fish_process.py, backend/tests/test_config.py, backend/tests/test_engines.py, backend/tests/test_api.py, backend/tests/test_fish_deployment_template.py, backend/tests/test_speech_contract.py -->
 
 `TTS_FISH_OPPORTUNISTIC=true` SHALL explicitly opt in to language-preserving
 native fallback for valid neural selections, including retired `vibevoice`,
@@ -272,6 +272,18 @@ offline library flags are not a network sandbox. Sampled host/RSS estimates
 SHALL not be represented as hard physical/Metal memory isolation or native
 qualification. Exact runtime/artifact/reference and deployment approval remain
 separate gates.
+
+The experimental `TTS_FISH_RUNTIME=mlx4` choice SHALL require the owned
+isolated candidate bootstrap and a separate exact candidate approval in addition
+to the original approvals. The default remains PyTorch. The candidate SHALL
+use the existing managed lifecycle and qualified references and retain the
+original codec. Candidate conversion or mocked tests do not establish native
+speech quality, performance, rights or deployment qualification.
+
+#### Scenario: a candidate approval is missing or changed
+
+- **WHEN** the MLX candidate is selected but its independent approval or bound inputs are missing, unapproved or changed
+- **THEN** the worker refuses startup and the configured managed fallback policy remains in effect.
 
 #### Scenario: a request omits the voice when Fish is the configured default
 

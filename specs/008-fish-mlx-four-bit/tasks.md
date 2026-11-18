@@ -17,11 +17,11 @@
 
 **Independent test**: Convert and strictly reload an approved checkpoint in isolation; reject incompatible, missing or tampered inputs.
 
-- [ ] T004 [US1] Add focused conversion, strict load and tampering tests in `backend/tests/test_fish_mlx_conversion.py`
-- [ ] T005 [US1] Implement offline deterministic conversion and metadata in `backend/deployment/fish_mlx/`
-- [ ] T006 [US1] Implement exact separate approval validation binding source, checkpoint, codec, references, runtime and derived artifacts in `backend/deployment/fish_mlx/`
-- [ ] T007 [US1] Implement Fish 1.5 MLX DualAR layers, cache, sampling and strict quantized loading in `backend/deployment/fish_mlx/`
-- [ ] T008 [US1] Verify native conversion and numerical compatibility on authorized Apple Silicon in `specs/008-fish-mlx-four-bit/quickstart.md`
+- [X] T004 [US1] Add focused conversion, strict load and tampering tests in `backend/tests/test_fish_mlx_conversion.py`
+- [X] T005 [US1] Implement offline deterministic conversion and metadata in `backend/deployment/fish_mlx/`
+- [X] T006 [US1] Implement exact separate approval validation binding source, checkpoint, codec, references, runtime and derived artifacts in `backend/deployment/fish_mlx/`
+- [X] T007 [US1] Implement Fish 1.5 MLX DualAR layers, cache, sampling and strict quantized loading in `backend/deployment/fish_mlx/`
+- [X] T008 [US1] Verify native conversion and numerical compatibility on authorized Apple Silicon in `specs/008-fish-mlx-four-bit/quickstart.md`
 
 ## Phase 4: User Story 2 - Opt in without disrupting native speech (P1)
 
@@ -29,9 +29,9 @@
 
 **Independent test**: Exercise explicit dispatch, transport, preload and failure with unchanged native fallback.
 
-- [ ] T009 [US2] Add candidate dispatch, transport, lifecycle and fallback tests in `backend/tests/test_fish_process.py` and `backend/tests/test_fish_worker_launcher.py`
-- [ ] T010 [US2] Bridge approved Fish tokenizer, prompt, references and Firefly codec to MLX generation and MessagePack/WAV transport in `backend/deployment/fish_mlx/`
-- [ ] T011 [US2] Add explicit opt-in managed launch selection and candidate validation in `backend/app/config.py` and `backend/deployment/fish_worker_launcher.py`
+- [ ] T009 [US2] Add candidate dispatch, transport, lifecycle and fallback tests in `backend/tests/test_fish_process.py` and `backend/tests/test_fish_worker_launcher.py` (dispatch, preload and queue tests added; candidate transport/fallback integration remains unverified)
+- [X] T010 [US2] Bridge approved Fish tokenizer, prompt, references and Firefly codec to MLX generation and MessagePack/WAV transport in `backend/deployment/fish_mlx/`
+- [X] T011 [US2] Add explicit opt-in managed launch selection and candidate validation in `backend/app/config.py` and `backend/deployment/fish_worker_launcher.py`
 - [ ] T012 [US2] Validate approved-reference isolated native synthesis without touching production in `specs/008-fish-mlx-four-bit/quickstart.md`
 
 ## Phase 5: User Story 3 - Qualify the candidate (P2)
@@ -40,13 +40,13 @@
 
 **Independent test**: Review synchronized measurements and explicit qualification gates without implying deployment approval.
 
-- [ ] T013 [US3] Document conversion, approvals, activation, isolation and unresolved quality and rights gates in `specs/008-fish-mlx-four-bit/quickstart.md`
+- [X] T013 [US3] Document conversion, approvals, activation, isolation and unresolved quality and rights gates in `specs/008-fish-mlx-four-bit/quickstart.md`
 - [ ] T014 [US3] Record only authorized synchronized hardware measurements and limitations in `specs/008-fish-mlx-four-bit/quickstart.md`
 
 ## Phase 6: Polish & cross-cutting concerns
 
-- [ ] T015 Update affected requirements and coverage mappings in `capabilities/backend-synthesis/`
-- [ ] T016 Run focused regression checks and review the resulting changes in `backend/tests/`
+- [X] T015 Update affected requirements and coverage mappings in `capabilities/backend-synthesis/`
+- [X] T016 Run focused regression checks and review the resulting changes in `backend/tests/`
 
 ## Dependencies & execution order
 

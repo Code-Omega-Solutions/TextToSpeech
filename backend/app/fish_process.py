@@ -9,6 +9,7 @@ import threading
 import time
 from collections.abc import Callable
 from http.client import HTTPException
+from pathlib import Path
 from typing import NoReturn, TypeVar
 from urllib.parse import urlsplit
 
@@ -19,6 +20,16 @@ from app.memory import available_memory_bytes, process_group_resident_memory_byt
 _POLL_SECONDS = 0.25
 _T = TypeVar("_T")
 logger = logging.getLogger(__name__)
+_MLX_BOOTSTRAP = str(Path(__file__).resolve().parents[1] / "deployment" / "fish_mlx" / "bootstrap.py")
+_MLX_ENVIRONMENT = {
+    "HOME", "USER", "LOGNAME", "PATH", "TMPDIR", "LANG", "LC_ALL",
+    "TTS_FISH_SOURCE_ROOT", "TTS_FISH_CHECKPOINT_ROOT", "TTS_FISH_REFERENCE_ROOT",
+    "TTS_FISH_ARTIFACT_MANIFEST", "TTS_FISH_REFERENCE_MANIFEST",
+    "TTS_FISH_ARTIFACTS_APPROVED", "TTS_FISH_REFERENCES_APPROVED",
+    "TTS_FISH_WORKER_HOST", "TTS_FISH_WORKER_PORT",
+    "TTS_FISH_MLX_CANDIDATE_ROOT", "TTS_FISH_MLX_SITE_ROOT",
+    "TTS_FISH_MLX_APPROVAL_MANIFEST", "TTS_FISH_MLX_APPROVED",
+}
 
 
 class FishResourceUnavailable(RuntimeError):
@@ -232,13 +243,26 @@ class FishProcess:
         ):
             raise FishResourceUnavailable("fish_external_service")
         self._check_request(deadline, self._cancel_event)
-        environment = {
-            key: value for key, value in os.environ.items()
-            if key not in {
-                "TTS_API_KEY", "TTS_API_KEY_FILE", "TTS_OPERATOR_TOKEN",
-                "HF_TOKEN", "HUGGING_FACE_HUB_TOKEN", "HUGGINGFACE_HUB_TOKEN",
+        if self.settings.fish_runtime == "mlx4":
+            command = self.settings.fish_worker_command
+            if (
+                len(command) != 5
+                or command[1:4] != ("-I", "-S", "-B")
+                or os.path.islink(command[4])
+                or os.path.realpath(command[4]) != _MLX_BOOTSTRAP
+            ):
+                self._deny("fish_unavailable")
+            environment = {
+                key: value for key, value in os.environ.items() if key in _MLX_ENVIRONMENT
             }
-        }
+        else:
+            environment = {
+                key: value for key, value in os.environ.items()
+                if key not in {
+                    "TTS_API_KEY", "TTS_API_KEY_FILE", "TTS_OPERATOR_TOKEN",
+                    "HF_TOKEN", "HUGGING_FACE_HUB_TOKEN", "HUGGINGFACE_HUB_TOKEN",
+                }
+            }
         environment.update(HF_HUB_OFFLINE="1", TRANSFORMERS_OFFLINE="1")
         try:
             self._process = subprocess.Popen(

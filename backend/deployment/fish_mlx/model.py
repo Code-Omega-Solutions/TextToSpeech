@@ -29,7 +29,7 @@ class DualAR:
     def linear(self, x: Any, prefix: str, quantized: bool = True) -> Any:
         mx = self.mx
         weight = self.tensors[prefix + ".weight"]
-        if not quantized:
+        if not quantized or prefix + ".scales" not in self.tensors:
             return x @ weight.T
         return mx.quantized_matmul(
             x,

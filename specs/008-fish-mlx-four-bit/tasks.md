@@ -29,10 +29,10 @@
 
 **Independent test**: Exercise explicit dispatch, transport, preload and failure with unchanged native fallback.
 
-- [X] T009 [US2] Add candidate dispatch, transport, lifecycle and fallback tests in `backend/tests/test_fish_process.py` and `backend/tests/test_fish_worker_launcher.py` (mocked transport and failure; native WAV remains separately gated)
+- [X] T009 [US2] Add candidate dispatch, transport, lifecycle and fallback tests in `backend/tests/test_fish_process.py` and `backend/tests/test_fish_worker_launcher.py` (mocked transport and failure; native WAV validated separately)
 - [X] T010 [US2] Bridge approved Fish tokenizer, prompt, references and Firefly codec to MLX generation and MessagePack/WAV transport in `backend/deployment/fish_mlx/`
 - [X] T011 [US2] Add explicit opt-in managed launch selection and candidate validation in `backend/app/config.py` and `backend/deployment/fish_worker_launcher.py`
-- [ ] T012 [US2] Validate approved-reference isolated native synthesis without touching production in `specs/008-fish-mlx-four-bit/quickstart.md`
+- [X] T012 [US2] Validate approved-reference isolated native synthesis without touching production in `specs/008-fish-mlx-four-bit/quickstart.md`
 
 ## Phase 5: User Story 3 - Qualify the candidate (P2)
 
@@ -41,7 +41,7 @@
 **Independent test**: Review synchronized measurements and explicit qualification gates without implying deployment approval.
 
 - [X] T013 [US3] Document conversion, approvals, activation, isolation and unresolved quality and rights gates in `specs/008-fish-mlx-four-bit/quickstart.md`
-- [ ] T014 [US3] Record only authorized synchronized hardware measurements and limitations in `specs/008-fish-mlx-four-bit/quickstart.md`
+- [X] T014 [US3] Record only authorized synchronized hardware measurements and limitations in `specs/008-fish-mlx-four-bit/quickstart.md`
 
 ## Phase 6: Polish & cross-cutting concerns
 
@@ -58,4 +58,4 @@ US1 conversion tests and runtime design may proceed independently after foundati
 
 ## Implementation strategy
 
-MVP is US1's genuinely convertible and loadable approved model; proceed to US2 for end-to-end synthesis and US3 for qualification. Do not deploy.
+MVP is US1's genuinely convertible and loadable approved model; proceed to US2 for end-to-end synthesis and US3 for qualification. Deployment requires separate authorization and operational qualification.

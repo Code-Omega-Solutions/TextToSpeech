@@ -60,6 +60,7 @@ def _directory(name: str) -> Path:
 
 def snapshot() -> dict[str, Any]:
     from deployment import fish_worker_launcher as launcher
+    from deployment.fish_mlx.conversion import FP16_SLOW_LAYERS
     from deployment.fish_mlx.prepare import approved_origin, converter_digest
     from deployment.fish_mlx.validation import validate_config
 
@@ -110,9 +111,10 @@ def snapshot() -> dict[str, Any]:
     reference_hash = launcher._sha256(reference_manifest.resolve())
     semantic_hash = launcher._sha256(weights)
     expected_metadata = {
-        "format": "fish-1.5-mlx-affine-v1",
+        "format": "fish-1.5-mlx-affine-v2",
         "bits": 4,
         "group_size": 64,
+        "fp16_slow_layers": FP16_SLOW_LAYERS,
         "model_sha256": original["model_sha256"],
         "checkpoint_sha256": launcher._sha256(checkpoint / "model.pth"),
         "codec_sha256": original["codec_sha256"],

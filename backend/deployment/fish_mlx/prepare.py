@@ -12,7 +12,9 @@ from pathlib import Path
 
 from app.memory import available_memory_bytes, process_resident_memory_bytes
 from deployment import fish_worker_launcher as launcher
-from deployment.fish_mlx.conversion import BITS, GROUP_SIZE, convert_tensors, inspect_mlx_tensors
+from deployment.fish_mlx.conversion import (
+    BITS, FP16_SLOW_LAYERS, GROUP_SIZE, convert_tensors, inspect_mlx_tensors,
+)
 from deployment.fish_mlx.validation import validate_config
 
 _RESERVE = 12 * 1024**3
@@ -119,9 +121,10 @@ def prepare(destination: Path) -> None:
     if not manifest_path:
         raise RuntimeError("Fish reference approval manifest is unavailable")
     metadata = {
-        "format": "fish-1.5-mlx-affine-v1",
+        "format": "fish-1.5-mlx-affine-v2",
         "bits": BITS,
         "group_size": GROUP_SIZE,
+        "fp16_slow_layers": FP16_SLOW_LAYERS,
         "model_sha256": approval["model_sha256"],
         "checkpoint_sha256": launcher._sha256(checkpoint / "model.pth"),
         "codec_sha256": approval["codec_sha256"],

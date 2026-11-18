@@ -92,7 +92,8 @@ def test_snapshot_rejects_changed_derived_weights_and_runtime(monkeypatch, tmp_p
     }
     digest = fish_worker_launcher._sha256
     metadata = {
-        "format": "fish-1.5-mlx-affine-v1", "bits": 4, "group_size": 64,
+        "format": "fish-1.5-mlx-affine-v2", "bits": 4, "group_size": 64,
+        "fp16_slow_layers": 8,
         "model_sha256": original["model_sha256"],
         "checkpoint_sha256": digest(checkpoint / "model.pth"),
         "codec_sha256": original["codec_sha256"],

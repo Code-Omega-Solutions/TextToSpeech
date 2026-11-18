@@ -1,5 +1,6 @@
 import queue
 import sys
+import threading
 from types import ModuleType, SimpleNamespace
 
 import pytest
@@ -53,6 +54,23 @@ def test_generation_queue_forwards_contract_and_sanitizes_errors(caplog):
     requests.put(None)
 
 
+def test_generation_queue_seeds_on_the_generation_thread():
+    seen = []
+    upstream = SimpleNamespace(
+        generate_long=lambda **_kwargs: iter(["sample"]),
+        WrappedGenerateResponse=lambda **kwargs: SimpleNamespace(**kwargs),
+    )
+    requests = generation_queue(
+        upstream, object(), lambda: 0,
+        lambda value: seen.append((value, threading.current_thread().name)),
+    )
+    responses = queue.Queue()
+    requests.put(SimpleNamespace(request={}, response_queue=responses))
+    assert responses.get(timeout=2).response == "sample"
+    assert seen == [(0, "fish-mlx-generation")]
+    requests.put(None)
+
+
 def test_serve_wires_original_api_queue_and_qualified_references(monkeypatch, tmp_path):
     def module(name, **attributes):
         result = ModuleType(name)
@@ -70,8 +88,12 @@ def test_serve_wires_original_api_queue_and_qualified_references(monkeypatch, tm
     module("uvicorn", run=lambda *args, **kwargs: runs.append((args, kwargs)))
 
     class Engine:
+        def send_Llama_request(self, request, _tokens, _texts):
+            self.llama_queue.put(SimpleNamespace(request={}, response_queue=request.responses))
+            return request.reference_id
+
         def inference(self, request):
-            yield request.reference_id
+            yield self.send_Llama_request(request, None, None)
 
     inference = module(
         "tools.inference_engine", TTSInferenceEngine=Engine,
@@ -112,16 +134,18 @@ def test_serve_wires_original_api_queue_and_qualified_references(monkeypatch, tm
         "host": "127.0.0.1", "port": 8002, "workers": 1, "log_level": "info"
     })]
     assert "--half" in sys.argv and "--decoder-config-name" in sys.argv
-    inference.set_seed(42)
-    assert seeded == [("original", 42), 42]
-    assert list(Engine().inference(SimpleNamespace(references=[], reference_id="en-female"))) == [
-        "en-female"
-    ]
-    with pytest.raises(ValueError, match="qualified"):
-        list(Engine().inference(SimpleNamespace(references=[], reference_id="unknown")))
     responses = queue.Queue()
     requests = manager.launch_thread_safe_queue()
-    requests.put(SimpleNamespace(request={}, response_queue=responses))
+    engine = Engine()
+    engine.llama_queue = requests
+    assert list(engine.inference(SimpleNamespace(
+        references=[], reference_id="en-female", seed=42, responses=responses
+    ))) == [
+        "en-female"
+    ]
     assert responses.get(timeout=2).response == "synthetic-codes"
+    assert seeded == [42]
+    with pytest.raises(ValueError, match="qualified"):
+        list(engine.inference(SimpleNamespace(references=[], reference_id="unknown")))
     requests.put(None)
     assert manager.ModelManager().warm_up(None) is None

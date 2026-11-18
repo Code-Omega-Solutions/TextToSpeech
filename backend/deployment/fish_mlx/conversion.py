@@ -12,16 +12,23 @@ from .validation import expected_tensor_shapes, validate_tensor_shapes
 
 GROUP_SIZE = 64
 BITS = 4
+FP16_SLOW_LAYERS = 8
 _LINEAR = re.compile(
     r"^(?:fast_)?layers\.\d+\."
     r"(?:attention\.(?:wqkv|wo)|feed_forward\.(?:w1|w2|w3))\.weight$"
 )
 
 
+def is_quantized_weight(name: str) -> bool:
+    if not _LINEAR.fullmatch(name):
+        return False
+    return not any(name.startswith(f"layers.{index}.") for index in range(FP16_SLOW_LAYERS))
+
+
 def expected_derived_tensors() -> dict[str, tuple[tuple[int, ...], str]]:
     result: dict[str, tuple[tuple[int, ...], str]] = {}
     for name, shape in expected_tensor_shapes().items():
-        if not _LINEAR.fullmatch(name):
+        if not is_quantized_weight(name):
             result[name] = (shape, "float16")
             continue
         rows, columns = shape
@@ -61,7 +68,7 @@ def convert_tensors(
     for name, value in weights.items():
         check_resources()
         tensor = mx.array(value.detach().to(dtype=torch.float16, device="cpu").numpy())
-        if _LINEAR.fullmatch(name):
+        if is_quantized_weight(name):
             packed, scales, biases = mx.quantize(
                 tensor, group_size=GROUP_SIZE, bits=BITS, mode="affine"
             )

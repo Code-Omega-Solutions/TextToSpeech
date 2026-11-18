@@ -39,7 +39,11 @@ class NativeMLXTest(unittest.TestCase):
 
             def slow(self, tokens):
                 self.slow_lengths.append(tokens.shape[1])
-                return mx.array([10.0, -10.0, -10.0, -10.0]), mx.zeros((1, 1, 1024))
+                logits = (
+                    [10.0, -10.0, -10.0, -10.0] if len(self.slow_lengths) == 1
+                    else [-10.0, -10.0, -10.0, 10.0]
+                )
+                return mx.array(logits), mx.zeros((1, 1, 1024))
 
             def fast(self, _hidden):
                 self.fast_calls += 1
@@ -55,6 +59,16 @@ class NativeMLXTest(unittest.TestCase):
         self.assertEqual(model.slow_lengths, [3, 1])
         self.assertEqual(model.fast_calls, 16)
         self.assertTrue(torch.equal(output[2:, 3:], torch.ones((7, 2), dtype=torch.int32)))
+
+        class NoEnd(Model):
+            def slow(self, tokens):
+                return mx.array([10.0, -10.0, -10.0, -10.0]), mx.zeros((1, 1, 1024))
+
+        with self.assertRaisesRegex(RuntimeError, "token limit"):
+            generate(
+                model=NoEnd(), prompt=prompt, max_new_tokens=2,
+                temperature=0.7, top_p=0.01, repetition_penalty=1.2,
+            )
 
     def test_packed_transformer_block_matches_dequantized_torch(self):
         import numpy as np

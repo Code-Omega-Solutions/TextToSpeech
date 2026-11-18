@@ -52,6 +52,7 @@ def generate(*, model: Any, prompt: Any, max_new_tokens: int,
     generated: list[list[int]] = []
     previous: list[list[int]] = [[] for _ in range(9)]
     end = model.tokenizer.get_token_id("<|im_end|>")
+    terminated = False
 
     for step in range(count):
         logits, hidden = model.slow(current)
@@ -80,6 +81,9 @@ def generate(*, model: Any, prompt: Any, max_new_tokens: int,
                 previous[index].append(value)
         current = mx.array(codebooks, dtype=mx.int32).reshape(9, 1)
         if step and token == end:
+            terminated = True
             break
+    if not terminated:
+        raise RuntimeError("Fish MLX generation reached its token limit")
     output = torch.tensor(generated, dtype=prompt.dtype, device=prompt.device).T
     return torch.cat((prompt, output), dim=1)

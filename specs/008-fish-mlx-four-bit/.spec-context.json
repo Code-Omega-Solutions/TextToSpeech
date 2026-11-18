@@ -3,7 +3,7 @@
   "specName": "Fish Speech MLX 4-bit candidate",
   "branch": "pgfeller-mlx-fish-4bit",
   "currentStep": "implement",
-  "status": "implementing",
+  "status": "implemented",
   "history": [
     {
       "step": "specify",
@@ -165,7 +165,30 @@
       "kind": "complete",
       "by": "extension",
       "at": "2026-11-18T13:38:44.805Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T012",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-18T21:49:42.035Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T014",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-18T21:49:42.035Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-18T21:49:42.035Z"
     }
   ],
-  "currentTask": "T012"
+  "currentTask": "T009"
 }

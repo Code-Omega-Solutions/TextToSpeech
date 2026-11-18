@@ -12,12 +12,14 @@ from deployment.fish_mlx.validation import expected_tensor_shapes
 
 def test_derived_inventory_requires_packed_attention_and_feed_forward():
     inventory = expected_derived_tensors()
-    assert inventory["layers.0.attention.wqkv.weight"] == ((1280, 128), "uint32")
-    assert inventory["layers.0.attention.wqkv.scales"] == ((1280, 16), "float16")
-    assert inventory["layers.0.attention.wqkv.biases"] == ((1280, 16), "float16")
+    assert inventory["layers.0.attention.wqkv.weight"] == ((1280, 1024), "float16")
+    assert inventory["layers.7.feed_forward.w2.weight"] == ((1024, 4096), "float16")
+    assert inventory["layers.8.attention.wqkv.weight"] == ((1280, 128), "uint32")
+    assert inventory["layers.8.attention.wqkv.scales"] == ((1280, 16), "float16")
+    assert inventory["layers.8.attention.wqkv.biases"] == ((1280, 16), "float16")
     assert inventory["embeddings.weight"] == ((102048, 1024), "float16")
     assert inventory["output.weight"] == ((102048, 1024), "float16")
-    assert len(inventory) == 483
+    assert len(inventory) == 403
     validate_derived_tensors(inventory)
 
 
@@ -107,8 +109,8 @@ def test_conversion_quantizes_only_supported_transformer_matrices():
     weights = {name: Array(shape, "bfloat16") for name, shape in expected_tensor_shapes().items()}
     checks = []
     converted = convert_tensors(weights, MLX, Torch, lambda: checks.append(True))
-    assert MLX.calls == 140
-    assert len(converted) == 483
+    assert MLX.calls == 100
+    assert len(converted) == 403
     assert len(checks) == 406
     weights["output.weight"].dtype = "float32"
     with pytest.raises(ValueError, match="dtype"):

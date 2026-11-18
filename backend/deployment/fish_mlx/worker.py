@@ -8,6 +8,7 @@ import os
 import queue
 import sys
 import threading
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -30,15 +31,27 @@ class _PrivateGenerationLogger:
         return getattr(self.original, name)
 
 
-def generation_queue(upstream: Any, model: Any) -> queue.Queue:
-    requests: queue.Queue = queue.Queue()
+def generation_queue(
+    upstream: Any,
+    model: Any,
+    seed_source: Callable[[], int | None] = lambda: None,
+    seed_random: Callable[[int], None] = lambda _seed: None,
+) -> queue.Queue:
+    class RequestQueue(queue.Queue):
+        def put(self, item: Any, block: bool = True, timeout: float | None = None) -> None:
+            super().put(None if item is None else (item, seed_source()), block, timeout)
+
+    requests: queue.Queue = RequestQueue()
 
     def run() -> None:
         while True:
-            item = requests.get()
-            if item is None:
+            queued = requests.get()
+            if queued is None:
                 return
+            item, seed = queued
             try:
+                if seed is not None:
+                    seed_random(seed)
                 for response in upstream.generate_long(
                     model=model, decode_one_token=None, **item.request
                 ):
@@ -77,8 +90,9 @@ def serve(host: str, port: int) -> None:
         raise RuntimeError("Fish MLX runtime version does not match approval")
     checkpoint = Path(os.environ["TTS_FISH_CHECKPOINT_ROOT"]).resolve()
     candidate = Path(os.environ["TTS_FISH_MLX_CANDIDATE_ROOT"]).resolve()
-    original_seed = inference_engine.set_seed
     original_inference = inference_engine.TTSInferenceEngine.inference
+    original_send = inference_engine.TTSInferenceEngine.send_Llama_request
+    seed_context = threading.local()
 
     def qualified_inference(self: Any, request: Any):
         validate_reference_request(request)
@@ -86,11 +100,14 @@ def serve(host: str, port: int) -> None:
 
     inference_engine.TTSInferenceEngine.inference = qualified_inference
 
-    def set_seed(seed: int) -> None:
-        original_seed(seed)
-        mx.random.seed(seed)
+    def send_request(self: Any, request: Any, prompt_tokens: Any, prompt_texts: Any):
+        seed_context.value = request.seed
+        try:
+            return original_send(self, request, prompt_tokens, prompt_texts)
+        finally:
+            del seed_context.value
 
-    inference_engine.set_seed = set_seed
+    inference_engine.TTSInferenceEngine.send_Llama_request = send_request
     upstream.generate = generate
     upstream.logger = _PrivateGenerationLogger(upstream.logger)
 
@@ -101,7 +118,9 @@ def serve(host: str, port: int) -> None:
         tokenizer = FishTokenizer(str(checkpoint / "tokenizer.tiktoken"))
         model = DualAR(mx, weights, tokenizer)
         model.config = BaseModelArgs.from_pretrained(str(checkpoint))
-        return generation_queue(upstream, model)
+        return generation_queue(
+            upstream, model, lambda: getattr(seed_context, "value", None), mx.random.seed
+        )
 
     model_manager.launch_thread_safe_queue = launch_queue
     model_manager.ModelManager.warm_up = lambda self, engine: None

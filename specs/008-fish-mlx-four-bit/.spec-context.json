@@ -1,0 +1,83 @@
+{
+  "workflow": "speckit",
+  "specName": "Fish Speech MLX 4-bit candidate",
+  "branch": "pgfeller-mlx-fish-4bit",
+  "currentStep": "implement",
+  "status": "implementing",
+  "history": [
+    {
+      "step": "specify",
+      "substep": null,
+      "kind": "start",
+      "by": "extension",
+      "at": "2026-11-18T12:30:04.000Z"
+    },
+    {
+      "step": "specify",
+      "substep": null,
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-18T12:31:02.841Z"
+    },
+    {
+      "step": "plan",
+      "substep": null,
+      "kind": "start",
+      "by": "extension",
+      "at": "2026-11-18T12:31:19.346Z"
+    },
+    {
+      "step": "plan",
+      "substep": null,
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-18T12:34:01.589Z"
+    },
+    {
+      "step": "tasks",
+      "substep": null,
+      "kind": "start",
+      "by": "extension",
+      "at": "2026-11-18T12:34:24.967Z"
+    },
+    {
+      "step": "tasks",
+      "substep": null,
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-18T12:36:09.187Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "kind": "start",
+      "by": "extension",
+      "at": "2026-11-18T12:36:38.035Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T001",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-18T12:45:28.253Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T002",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-18T12:45:28.254Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T003",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-18T12:45:28.254Z"
+    }
+  ],
+  "currentTask": "T004"
+}

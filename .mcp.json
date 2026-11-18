@@ -6,17 +6,17 @@
 		},
 		"basic-memory-general": {
 			"type": "stdio",
-			"command": "C:\\Users\\pgfelle0\\.local\\bin\\basic-memory.exe",
+			"command": "basic-memory",
 			"args": ["mcp", "--project", "general"]
 		},
 		"basic-memory-project-TextToSpeech": {
 			"type": "stdio",
-			"command": "C:\\Users\\pgfelle0\\.local\\bin\\basic-memory.exe",
+			"command": "basic-memory",
 			"args": ["mcp", "--project", "project-TextToSpeech"]
 		},
 		"basic-memory-machine-TextToSpeech-win-1d43f440fc53216981b319eb1fbbb678b56f2db428e274546ca0171044cadf1a": {
 			"type": "stdio",
-			"command": "C:\\Users\\pgfelle0\\.local\\bin\\basic-memory.exe",
+			"command": "basic-memory",
 			"args": ["mcp", "--project", "machine-TextToSpeech-win-1d43f440fc53216981b319eb1fbbb678b56f2db428e274546ca0171044cadf1a"]
 		}
 	}

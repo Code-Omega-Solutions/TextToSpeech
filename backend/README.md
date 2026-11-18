@@ -231,6 +231,7 @@ private reference files to the source tree.
 | Setting | Default | Meaning |
 | --- | --- | --- |
 | `TTS_FISH_OPPORTUNISTIC` | `false` | Explicit opt-in; strict behavior otherwise unchanged |
+| `TTS_FISH_PRELOAD` | `false` | Warm the owned worker in the background at backend startup and retain it across idle periods; requires enabled opportunistic Fish |
 | `TTS_FISH_ARTIFACT_MANIFEST` | unset | Operator-only exact source/artifact/terms manifest path |
 | `TTS_FISH_REFERENCE_MANIFEST` | unset | Operator-only four-way WAV/transcript/dataset-terms manifest path |
 | `TTS_FISH_REFERENCE_ROOT` | unset | Private reference-data root containing exact `references/<id>` files; separate from the clean Fish source checkout |
@@ -240,18 +241,31 @@ private reference files to the source tree.
 | `TTS_FISH_WORKER_PEAK_MEMORY_BYTES` | `17179869184` | 16 GiB monitored process-group RSS budget |
 | `TTS_FISH_STARTUP_MEMORY_BYTES` | unset | Cold-start allowance added to reserve; defaults to full worker budget. A positive override no greater than the worker budget permits more aggressive startup without changing runtime limits |
 | `TTS_FISH_MEMORY_RESERVE_BYTES` | `12884901888` | 12 GiB available-memory reserve while loaded |
-| `TTS_FISH_IDLE_TIMEOUT_SECONDS` | `30` | Unload idle worker |
+| `TTS_FISH_IDLE_TIMEOUT_SECONDS` | `30` | Unload idle worker when preload is off |
 | `TTS_FISH_COOLDOWN_SECONDS` | `30` | Delay restart after unload/failure |
 
 Cold start requires reserve plus the whole worker budget. Only one neural
 attempt runs; at least two total synthesis permits are required so a waiting
-neural request cannot consume all native admission. The worker starts lazily at
+neural request cannot consume all native admission. By default the worker starts lazily at
 nice level 19 in a separately owned process session. The monitor polls every
 0.25 seconds between probes, including while loading and idle, and fails closed
 on unreadable measurements. It stops only the process group it created on
-pressure, cancellation, timeout, idle expiry or application shutdown. Unverified
+pressure, cancellation, timeout, idle expiry (lazy mode) or application shutdown. Unverified
 termination logs an error and disables neural restart. Discovery and readiness
 never launch the worker and native baseline readiness remains independent.
+
+To opt in, set `TTS_FISH_PRELOAD=true` in the backend environment alongside
+`TTS_FISH_ENABLED=true`, `TTS_FISH_OPPORTUNISTIC=true`, and the existing approved
+managed worker configuration. Startup schedules one background warm-up using the
+same reviewed launcher, authenticated health check, and Fish attempt timeout
+(`TTS_FISH_REQUEST_TIMEOUT_SECONDS`). Fish requests arriving during warm-up use
+native fallback (`fish_busy`); `/readyz` does not wait. Backend logs report
+`fish preload started`, `fish preload ready` (with duration), or a safe reason for
+failure or skip. A failed preload does not loop: if Fish can be restarted, a
+later eligible request can try again after cooldown. A healthy worker is reused
+without idle eviction; approval, memory limits, request timeouts, cancellation,
+and shutdown cleanup still apply. Preloading removes the cold start from warm
+requests; it does not speed up synthesis or extend request deadlines.
 
 These are sampled safety controls, not OS-enforced physical/GPU memory limits:
 macOS available memory uses free/inactive/speculative pages; summed process-group

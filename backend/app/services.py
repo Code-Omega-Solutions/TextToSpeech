@@ -210,12 +210,19 @@ class SpeechService:
     def release_permit(self) -> None:
         self._permits.release()
 
+    def start(self) -> None:
+        if not self.settings.fish_preload:
+            return
+        if not self.fish_reference_voices:
+            logger.warning("fish preload skipped reason=fish_references_unavailable")
+            return
+        self.fish_process.start_preload()
+
     def close(self) -> None:
         self.fish_process.close()
 
     def _fish_engine_ready(self) -> bool:
-        # A reviewed managed launcher is lazy: readiness must not start a
-        # neural worker. An empty qualified-reference catalog is never ready.
+        # Managed engine discovery checks eligibility, not worker health.
         if not self.fish_reference_voices:
             return False
         if self.settings.fish_worker_command is not None:

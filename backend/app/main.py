@@ -132,6 +132,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @asynccontextmanager
     async def lifespan(_application: FastAPI):
         try:
+            speech_service.start()
             yield
         finally:
             await run_in_threadpool(speech_service.close)

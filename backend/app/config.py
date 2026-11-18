@@ -42,6 +42,7 @@ class _SettingsValues(BaseModel):
     fish_artifacts_approved: bool = False
     fish_references_approved: bool = False
     fish_opportunistic: bool = False
+    fish_preload: bool = False
     fish_worker_command: tuple[str, ...] | None = Field(default=None, repr=False)
     fish_worker_peak_memory_bytes: int = Field(default=16 * 1024**3, ge=1)
     fish_startup_memory_bytes: int | None = Field(default=None, ge=1)
@@ -103,6 +104,8 @@ class _SettingsValues(BaseModel):
             raise ValueError("Fish Speech requires a qualified reference manifest")
         if self.fish_enabled and not self.fish_reference_root:
             raise ValueError("Fish Speech requires the approved reference data root")
+        if self.fish_preload and not (self.fish_enabled and self.fish_opportunistic):
+            raise ValueError("Fish preload requires enabled opportunistic Fish")
         if self.fish_opportunistic:
             if self.fish_enabled and self.fish_worker_command is None:
                 raise ValueError("Opportunistic Fish requires a managed worker command")
@@ -247,6 +250,7 @@ class Settings:
     vibevoice_worker_peak_memory_bytes: int | None
     higher_priority_memory_reserve_bytes: int | None
     fish_opportunistic: bool = False
+    fish_preload: bool = False
     fish_worker_command: tuple[str, ...] | None = field(default=None, repr=False)
     fish_worker_peak_memory_bytes: int = 16 * 1024**3
     fish_startup_memory_bytes: int | None = None
@@ -284,6 +288,7 @@ class Settings:
             "TTS_FISH_ARTIFACTS_APPROVED": "fish_artifacts_approved",
             "TTS_FISH_REFERENCES_APPROVED": "fish_references_approved",
             "TTS_FISH_OPPORTUNISTIC": "fish_opportunistic",
+            "TTS_FISH_PRELOAD": "fish_preload",
             "TTS_FISH_WORKER_COMMAND": "fish_worker_command",
             "TTS_FISH_WORKER_PEAK_MEMORY_BYTES": "fish_worker_peak_memory_bytes",
             "TTS_FISH_STARTUP_MEMORY_BYTES": "fish_startup_memory_bytes",

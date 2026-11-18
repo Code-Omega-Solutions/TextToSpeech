@@ -1,3 +1,4 @@
+import logging
 import os
 import signal
 import socket
@@ -89,6 +90,7 @@ def test_invalid_or_insufficient_start_headroom_never_launches(worker, available
 def test_worker_is_lazy_low_priority_offline_and_reused(worker, monkeypatch):
     managed, _observations, starts = worker
     monkeypatch.setenv("TTS_API_KEY", "synthetic-private-key")
+    managed.start_preload()
     assert not starts
     assert run(managed) == b"audio"
     assert run(managed) == b"audio"
@@ -99,6 +101,82 @@ def test_worker_is_lazy_low_priority_offline_and_reused(worker, monkeypatch):
     assert kwargs["shell"] is False
     assert "TTS_API_KEY" not in kwargs["env"]
     assert kwargs["env"]["HF_HUB_OFFLINE"] == "1"
+
+
+def test_preload_reserves_one_slot_reuses_worker_and_retains_it_while_idle(
+    worker, monkeypatch, caplog
+):
+    managed, observations, starts = worker
+    managed.settings = replace(managed.settings, fish_preload=True)
+    caplog.set_level(logging.INFO, logger="app.fish_process")
+    probing, ready, idle_checked = threading.Event(), threading.Event(), threading.Event()
+
+    def health_probe(**_kwargs):
+        probing.set()
+        return ready.is_set()
+
+    def resident_memory(_process):
+        if time.monotonic() - managed._last_used > managed.settings.fish_idle_timeout_seconds:
+            idle_checked.set()
+        return observations["resident"]
+
+    monkeypatch.setattr(managed.engine, "is_available", health_probe)
+    monkeypatch.setattr(fish_process, "process_group_resident_memory_bytes", resident_memory)
+    managed.start_preload()
+    assert probing.wait(2)
+    managed.start_preload()
+    with pytest.raises(FishResourceUnavailable, match="fish_busy"):
+        run(managed, callback=lambda: pytest.fail("synthesis ran during preload"))
+    assert len(starts) == 1
+    ready.set()
+    managed._preload_thread.join(timeout=2)
+    assert "fish preload ready duration_ms=" in caplog.text
+
+    monkeypatch.setattr(managed, "_last_used", time.monotonic() - 31)
+    assert idle_checked.wait(2)
+    assert run(managed) == b"audio"
+    assert len(starts) == 1
+    observations["available"] = 49
+    assert starts[0][0].terminated.wait(2)
+    with pytest.raises(FishResourceUnavailable, match="fish_cooldown"):
+        run(managed)
+
+
+@pytest.mark.parametrize("reason", ["fish_timeout", "fish_shutdown", "fish_external_service"])
+def test_preload_failure_or_shutdown_never_leaves_a_worker(
+    worker, monkeypatch, caplog, reason
+):
+    managed, observations, starts = worker
+    managed.settings = replace(
+        managed.settings, fish_preload=True, fish_request_timeout_seconds=1
+    )
+    caplog.set_level(logging.INFO, logger="app.fish_process")
+    probing = threading.Event()
+
+    def not_ready(**_kwargs):
+        probing.set()
+        return False
+
+    monkeypatch.setattr(managed.engine, "is_available", not_ready)
+    observations["external"] = reason == "fish_external_service"
+    managed.start_preload()
+    if reason == "fish_shutdown":
+        assert probing.wait(2)
+        managed.close()
+        with pytest.raises(FishResourceUnavailable, match="fish_shutdown"):
+            run(managed)
+        assert "fish preload cancelled reason=fish_shutdown" in caplog.text
+    else:
+        managed._preload_thread.join(timeout=3)
+        assert f"fish preload failed reason={reason}" in caplog.text
+        with pytest.raises(FishResourceUnavailable, match="fish_cooldown"):
+            run(managed)
+    assert not managed._preload_thread.is_alive()
+    if observations["external"]:
+        assert not starts
+    else:
+        assert len(starts) == 1
+        assert starts[0][0].terminated.is_set()
 
 
 def test_exact_budget_and_reserve_boundaries_are_admitted(worker, monkeypatch):

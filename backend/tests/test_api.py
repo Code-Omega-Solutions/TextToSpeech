@@ -8,6 +8,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.main import create_app
+from app.fish_process import FishResourceUnavailable
 from app.fish_speech import FishSpeechError
 from app.services import (
     AudioTooLarge,
@@ -545,6 +546,42 @@ def test_readiness_requires_only_german_and_us_english(settings, monkeypatch):
     response = client.get("/readyz")
     assert response.status_code == 503
     assert "Required speech voices" in response.json()["detail"]
+
+
+@pytest.mark.parametrize("approved_catalog", [False, True])
+def test_lifespan_preload_does_not_block_native_readiness(
+    settings_factory, monkeypatch, approved_catalog
+):
+    settings = settings_factory(
+        fish_enabled=True, fish_opportunistic=True, fish_preload=True,
+        fish_worker_command=("/approved/launcher",),
+    )
+    monkeypatch.setattr("app.routers.shutil.which", lambda _path: "/fake/executable")
+    monkeypatch.setattr("app.routers.available_codecs", lambda *_args, **_kwargs: {"libmp3lame", "pcm_s16le"})
+    monkeypatch.setattr("app.routers.available_voices", lambda *_args, **_kwargs: {"Anna", "Samantha"})
+    monkeypatch.setattr(
+        "app.services.load_qualified_reference_catalog",
+        lambda *_args: {"en-US": ("qualified-reference",)} if approved_catalog else {},
+    )
+    loading, release = threading.Event(), threading.Event()
+
+    def worker_start(_self, _deadline):
+        loading.set()
+        assert release.wait(5)
+        raise FishResourceUnavailable("fish_start_failed")
+
+    monkeypatch.setattr("app.fish_process.FishProcess._ensure_started", worker_start)
+    app = create_app(settings)
+    assert not loading.is_set()
+    with TestClient(app) as client:
+        try:
+            if approved_catalog:
+                assert loading.wait(2)
+            assert client.get("/readyz").status_code == 200
+            assert loading.is_set() == approved_catalog
+        finally:
+            release.set()
+    assert app.state.speech_service.fish_process._closed.is_set()
 
 
 def test_missing_optional_uk_voice_does_not_block_readiness_or_request_behavior(settings, monkeypatch):

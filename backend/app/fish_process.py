@@ -8,6 +8,7 @@ import subprocess
 import threading
 import time
 from collections.abc import Callable
+from http.client import HTTPException
 from typing import NoReturn, TypeVar
 from urllib.parse import urlsplit
 
@@ -78,6 +79,7 @@ class FishProcess:
         self._state_lock = threading.RLock()
         self._process: subprocess.Popen[bytes] | None = None
         self._monitor: threading.Thread | None = None
+        self._preload_thread: threading.Thread | None = None
         self._closed = threading.Event()
         self._last_used = 0.0
         self._restart_after = 0.0
@@ -85,6 +87,46 @@ class FishProcess:
         self._cleanup_failed = False
         self._active_deadline: float | None = None
         self._cancel_event: threading.Event | None = None
+
+    def start_preload(self) -> None:
+        if not self.settings.fish_preload:
+            return
+        with self._state_lock:
+            if self._closed.is_set() or self._preload_thread is not None:
+                return
+            # Reserve the neural slot before serving requests, without claiming native capacity.
+            if not self._request_lock.acquire(blocking=False):
+                logger.info("fish preload skipped reason=fish_busy")
+                return
+            thread = threading.Thread(target=self._preload, name="fish-preload", daemon=True)
+            try:
+                thread.start()
+            except RuntimeError:
+                self._request_lock.release()
+                self._stop("fish_preload_start_failed")
+                logger.warning("fish preload failed reason=fish_preload_start_failed")
+            else:
+                self._preload_thread = thread
+
+    def _preload(self) -> None:
+        started = time.monotonic()
+        logger.info("fish preload started")
+        try:
+            self._run_locked(
+                lambda: None,
+                deadline=started + self.settings.fish_request_timeout_seconds,
+                cancel_event=None,
+                preload=True,
+            )
+        except FishResourceUnavailable as exc:
+            if str(exc) == "fish_shutdown":
+                logger.info("fish preload cancelled reason=fish_shutdown")
+            else:
+                logger.warning("fish preload failed reason=%s", exc)
+        except (HTTPException, OSError, RuntimeError, ValueError):
+            logger.warning("fish preload failed reason=fish_preload_aborted")
+        else:
+            logger.info("fish preload ready duration_ms=%d", round((time.monotonic() - started) * 1000))
 
     def run(
         self,
@@ -95,6 +137,16 @@ class FishProcess:
     ) -> _T:
         if not self._request_lock.acquire(blocking=False):
             raise FishResourceUnavailable("fish_busy")
+        return self._run_locked(callback, deadline=deadline, cancel_event=cancel_event)
+
+    def _run_locked(
+        self,
+        callback: Callable[[], _T],
+        *,
+        deadline: float,
+        cancel_event: threading.Event | None,
+        preload: bool = False,
+    ) -> _T:
         try:
             with self._state_lock:
                 self._check_request(deadline, cancel_event)
@@ -108,6 +160,10 @@ class FishProcess:
                     if self._process is None:
                         raise FishResourceUnavailable(self._reason)
                 if self.engine.is_available(timeout_seconds=min(0.25, deadline - time.monotonic())):
+                    with self._state_lock:
+                        self._check_request(deadline, cancel_event)
+                        if self._process is None:
+                            raise FishResourceUnavailable(self._reason)
                     break
                 self._closed.wait(min(_POLL_SECONDS, max(0, deadline - time.monotonic())))
             result = callback()
@@ -117,11 +173,19 @@ class FishProcess:
                 if self._process is None:
                     raise FishResourceUnavailable(self._reason)
             return result
-        except Exception:
-            # Cleanup on any callback exception, but preserve it for the caller.
+        except Exception as exc:
+            # Keep the original error for the caller, including a monitor's stop reason.
             with self._state_lock:
-                if self._process is not None:
-                    self._stop("fish_request_aborted")
+                if not (self._closed.is_set() or self._cleanup_failed) and (
+                    self._process is not None or (preload and time.monotonic() >= self._restart_after)
+                ):
+                    reason = "fish_request_aborted"
+                    if preload:
+                        reason = (
+                            str(exc) if isinstance(exc, FishResourceUnavailable)
+                            else "fish_preload_aborted"
+                        )
+                    self._stop(reason)
             raise
         finally:
             with self._state_lock:
@@ -134,10 +198,11 @@ class FishProcess:
         self._closed.set()
         with self._state_lock:
             self._stop("fish_shutdown")
-        if self._monitor is not None:
-            self._monitor.join(timeout=8)
-            if self._monitor.is_alive():
-                logger.error("fish worker monitor shutdown is unverified")
+        for thread, role in ((self._preload_thread, "preload"), (self._monitor, "monitor")):
+            if thread is not None:
+                thread.join(timeout=8)
+                if thread.is_alive():
+                    logger.error("fish worker %s shutdown is unverified", role)
 
     def _check_request(self, deadline: float, cancel_event: threading.Event | None) -> None:
         if self._closed.is_set():
@@ -186,8 +251,9 @@ class FishProcess:
             self._deny("fish_start_failed")
         self._last_used = time.monotonic()
         if self._monitor is None:
-            self._monitor = threading.Thread(target=self._watch, daemon=True)
-            self._monitor.start()
+            monitor = threading.Thread(target=self._watch, daemon=True)
+            monitor.start()
+            self._monitor = monitor
 
     def _check_resources(self, *, starting: bool = False) -> None:
         try:
@@ -243,8 +309,10 @@ class FishProcess:
                     self._check_resources()
                     if self._active_deadline is not None:
                         self._check_request(self._active_deadline, self._cancel_event)
-                    elif time.monotonic() - self._last_used >= self.settings.fish_idle_timeout_seconds:
+                    elif not self.settings.fish_preload and (
+                        time.monotonic() - self._last_used >= self.settings.fish_idle_timeout_seconds
+                    ):
                         self._stop("fish_idle")
                 except FishResourceUnavailable as exc:
-                    if self._process is not None:
+                    if self._process is not None and not self._cleanup_failed:
                         self._stop(str(exc))

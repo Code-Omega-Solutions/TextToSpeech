@@ -265,7 +265,7 @@ a loaded worker SHALL not have its resident memory credited toward the reserve.
 
 The supervisor SHALL monitor loading, active and idle workers, reject invalid
 measurements, and stop only the owned process group on pressure, budget breach,
-cancellation, timeout, idle expiry or shutdown. Unverified termination SHALL
+cancellation, timeout, idle expiry in lazy mode or shutdown. Unverified termination SHALL
 disable neural restart and log an explicit safe error. Discovery SHALL not start
 a model. The reviewed launcher SHALL use local approved assets without downloads;
 offline library flags are not a network sandbox. Sampled host/RSS estimates
@@ -302,8 +302,13 @@ separate gates.
 
 #### Scenario: cancellation, idle expiry or shutdown occurs
 
-- **WHEN** an active request is cancelled or times out, or the worker idles past its limit, or the application shuts down
+- **WHEN** an active request is cancelled or times out, or a worker in lazy mode idles past its limit, or the application shuts down
 - **THEN** the owned worker is stopped and reaped without terminating an external listener; cancellation starts no native fallback.
+
+#### Scenario: managed Fish is preloaded at backend startup
+
+- **WHEN** enabled opportunistic Fish with qualified references is configured with `TTS_FISH_PRELOAD=true`
+- **THEN** the backend SHALL warm one owned worker in the background using the approved launcher and existing Fish timeout, without delaying native readiness. A Fish request during warm-up SHALL fall back as busy. The worker SHALL remain resident during ordinary idle periods, but the existing memory and cleanup policy SHALL still apply. The backend SHALL log startup and readiness or a safe failure reason; after a failed preload, any eligible restart SHALL be request-driven and respect cooldown.
 
 #### Scenario: an external listener or unverified cleanup is encountered
 

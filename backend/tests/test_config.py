@@ -332,6 +332,13 @@ def test_opportunistic_fish_requires_managed_worker_and_native_capacity(monkeypa
     monkeypatch.setenv("TTS_MAX_CONCURRENT_SYNTHESIS", "1")
     with pytest.raises(ValidationError, match="native capacity"):
         Settings.from_env()
+    monkeypatch.setenv("TTS_MAX_CONCURRENT_SYNTHESIS", "2")
+    assert Settings.from_env().fish_preload is False
+    monkeypatch.setenv("TTS_FISH_PRELOAD", "true")
+    assert Settings.from_env().fish_preload is True
+    monkeypatch.setenv("TTS_FISH_OPPORTUNISTIC", "false")
+    with pytest.raises(ValidationError, match="preload requires enabled opportunistic Fish"):
+        Settings.from_env()
 
 
 def test_opportunistic_policy_allows_native_only_default_fallback(monkeypatch):
@@ -339,3 +346,6 @@ def test_opportunistic_policy_allows_native_only_default_fallback(monkeypatch):
     monkeypatch.setenv("TTS_DEFAULT_BACKEND", "fish-speech")
     monkeypatch.setenv("TTS_FISH_ENABLED", "false")
     assert Settings.from_env().fish_opportunistic is True
+    monkeypatch.setenv("TTS_FISH_PRELOAD", "true")
+    with pytest.raises(ValidationError, match="preload requires enabled opportunistic Fish"):
+        Settings.from_env()

@@ -19,10 +19,17 @@ class SpeechRequest(BaseModel):
 
     input: str = Field(min_length=1, max_length=5000)
     model: Literal["macos-say", "fish-speech", "vibevoice"] | None = None
+    fish_runtime: Literal["pytorch", "mlx4"] | None = None
     language: str | None = None
     voice: str | None = Field(default=None, max_length=128)
     response_format: Literal["mp3", "wav"] = "mp3"
     speed: float = Field(default=1.0, ge=0.5, le=2.0, allow_inf_nan=False)
+
+    @model_validator(mode="after")
+    def fish_runtime_requires_fish_model(self) -> SpeechRequest:
+        if self.fish_runtime is not None and self.model != "fish-speech":
+            raise ValueError("fish_runtime requires model fish-speech")
+        return self
 
     @field_validator("voice", mode="before")
     @classmethod

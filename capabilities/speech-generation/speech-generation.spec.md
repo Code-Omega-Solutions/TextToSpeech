@@ -49,6 +49,13 @@ the service-default voice.
 - **WHEN** the engine catalog is loaded
 - **THEN** the engine selector lists only available engines and a selected explicit language filters the voice choices to advertised voices.
 
+#### Scenario: a user selects Fish Speech with MLX
+
+- **WHEN** the selected approved service advertises available Fish Speech with `fish_runtime: "mlx4"` for the selected language
+- **THEN** the speech engine menu identifies it as Fish Speech (MLX) and sends `model: "fish-speech"` and `fish_runtime: "mlx4"` when selected.
+- **WHEN** the selected service instead advertises PyTorch or has no recognized Fish runtime metadata
+- **THEN** the menu offers no MLX option and uses the advertised PyTorch value or the legacy Fish request, respectively.
+
 #### Scenario: automatic language detection uses the service-default voice
 
 - **WHEN** the user leaves language on automatic detection

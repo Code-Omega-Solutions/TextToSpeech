@@ -45,7 +45,7 @@ SHALL not disclose credential values or credential-file paths.
 - **THEN** a valid speech request can proceed without an Authorization header.
 
 ### Speech engines are selected explicitly and discovered
-<!-- touches: backend/app/config.py, backend/app/models.py, backend/app/engines.py, backend/app/fish_speech.py, backend/app/services.py, backend/app/routers.py, backend/deployment/fish_worker_launcher.py, backend/tests/test_config.py, backend/tests/test_models.py, backend/tests/test_engines.py, backend/tests/test_fish_speech.py, backend/tests/test_engine_catalog.py, backend/tests/test_fish_worker_launcher.py -->
+<!-- touches: backend/app/config.py, backend/app/models.py, backend/app/engines.py, backend/app/fish_speech.py, backend/app/services.py, backend/app/routers.py, backend/deployment/fish_worker_launcher.py, backend/tests/test_config.py, backend/tests/test_models.py, backend/tests/test_engines.py, backend/tests/test_fish_speech.py, backend/tests/test_engine_catalog.py, backend/tests/test_fish_worker_launcher.py, backend/tests/test_api.py -->
 
 The serving application SHALL use a fixed registry of configured speech
 engines. The `model` field SHALL select an enabled engine; omitting it SHALL
@@ -63,6 +63,15 @@ authenticated `TTS_API_KEY` credential; an explicit Fish credential is optional
 for separately authorized deployments. Engine discovery SHALL advertise Fish
 only when its qualified voice catalog is nonempty; no unqualified default or
 public/celebrity clone may be advertised.
+
+#### Scenario: a request selects an advertised Fish runtime
+
+- **WHEN** the authenticated catalog lists Fish as available
+- **THEN** it includes the instance's configured `fish_runtime` (`pytorch` or `mlx4`).
+- **WHEN** a request with explicit `model: "fish-speech"` includes a matching `fish_runtime`
+- **THEN** it uses the configured Fish worker under the existing admission and fallback policy.
+- **WHEN** a valid `fish_runtime` does not match the instance
+- **THEN** the request returns 409 before synthesis, without trying another runtime or fallback.
 
 #### Scenario: an enabled engine is selected
 

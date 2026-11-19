@@ -42,7 +42,7 @@ async function open(page, catalogResponse = { json: catalog }) {
     route.fulfill({ json: { status: "ok" } }),
   );
   await page.route(`**${catalogPath}`, (route) =>
-    route.fulfill(catalogResponse),
+    route.fulfill(typeof catalogResponse === "function" ? catalogResponse() : catalogResponse),
   );
   await page.addInitScript(() => {
     HTMLMediaElement.prototype.play = async function () {};
@@ -103,6 +103,61 @@ test("populates only available engines and filters choices by language", async (
   ).toEqual(["Engine default", "Female (German)", "Male (German)"]);
   await expect(page.locator("#discovery-status")).toHaveText(
     "Speech options are ready.",
+  );
+});
+
+test("selects the advertised Fish runtime on the approved service", async ({ page }) => {
+  let runtime = "pytorch";
+  await page.route("**/api/targets", (route) =>
+    route.fulfill({
+      json: {
+        targets: [{ id: "pytorch-service", label: "PyTorch" }, { id: "mlx-service", label: "MLX" }],
+        selected: "pytorch-service",
+      },
+    }),
+  );
+  await page.route("**/api/target", (route) => {
+    expect(route.request().postDataJSON()).toEqual({ id: "mlx-service" });
+    runtime = "mlx4";
+    return route.fulfill({ json: { selected: "mlx-service" } });
+  });
+  await page.route(`**${speechPath}`, (route) => {
+    expect(route.request().postDataJSON()).toEqual({
+      input: "Guten Morgen",
+      response_format: "mp3",
+      speed: 1,
+      model: "fish-speech",
+      fish_runtime: "mlx4",
+    });
+    return route.fulfill({
+      contentType: "audio/wav",
+      headers: {
+        "X-Speech-Backend": "macos-say",
+        "X-Speech-Fallback": "true",
+        "X-Speech-Fallback-Reason": "fish_busy",
+      },
+      body: audio,
+    });
+  });
+  await open(page, () => ({
+    json: {
+      engines: catalog.engines.map((engine) =>
+        engine.id === "fish-speech" ? { ...engine, fish_runtime: runtime } : engine),
+    },
+  }));
+  const engine = page.locator("#engine");
+  await expect(engine.locator("option", { hasText: "Fish Speech (PyTorch)" })).toHaveCount(1);
+  await expect(engine.locator("option", { hasText: "Fish Speech (MLX)" })).toHaveCount(0);
+  await page.getByRole("button", { name: "Configuration" }).click();
+  await page.locator("#target").selectOption("mlx-service");
+  await page.getByRole("button", { name: "Speech", exact: true }).click();
+  await expect(engine).toHaveValue("macos-say");
+  await expect(engine.locator("option", { hasText: "Fish Speech (MLX)" })).toHaveCount(1);
+  await engine.selectOption({ label: "Fish Speech (MLX)" });
+  await page.getByRole("textbox", { name: "YOUR TEXT" }).fill("Guten Morgen");
+  await page.getByRole("button", { name: "Generate speech" }).click();
+  await expect(page.locator("#speech-engine-disclosure")).toHaveText(
+    "Actual engine: macos-say. Fallback used (fish_busy).",
   );
 });
 

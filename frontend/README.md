@@ -84,9 +84,15 @@ speech API on its deployed port (for example `http://speech-service.example:8000
 not the loopback Fish inference worker or a retired prototype port. Engine
 selection and fallback remain backend responsibilities; the UI proxy keeps
 using the existing backend bearer credential.
-The current UI initially selects `macos-say` when it is available. Select
-`fish-speech` in the Speech Engine menu to request Fish from the UI; the
-backend's default applies only to requests that omit `model`.
+The UI initially selects `macos-say` when it is available. To use MLX, choose an
+approved MLX-enabled backend under **Configuration → Speech Service**, then
+select **Fish Speech (MLX)** under **Speech → Speech Engine**. The option only
+appears when the selected service advertises available MLX Fish for the chosen
+language. An updated PyTorch backend advertises **Fish Speech (PyTorch)**;
+older backends keep the generic `fish-speech` option. One backend runs one
+Fish runtime. To offer both, configure separate approved backend targets,
+not two runtime choices for the same service. Results still report the actual
+engine, including any native fallback.
 
 Compose accepts only the protected file form for the container credential:
 `TTS_API_KEY_FILE` points to a local, protected source file and Compose mounts it

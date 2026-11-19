@@ -23,6 +23,10 @@ const configurationPanel = document.querySelector("#configuration-panel");
 const targetSelect = document.querySelector("#target");
 
 const supportedLanguages = new Set(["de-DE", "en-US", "en-GB"]);
+const fishRuntimeLabels = new Map([
+  ["pytorch", "Fish Speech (PyTorch)"],
+  ["mlx4", "Fish Speech (MLX)"],
+]);
 const voiceDisplayNames = new Map([
   ["de-male", "Male (German)"],
   ["de-female", "Female (German)"],
@@ -35,6 +39,14 @@ let endpointRevision = 0;
 let speechRequestSequence = 0;
 let currentSpeechRequest = 0;
 let currentSpeechRevision = 0;
+let targetChanging = false;
+let speechOptionsReady = false;
+
+function updateGenerateButton() {
+  generateButton.disabled =
+    targetChanging || !speechOptionsReady ||
+    (currentSpeechRequest !== 0 && currentSpeechRevision === endpointRevision);
+}
 
 async function loadTargets() {
   const response = await fetch("/api/targets", { cache: "no-store" });
@@ -51,6 +63,8 @@ async function loadTargets() {
 }
 
 targetSelect.addEventListener("change", async () => {
+  targetChanging = true;
+  updateGenerateButton();
   targetSelect.disabled = true;
   try {
     const response = await fetch("/api/target", {
@@ -66,6 +80,8 @@ targetSelect.addEventListener("change", async () => {
     statusMessage.textContent = error.message;
   } finally {
     targetSelect.disabled = false;
+    targetChanging = false;
+    updateGenerateButton();
   }
 });
 
@@ -191,7 +207,11 @@ function normalizeCatalog(catalog) {
           : [],
       ]),
     );
-    return [{ id: engine.id, languages, voices }];
+    const fishRuntime =
+      engine.id === "fish-speech" && fishRuntimeLabels.has(engine.fish_runtime)
+        ? engine.fish_runtime
+        : undefined;
+    return [{ id: engine.id, languages, voices, fishRuntime }];
   });
 }
 
@@ -241,6 +261,7 @@ function renderEngines(preferredEngine = engineSelect.value) {
     engineSelect,
     engines.map((engine) => engine.id),
     preferredEngine,
+    (id) => fishRuntimeLabels.get(engines.find((engine) => engine.id === id)?.fishRuntime) || id,
   );
   engineSelect.disabled = engines.length === 0;
 
@@ -250,7 +271,8 @@ function renderEngines(preferredEngine = engineSelect.value) {
   if (!selectedEngine) {
     setOptions(voiceSelect, [], "");
     voiceSelect.disabled = true;
-    generateButton.disabled = true;
+    speechOptionsReady = false;
+    updateGenerateButton();
     discoveryStatus.textContent =
       availableEngines.length === 0
         ? "No speech engines are currently available."
@@ -259,7 +281,8 @@ function renderEngines(preferredEngine = engineSelect.value) {
   }
 
   renderVoices(selectedEngine);
-  generateButton.disabled = false;
+  speechOptionsReady = true;
+  updateGenerateButton();
   discoveryStatus.textContent = "Speech options are ready.";
 }
 
@@ -274,7 +297,8 @@ async function loadEngineCatalog() {
       availableEngines = [];
       engineSelect.hidden = true;
       voiceSelect.hidden = true;
-      generateButton.disabled = false;
+      speechOptionsReady = true;
+      updateGenerateButton();
       discoveryStatus.textContent = "This service does not support discovery. Service defaults will be used.";
       return;
     }
@@ -313,7 +337,8 @@ async function loadEngineCatalog() {
     setOptions(voiceSelect, [], "");
     engineSelect.disabled = true;
     voiceSelect.disabled = true;
-    generateButton.disabled = true;
+    speechOptionsReady = false;
+    updateGenerateButton();
     discoveryStatus.textContent = isNetworkError(error)
       ? "Could not reach the speech service. Check the service connection and try again."
       : error.message;
@@ -336,11 +361,11 @@ form.addEventListener("submit", async (event) => {
   if ((!selectedEngine && availableEngines.length > 0) || generateButton.disabled) return;
   statusMessage.textContent = "";
   clearAudio();
-  generateButton.disabled = true;
   const speechRevision = endpointRevision;
   const speechRequest = ++speechRequestSequence;
   currentSpeechRequest = speechRequest;
   currentSpeechRevision = speechRevision;
+  updateGenerateButton();
   generateButton.firstElementChild.textContent = "Generating…";
 
   const request = {
@@ -349,6 +374,7 @@ form.addEventListener("submit", async (event) => {
     speed: Number(speedInput.value),
   };
   if (selectedEngine) request.model = selectedEngine.id;
+  if (selectedEngine?.fishRuntime) request.fish_runtime = selectedEngine.fishRuntime;
   const language = languageSelect.value;
   if (language) request.language = language;
   if (voiceSelect.value) request.voice = voiceSelect.value;
@@ -416,7 +442,7 @@ form.addEventListener("submit", async (event) => {
     if (currentSpeechRequest === speechRequest) {
       currentSpeechRequest = 0;
       currentSpeechRevision = 0;
-      generateButton.disabled = false;
+      updateGenerateButton();
       generateButton.firstElementChild.textContent = "Generate speech";
     }
   }

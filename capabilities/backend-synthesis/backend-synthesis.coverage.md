@@ -3,13 +3,16 @@
 These references identify existing tests. The backend suite mocks system
 executables; it does not qualify synthesis on a native macOS host.
 The optional-headroom tests also cover opt-in startup allowance boundaries,
-invalid allowances and unchanged loaded reserve/RSS enforcement.
+invalid allowances and default loaded reserve/RSS enforcement. The same
+[supervisor tests](../../backend/tests/test_fish_process.py) cover memory
+advisories without blocking launch or reuse, including probe failure and
+preserved worker-exit handling.
 Project-wide license and release-policy evidence is mapped separately in the
 [project licensing coverage map](../project-licensing/project-licensing.coverage.md).
 
 | Requirement | Existing test reference | Evidence scope |
 | --- | --- | --- |
-| Optional neural synthesis yields to native speech and host headroom | [backend/tests/test_fish_process.py](../../backend/tests/test_fish_process.py), [backend/tests/test_engines.py](../../backend/tests/test_engines.py), [backend/tests/test_config.py](../../backend/tests/test_config.py), [backend/tests/test_api.py](../../backend/tests/test_api.py) | Mocked loading/active/idle pressure and probe failure, exact memory boundaries, lazy low-priority offline launch, one neural request, cooldown, cleanup quarantine, cancellation, remaining deadline, language-only fallback, truthful headers, strict default and auth; real disposable Linux process termination/reaping, not macOS/model qualification |
+| Optional neural synthesis yields to native speech and host headroom | [backend/tests/test_fish_process.py](../../backend/tests/test_fish_process.py), [backend/tests/test_engines.py](../../backend/tests/test_engines.py), [backend/tests/test_config.py](../../backend/tests/test_config.py), [backend/tests/test_api.py](../../backend/tests/test_api.py), [backend/tests/test_fish_mlx_approval.py](../../backend/tests/test_fish_mlx_approval.py), [backend/tests/test_fish_mlx_conversion.py](../../backend/tests/test_fish_mlx_conversion.py), [backend/tests/test_fish_mlx_worker.py](../../backend/tests/test_fish_mlx_worker.py), [backend/tests/test_fish_mlx_native.py](../../backend/tests/test_fish_mlx_native.py), [backend/tests/test_fish_mlx_upstream.py](../../backend/tests/test_fish_mlx_upstream.py) | Mocked managed lifecycle, transport and fallback, candidate approval and conversion, native synthetic numeric and approved-source prompt checks, and disposable Linux process cleanup; no candidate end-to-end audio or model qualification |
 | Speech generation is authenticated by default | [backend/tests/test_api.py](../../backend/tests/test_api.py), [backend/tests/test_config.py](../../backend/tests/test_config.py) | Default/disabled auth, protected credential files, shared Fish credential reuse, conflicting sources, challenge and rejection before synthesis |
 | Opt-in startup preloads and retains the managed Fish worker | [backend/tests/test_fish_process.py](../../backend/tests/test_fish_process.py), [backend/tests/test_api.py](../../backend/tests/test_api.py), [backend/tests/test_config.py](../../backend/tests/test_config.py) | Mocked startup before requests, single-slot contention, reuse past idle expiry, nonblocking native readiness, qualified-reference gate, reserve, timeout/cooldown and shutdown; no macOS/model qualification |
 | Speech requests are validated against the supported contract | [backend/tests/test_models.py](../../backend/tests/test_models.py), [backend/tests/test_api.py](../../backend/tests/test_api.py), [backend/tests/test_speech_contract.py](../../backend/tests/test_speech_contract.py) | UTF-16 input bounds, streamed 32 KiB body limits, macOS/Fish selection, legacy VibeVoice identifier, format, speed, and safe HTTP responses |

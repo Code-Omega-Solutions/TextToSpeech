@@ -85,6 +85,16 @@ metadata and notices before bundling or redistributing it. Do the same for
 other separately installed runtime components; the project license does not
 cover them.
 
+## Experimental MLX dependency (not a working worker)
+
+The proposed Fish candidate pins `mlx==0.32.4` and `mlx-metal==0.32.4` in
+`backend/deployment/fish_mlx-requirements.txt`, with hashes for Python 3.12
+macOS arm64 wheels. The [MLX source license at v0.32.4](https://github.com/ml-explore/mlx/blob/v0.32.4/LICENSE)
+is MIT, copyright Apple Inc. The exact wheel contents and notices have not been
+fully audited for redistribution. This dependency pin is not a working Fish
+runtime or approval to deploy; Fish model, codec and reference terms remain
+separate gates.
+
 ## Optional VibeVoice worker (release blocked)
 
 The optional worker runtime is isolated in

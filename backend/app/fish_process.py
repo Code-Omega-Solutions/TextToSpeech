@@ -9,6 +9,7 @@ import threading
 import time
 from collections.abc import Callable
 from http.client import HTTPException
+from pathlib import Path
 from typing import NoReturn, TypeVar
 from urllib.parse import urlsplit
 
@@ -19,6 +20,16 @@ from app.memory import available_memory_bytes, process_group_resident_memory_byt
 _POLL_SECONDS = 0.25
 _T = TypeVar("_T")
 logger = logging.getLogger(__name__)
+_MLX_BOOTSTRAP = str(Path(__file__).resolve().parents[1] / "deployment" / "fish_mlx" / "bootstrap.py")
+_MLX_ENVIRONMENT = {
+    "HOME", "USER", "LOGNAME", "PATH", "TMPDIR", "LANG", "LC_ALL",
+    "TTS_FISH_SOURCE_ROOT", "TTS_FISH_CHECKPOINT_ROOT", "TTS_FISH_REFERENCE_ROOT",
+    "TTS_FISH_ARTIFACT_MANIFEST", "TTS_FISH_REFERENCE_MANIFEST",
+    "TTS_FISH_ARTIFACTS_APPROVED", "TTS_FISH_REFERENCES_APPROVED",
+    "TTS_FISH_WORKER_HOST", "TTS_FISH_WORKER_PORT",
+    "TTS_FISH_MLX_CANDIDATE_ROOT", "TTS_FISH_MLX_SITE_ROOT",
+    "TTS_FISH_MLX_APPROVAL_MANIFEST", "TTS_FISH_MLX_APPROVED",
+}
 
 
 class FishResourceUnavailable(RuntimeError):
@@ -84,6 +95,7 @@ class FishProcess:
         self._last_used = 0.0
         self._restart_after = 0.0
         self._reason = "fish_unavailable"
+        self._memory_warnings: set[str] = set()
         self._cleanup_failed = False
         self._active_deadline: float | None = None
         self._cancel_event: threading.Event | None = None
@@ -232,13 +244,26 @@ class FishProcess:
         ):
             raise FishResourceUnavailable("fish_external_service")
         self._check_request(deadline, self._cancel_event)
-        environment = {
-            key: value for key, value in os.environ.items()
-            if key not in {
-                "TTS_API_KEY", "TTS_API_KEY_FILE", "TTS_OPERATOR_TOKEN",
-                "HF_TOKEN", "HUGGING_FACE_HUB_TOKEN", "HUGGINGFACE_HUB_TOKEN",
+        if self.settings.fish_runtime == "mlx4":
+            command = self.settings.fish_worker_command
+            if (
+                len(command) != 5
+                or command[1:4] != ("-I", "-S", "-B")
+                or os.path.islink(command[4])
+                or os.path.realpath(command[4]) != _MLX_BOOTSTRAP
+            ):
+                self._deny("fish_unavailable")
+            environment = {
+                key: value for key, value in os.environ.items() if key in _MLX_ENVIRONMENT
             }
-        }
+        else:
+            environment = {
+                key: value for key, value in os.environ.items()
+                if key not in {
+                    "TTS_API_KEY", "TTS_API_KEY_FILE", "TTS_OPERATOR_TOKEN",
+                    "HF_TOKEN", "HUGGING_FACE_HUB_TOKEN", "HUGGINGFACE_HUB_TOKEN",
+                }
+            }
         environment.update(HF_HUB_OFFLINE="1", TRANSFORMERS_OFFLINE="1")
         try:
             self._process = subprocess.Popen(
@@ -256,6 +281,9 @@ class FishProcess:
             self._monitor = monitor
 
     def _check_resources(self, *, starting: bool = False) -> None:
+        if self._process is not None and self._process.poll() is not None:
+            self._deny("fish_worker_exited")
+        warnings: set[str] = set()
         try:
             available = available_memory_bytes()
             resident = (
@@ -267,19 +295,34 @@ class FishProcess:
             if type(resident) is not int or resident < 0:
                 raise ValueError("invalid worker memory")
         except (OSError, ValueError, subprocess.SubprocessError):
-            self._deny("fish_memory_unreadable")
-        required = self.settings.fish_memory_reserve_bytes
-        if starting:
-            startup = self.settings.fish_startup_memory_bytes
-            required += (
-                self.settings.fish_worker_peak_memory_bytes if startup is None else startup
-            )
-        if available < required:
-            self._deny("fish_memory_reserve")
-        if resident > self.settings.fish_worker_peak_memory_bytes:
-            self._deny("fish_worker_budget")
-        if self._process is not None and self._process.poll() is not None:
-            self._deny("fish_worker_exited")
+            self._memory_violation(warnings, "fish_memory_unreadable")
+        else:
+            budget = self.settings.fish_worker_peak_memory_bytes
+            required = self.settings.fish_memory_reserve_bytes
+            if starting:
+                startup = self.settings.fish_startup_memory_bytes
+                required += budget if startup is None else startup
+            if available < required:
+                self._memory_violation(warnings, "fish_memory_reserve", available, required)
+            if resident > budget:
+                self._memory_violation(warnings, "fish_worker_budget", resident, budget)
+        self._memory_warnings = warnings
+
+    def _memory_violation(
+        self, warnings: set[str], reason: str,
+        observed: int | None = None, threshold: int | None = None,
+    ) -> None:
+        if self.settings.fish_memory_policy == "enforce":
+            self._deny(reason)
+        warnings.add(reason)
+        if reason not in self._memory_warnings:
+            if observed is None:
+                logger.warning("fish memory advisory reason=%s", reason)
+            else:
+                logger.warning(
+                    "fish memory advisory reason=%s observed_bytes=%d threshold_bytes=%d",
+                    reason, observed, threshold,
+                )
 
     def _deny(self, reason: str) -> NoReturn:
         self._stop(reason)
@@ -287,6 +330,7 @@ class FishProcess:
 
     def _stop(self, reason: str) -> None:
         self._reason = reason
+        self._memory_warnings.clear()
         self._restart_after = time.monotonic() + self.settings.fish_cooldown_seconds
         if self._process is None:
             return

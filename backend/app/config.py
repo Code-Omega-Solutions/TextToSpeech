@@ -43,7 +43,9 @@ class _SettingsValues(BaseModel):
     fish_references_approved: bool = False
     fish_opportunistic: bool = False
     fish_preload: bool = False
+    fish_runtime: Literal["pytorch", "mlx4"] = "pytorch"
     fish_worker_command: tuple[str, ...] | None = Field(default=None, repr=False)
+    fish_memory_policy: Literal["enforce", "warn"] = "enforce"
     fish_worker_peak_memory_bytes: int = Field(default=16 * 1024**3, ge=1)
     fish_startup_memory_bytes: int | None = Field(default=None, ge=1)
     fish_memory_reserve_bytes: int = Field(default=12 * 1024**3, ge=1)
@@ -106,6 +108,17 @@ class _SettingsValues(BaseModel):
             raise ValueError("Fish Speech requires the approved reference data root")
         if self.fish_preload and not (self.fish_enabled and self.fish_opportunistic):
             raise ValueError("Fish preload requires enabled opportunistic Fish")
+        if self.fish_enabled and self.fish_runtime == "mlx4":
+            command = self.fish_worker_command
+            if (
+                not self.fish_opportunistic
+                or command is None
+                or len(command) != 5
+                or command[1:4] != ("-I", "-S", "-B")
+                or PurePosixPath(command[4]).parts[-3:]
+                != ("deployment", "fish_mlx", "bootstrap.py")
+            ):
+                raise ValueError("Fish MLX requires an isolated managed worker command")
         if self.fish_opportunistic:
             if self.fish_enabled and self.fish_worker_command is None:
                 raise ValueError("Opportunistic Fish requires a managed worker command")
@@ -251,7 +264,9 @@ class Settings:
     higher_priority_memory_reserve_bytes: int | None
     fish_opportunistic: bool = False
     fish_preload: bool = False
+    fish_runtime: Literal["pytorch", "mlx4"] = "pytorch"
     fish_worker_command: tuple[str, ...] | None = field(default=None, repr=False)
+    fish_memory_policy: Literal["enforce", "warn"] = "enforce"
     fish_worker_peak_memory_bytes: int = 16 * 1024**3
     fish_startup_memory_bytes: int | None = None
     fish_memory_reserve_bytes: int = 12 * 1024**3
@@ -289,7 +304,9 @@ class Settings:
             "TTS_FISH_REFERENCES_APPROVED": "fish_references_approved",
             "TTS_FISH_OPPORTUNISTIC": "fish_opportunistic",
             "TTS_FISH_PRELOAD": "fish_preload",
+            "TTS_FISH_RUNTIME": "fish_runtime",
             "TTS_FISH_WORKER_COMMAND": "fish_worker_command",
+            "TTS_FISH_MEMORY_POLICY": "fish_memory_policy",
             "TTS_FISH_WORKER_PEAK_MEMORY_BYTES": "fish_worker_peak_memory_bytes",
             "TTS_FISH_STARTUP_MEMORY_BYTES": "fish_startup_memory_bytes",
             "TTS_FISH_MEMORY_RESERVE_BYTES": "fish_memory_reserve_bytes",

@@ -228,10 +228,16 @@ as its working directory, while the pinned source checkout is supplied through
 `PYTHONPATH`; this preserves Fish's relative reference lookup without adding
 private reference files to the source tree.
 
+The experimental `mlx4` runtime is a separate, opt-in Fish 1.5 candidate.
+It requires independent artifact/runtime approval and has not been qualified
+for end-to-end speech or deployment. See
+[`specs/008-fish-mlx-four-bit/quickstart.md`](../specs/008-fish-mlx-four-bit/quickstart.md).
+
 | Setting | Default | Meaning |
 | --- | --- | --- |
 | `TTS_FISH_OPPORTUNISTIC` | `false` | Explicit opt-in; strict behavior otherwise unchanged |
 | `TTS_FISH_PRELOAD` | `false` | Warm the owned worker in the background at backend startup and retain it across idle periods; requires enabled opportunistic Fish |
+| `TTS_FISH_RUNTIME` | `pytorch` | `mlx4` selects the separately approved, isolated experimental candidate |
 | `TTS_FISH_ARTIFACT_MANIFEST` | unset | Operator-only exact source/artifact/terms manifest path |
 | `TTS_FISH_REFERENCE_MANIFEST` | unset | Operator-only four-way WAV/transcript/dataset-terms manifest path |
 | `TTS_FISH_REFERENCE_ROOT` | unset | Private reference-data root containing exact `references/<id>` files; separate from the clean Fish source checkout |
@@ -241,6 +247,7 @@ private reference files to the source tree.
 | `TTS_FISH_WORKER_PEAK_MEMORY_BYTES` | `17179869184` | 16 GiB monitored process-group RSS budget |
 | `TTS_FISH_STARTUP_MEMORY_BYTES` | unset | Cold-start allowance added to reserve; defaults to full worker budget. A positive override no greater than the worker budget permits more aggressive startup without changing runtime limits |
 | `TTS_FISH_MEMORY_RESERVE_BYTES` | `12884901888` | 12 GiB available-memory reserve while loaded |
+| `TTS_FISH_MEMORY_POLICY` | `enforce` | Set to `warn` to log startup headroom, loaded reserve, worker RSS and probe failures without blocking or stopping Fish. This removes the supervisor's memory protection for Fish; the OS can still terminate processes under pressure. |
 | `TTS_FISH_IDLE_TIMEOUT_SECONDS` | `30` | Unload idle worker when preload is off |
 | `TTS_FISH_COOLDOWN_SECONDS` | `30` | Delay restart after unload/failure |
 

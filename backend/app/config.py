@@ -45,6 +45,7 @@ class _SettingsValues(BaseModel):
     fish_preload: bool = False
     fish_runtime: Literal["pytorch", "mlx4"] = "pytorch"
     fish_worker_command: tuple[str, ...] | None = Field(default=None, repr=False)
+    fish_memory_policy: Literal["enforce", "warn"] = "enforce"
     fish_worker_peak_memory_bytes: int = Field(default=16 * 1024**3, ge=1)
     fish_startup_memory_bytes: int | None = Field(default=None, ge=1)
     fish_memory_reserve_bytes: int = Field(default=12 * 1024**3, ge=1)
@@ -265,6 +266,7 @@ class Settings:
     fish_preload: bool = False
     fish_runtime: Literal["pytorch", "mlx4"] = "pytorch"
     fish_worker_command: tuple[str, ...] | None = field(default=None, repr=False)
+    fish_memory_policy: Literal["enforce", "warn"] = "enforce"
     fish_worker_peak_memory_bytes: int = 16 * 1024**3
     fish_startup_memory_bytes: int | None = None
     fish_memory_reserve_bytes: int = 12 * 1024**3
@@ -304,6 +306,7 @@ class Settings:
             "TTS_FISH_PRELOAD": "fish_preload",
             "TTS_FISH_RUNTIME": "fish_runtime",
             "TTS_FISH_WORKER_COMMAND": "fish_worker_command",
+            "TTS_FISH_MEMORY_POLICY": "fish_memory_policy",
             "TTS_FISH_WORKER_PEAK_MEMORY_BYTES": "fish_worker_peak_memory_bytes",
             "TTS_FISH_STARTUP_MEMORY_BYTES": "fish_startup_memory_bytes",
             "TTS_FISH_MEMORY_RESERVE_BYTES": "fish_memory_reserve_bytes",

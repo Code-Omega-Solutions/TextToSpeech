@@ -92,6 +92,37 @@ def test_invalid_or_insufficient_start_headroom_never_launches(worker, available
     assert starts == []
 
 
+def test_warn_memory_policy_allows_launch_and_reuse_across_thresholds(worker, caplog):
+    managed, observations, starts = worker
+    managed.settings = replace(managed.settings, fish_memory_policy="warn")
+    observations.update(available=40, resident=101)
+
+    assert run(managed) == b"audio"
+    assert run(managed) == b"audio"
+    assert len(starts) == 1
+    assert not starts[0][0].terminated.is_set()
+    assert caplog.text.count("advisory reason=fish_memory_reserve") == 1
+    assert "observed_bytes=40 threshold_bytes=150" in caplog.text
+    assert caplog.text.count("advisory reason=fish_worker_budget") == 1
+    assert "observed_bytes=101 threshold_bytes=100" in caplog.text
+
+
+def test_warn_memory_policy_allows_probe_failure_but_not_worker_exit(worker, caplog):
+    managed, observations, starts = worker
+    managed.settings = replace(managed.settings, fish_memory_policy="warn")
+    observations["available"] = OSError("private probe detail")
+    assert run(managed) == b"audio"
+    assert "advisory reason=fish_memory_unreadable" in caplog.text
+    assert "private probe detail" not in caplog.text
+
+    def exit_during_synthesis():
+        starts[0][0].terminated.set()
+        return b"audio"
+
+    with pytest.raises(FishResourceUnavailable, match="fish_worker_exited"):
+        run(managed, exit_during_synthesis)
+
+
 def test_worker_is_lazy_low_priority_offline_and_reused(worker, monkeypatch):
     managed, _observations, starts = worker
     monkeypatch.setenv("TTS_API_KEY", "synthetic-private-key")

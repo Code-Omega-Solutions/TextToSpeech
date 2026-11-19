@@ -95,6 +95,7 @@ class FishProcess:
         self._last_used = 0.0
         self._restart_after = 0.0
         self._reason = "fish_unavailable"
+        self._memory_warnings: set[str] = set()
         self._cleanup_failed = False
         self._active_deadline: float | None = None
         self._cancel_event: threading.Event | None = None
@@ -280,6 +281,9 @@ class FishProcess:
             self._monitor = monitor
 
     def _check_resources(self, *, starting: bool = False) -> None:
+        if self._process is not None and self._process.poll() is not None:
+            self._deny("fish_worker_exited")
+        warnings: set[str] = set()
         try:
             available = available_memory_bytes()
             resident = (
@@ -291,19 +295,34 @@ class FishProcess:
             if type(resident) is not int or resident < 0:
                 raise ValueError("invalid worker memory")
         except (OSError, ValueError, subprocess.SubprocessError):
-            self._deny("fish_memory_unreadable")
-        required = self.settings.fish_memory_reserve_bytes
-        if starting:
-            startup = self.settings.fish_startup_memory_bytes
-            required += (
-                self.settings.fish_worker_peak_memory_bytes if startup is None else startup
-            )
-        if available < required:
-            self._deny("fish_memory_reserve")
-        if resident > self.settings.fish_worker_peak_memory_bytes:
-            self._deny("fish_worker_budget")
-        if self._process is not None and self._process.poll() is not None:
-            self._deny("fish_worker_exited")
+            self._memory_violation(warnings, "fish_memory_unreadable")
+        else:
+            budget = self.settings.fish_worker_peak_memory_bytes
+            required = self.settings.fish_memory_reserve_bytes
+            if starting:
+                startup = self.settings.fish_startup_memory_bytes
+                required += budget if startup is None else startup
+            if available < required:
+                self._memory_violation(warnings, "fish_memory_reserve", available, required)
+            if resident > budget:
+                self._memory_violation(warnings, "fish_worker_budget", resident, budget)
+        self._memory_warnings = warnings
+
+    def _memory_violation(
+        self, warnings: set[str], reason: str,
+        observed: int | None = None, threshold: int | None = None,
+    ) -> None:
+        if self.settings.fish_memory_policy == "enforce":
+            self._deny(reason)
+        warnings.add(reason)
+        if reason not in self._memory_warnings:
+            if observed is None:
+                logger.warning("fish memory advisory reason=%s", reason)
+            else:
+                logger.warning(
+                    "fish memory advisory reason=%s observed_bytes=%d threshold_bytes=%d",
+                    reason, observed, threshold,
+                )
 
     def _deny(self, reason: str) -> NoReturn:
         self._stop(reason)
@@ -311,6 +330,7 @@ class FishProcess:
 
     def _stop(self, reason: str) -> None:
         self._reason = reason
+        self._memory_warnings.clear()
         self._restart_after = time.monotonic() + self.settings.fish_cooldown_seconds
         if self._process is None:
             return

@@ -3,7 +3,10 @@
 These references identify existing tests. The backend suite mocks system
 executables; it does not qualify synthesis on a native macOS host.
 The optional-headroom tests also cover opt-in startup allowance boundaries,
-invalid allowances and unchanged loaded reserve/RSS enforcement.
+invalid allowances and default loaded reserve/RSS enforcement. The same
+[supervisor tests](../../backend/tests/test_fish_process.py) cover memory
+advisories without blocking launch or reuse, including probe failure and
+preserved worker-exit handling.
 Project-wide license and release-policy evidence is mapped separately in the
 [project licensing coverage map](../project-licensing/project-licensing.coverage.md).
 

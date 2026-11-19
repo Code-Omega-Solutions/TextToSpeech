@@ -247,6 +247,7 @@ for end-to-end speech or deployment. See
 | `TTS_FISH_WORKER_PEAK_MEMORY_BYTES` | `17179869184` | 16 GiB monitored process-group RSS budget |
 | `TTS_FISH_STARTUP_MEMORY_BYTES` | unset | Cold-start allowance added to reserve; defaults to full worker budget. A positive override no greater than the worker budget permits more aggressive startup without changing runtime limits |
 | `TTS_FISH_MEMORY_RESERVE_BYTES` | `12884901888` | 12 GiB available-memory reserve while loaded |
+| `TTS_FISH_MEMORY_POLICY` | `enforce` | Set to `warn` to log startup headroom, loaded reserve, worker RSS and probe failures without blocking or stopping Fish. This removes the supervisor's memory protection for Fish; the OS can still terminate processes under pressure. |
 | `TTS_FISH_IDLE_TIMEOUT_SECONDS` | `30` | Unload idle worker when preload is off |
 | `TTS_FISH_COOLDOWN_SECONDS` | `30` | Delay restart after unload/failure |
 

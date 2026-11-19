@@ -263,9 +263,13 @@ sampled monitoring cannot guarantee instantaneous yielding or prevent transient
 memory pressure during load. With either admission policy,
 a loaded worker SHALL not have its resident memory credited toward the reserve.
 
-The supervisor SHALL monitor loading, active and idle workers, reject invalid
-measurements, and stop only the owned process group on pressure, budget breach,
-cancellation, timeout, idle expiry in lazy mode or shutdown. Unverified termination SHALL
+The supervisor SHALL monitor loading, active and idle workers. In the default
+`enforce` mode it SHALL reject invalid measurements and stop only the owned
+process group on pressure or budget breach. With explicit
+`TTS_FISH_MEMORY_POLICY=warn`, the same thresholds and invalid probes SHALL
+produce warnings without denying launch or stopping synthesis. Both policies
+SHALL preserve cancellation, timeout, idle expiry in lazy mode and shutdown.
+Unverified termination SHALL
 disable neural restart and log an explicit safe error. Discovery SHALL not start
 a model. The reviewed launcher SHALL use local approved assets without downloads;
 offline library flags are not a network sandbox. Sampled host/RSS estimates
@@ -299,8 +303,13 @@ speech quality, performance, rights or deployment qualification.
 
 #### Scenario: memory pressure occurs while loading, active or idle
 
-- **WHEN** the owned worker exceeds its budget, available memory falls below reserve, or a memory probe fails in any lifecycle phase
+- **WHEN** the default memory policy is enforced and the owned worker exceeds its budget, available memory falls below reserve, or a memory probe fails in any lifecycle phase
 - **THEN** the supervisor terminates only its owned group, rejects the neural result, and requires cooldown plus sufficient cold-start headroom before restart.
+
+#### Scenario: an operator opts in to advisory memory monitoring
+
+- **WHEN** `TTS_FISH_MEMORY_POLICY=warn` and a memory threshold is breached or a probe fails
+- **THEN** the supervisor logs the condition without blocking launch or stopping the worker for that condition, and actual worker failure still triggers the existing fallback behavior.
 
 #### Scenario: the exact configured memory boundary is available
 

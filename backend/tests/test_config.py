@@ -41,6 +41,16 @@ def test_fish_startup_allowance_is_opt_in_and_independent_of_runtime_budget(monk
     assert settings.fish_memory_reserve_bytes == 12 * 1024**3
 
 
+def test_fish_memory_advisories_require_explicit_valid_policy(monkeypatch):
+    monkeypatch.setenv("TTS_API_KEY", "unit-test-api-key")
+    assert Settings.from_env().fish_memory_policy == "enforce"
+    monkeypatch.setenv("TTS_FISH_MEMORY_POLICY", "warn")
+    assert Settings.from_env().fish_memory_policy == "warn"
+    monkeypatch.setenv("TTS_FISH_MEMORY_POLICY", "unknown")
+    with pytest.raises(ValidationError, match="fish_memory_policy"):
+        Settings.from_env()
+
+
 @pytest.mark.parametrize(
     ("name", "value"),
     [

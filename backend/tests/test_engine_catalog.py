@@ -1,3 +1,4 @@
+import pytest
 from fastapi.testclient import TestClient
 
 from app.engines import EngineDescriptor, EngineRegistration, EngineRegistry
@@ -11,7 +12,9 @@ def test_engine_catalog_requires_bearer_auth(settings):
     assert response.headers["www-authenticate"] == "Bearer"
 
 
-def test_engine_catalog_is_public_metadata_only(settings, monkeypatch):
+@pytest.mark.parametrize("fish_runtime", ["pytorch", "mlx4"])
+def test_engine_catalog_is_public_metadata_only(settings_factory, fish_runtime):
+    settings = settings_factory(fish_runtime=fish_runtime)
     app = create_app(settings)
     app.state.speech_service.engine_registry = EngineRegistry(
         (
@@ -39,6 +42,7 @@ def test_engine_catalog_is_public_metadata_only(settings, monkeypatch):
             {
                 "id": "fish-speech",
                 "available": True,
+                "fish_runtime": fish_runtime,
                 "languages": ["de-DE", "en-US"],
                 "voices": {"de-DE": ["de-reference"], "en-US": ["en-reference"]},
             }

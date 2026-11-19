@@ -121,6 +121,14 @@ uses `TTS_DEFAULT_LANGUAGE` (default `en-US`). An authenticated
 `GET /v1/audio/engines` response lists configured engines, supported languages,
 and public voice identifiers for clients that support discovery.
 
+For available Fish Speech, discovery also returns `fish_runtime` (`pytorch`
+or `mlx4`). Clients can send that value with an explicit `"model": "fish-speech"`
+to require a matching service. A mismatch returns HTTP 409 before synthesis,
+even with native fallback enabled. A matching request follows the existing
+Fish admission and fallback policy and reports the actual engine as before.
+`TTS_FISH_RUNTIME` selects the worker when configuring the service, not per
+request. Omit `fish_runtime` for the previous contract and configured defaults.
+
 German (`de-DE`) and US English (`en-US`) voices are required. Defaults are
 `Anna (Deutsch (Deutschland))` and `Samantha`; British English (`en-GB`,
 default voice `Daniel`) is optional. Verify the host inventory with

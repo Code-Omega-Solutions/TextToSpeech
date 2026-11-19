@@ -148,28 +148,74 @@ def test_success_returns_binary_audio_and_expected_headers(settings, monkeypatch
     assert response.headers["x-request-id"]
 
 
-def test_response_reports_actual_backend(settings_factory, monkeypatch):
+@pytest.mark.parametrize("fish_runtime", [None, "pytorch", "mlx4"])
+def test_response_reports_actual_backend(settings_factory, monkeypatch, fish_runtime):
     settings = settings_factory(
         fish_enabled=True,
+        fish_opportunistic=True,
+        fish_runtime=fish_runtime or "pytorch",
         fish_server_url="http://127.0.0.1:8080",
         fish_api_key="unit-test-fish-key",
     )
     app = create_app(settings)
+    service = app.state.speech_service
+    runtimes = []
+
+    def run_fish(operation, **_kwargs):
+        runtimes.append(service.fish_process.settings.fish_runtime)
+        return operation()
+
+    monkeypatch.setattr(service.fish_process, "run", run_fish)
     monkeypatch.setattr(
-        app.state.speech_service,
-        "synthesize_reserved",
-        lambda *_args: SynthesisResult(
+        service,
+        "_synthesize_fish",
+        lambda *_args, **_kwargs: SynthesisResult(
             b"audio", "audio/wav", "speech.wav", actual_backend="fish-speech"
         ),
     )
+    body = {"input": "Hello there", "model": "fish-speech", "language": "en-US"}
+    if fish_runtime is not None:
+        body["fish_runtime"] = fish_runtime
     response = TestClient(app).post(
         "/v1/audio/speech",
-        json={"input": "Hello there", "model": "fish-speech", "language": "en-US"},
+        json=body,
         headers={"Authorization": f"Bearer {settings.api_key}"},
     )
     assert response.status_code == 200
+    assert runtimes == [fish_runtime or "pytorch"]
     assert response.headers["x-speech-backend"] == "fish-speech"
     assert response.headers["x-speech-fallback"] == "false"
+
+
+@pytest.mark.parametrize(
+    ("model", "runtime", "status"),
+    [
+        ("fish-speech", "mlx4", 409),
+        ("fish-speech", "unknown", 422),
+        ("macos-say", "mlx4", 422),
+        (None, "mlx4", 422),
+    ],
+)
+def test_incompatible_fish_runtime_is_rejected_before_admission(
+    settings_factory, monkeypatch, model, runtime, status
+):
+    settings = settings_factory(fish_runtime="pytorch", fish_opportunistic=True)
+    app = create_app(settings)
+    monkeypatch.setattr(
+        app.state.speech_service,
+        "try_acquire",
+        lambda: pytest.fail("incompatible runtime reached synthesis admission"),
+    )
+    response = TestClient(app).post(
+        "/v1/audio/speech",
+        json={"input": "Hello there", "model": model, "fish_runtime": runtime},
+        headers={"Authorization": f"Bearer {settings.api_key}"},
+    )
+    assert response.status_code == status
+    if status == 409:
+        assert response.json() == {
+            "detail": "This speech service does not use the requested Fish runtime."
+        }
 
 
 def test_fish_failure_returns_unavailable_without_silent_macos_fallback(
@@ -217,18 +263,19 @@ def test_legacy_vibevoice_selector_is_safe_unavailable_without_admission(setting
 
 
 @pytest.mark.parametrize(
-    ("model", "language", "voice"),
+    ("model", "language", "voice", "fish_runtime"),
     [
-        ("fish-speech", "de", "neural-reference"),
-        ("fish-speech", "en", "neural-reference"),
-        ("vibevoice", "de", "de-Spk0_man"),
-        ("vibevoice", "en", "en-Carter_man"),
+        ("fish-speech", "de", "neural-reference", None),
+        ("fish-speech", "en", "neural-reference", None),
+        ("fish-speech", "en", "neural-reference", "mlx4"),
+        ("vibevoice", "de", "de-Spk0_man", None),
+        ("vibevoice", "en", "en-Carter_man", None),
     ],
 )
 def test_optional_fallback_is_authenticated_language_only_and_observable(
-    settings_factory, monkeypatch, caplog, model, language, voice
+    settings_factory, monkeypatch, caplog, model, language, voice, fish_runtime
 ):
-    settings = settings_factory(fish_opportunistic=True)
+    settings = settings_factory(fish_opportunistic=True, fish_runtime=fish_runtime or "pytorch")
     app = create_app(settings)
     calls = []
 
@@ -243,6 +290,8 @@ def test_optional_fallback_is_authenticated_language_only_and_observable(
             "input": "synthetic speech marker", "model": model,
             "language": language, "voice": voice, "response_format": "wav",
         }
+        if fish_runtime is not None:
+            body["fish_runtime"] = fish_runtime
         assert client.post("/v1/audio/speech", json=body).status_code == 401
         assert calls == []
         with caplog.at_level(logging.INFO):
@@ -256,6 +305,7 @@ def test_optional_fallback_is_authenticated_language_only_and_observable(
         assert response.content == b"native audio"
         assert response.headers["x-speech-backend"] == "macos-say"
         assert response.headers["x-speech-fallback"] == "true"
+        assert response.headers["x-speech-fallback-reason"] == "fish_unavailable"
         body["model"] = "unknown"
         assert client.post(
             "/v1/audio/speech", json=body,

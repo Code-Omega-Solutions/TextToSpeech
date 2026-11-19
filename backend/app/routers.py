@@ -88,7 +88,11 @@ def build_router(settings: Settings, speech_service: SpeechService) -> APIRouter
         authorization: str | None = Header(default=None, alias="Authorization"),
     ) -> dict[str, object]:
         _authenticate(authorization, settings)
-        return {"engines": speech_service.engine_registry.catalog()}
+        engines = speech_service.engine_registry.catalog()
+        for engine in engines:
+            if engine["id"] == "fish-speech" and engine["available"]:
+                engine["fish_runtime"] = settings.fish_runtime
+        return {"engines": engines}
 
     @api.post("/v1/audio/speech")
     async def create_speech(
@@ -105,6 +109,10 @@ def build_router(settings: Settings, speech_service: SpeechService) -> APIRouter
         status_code = 500
         try:
             _authenticate(authorization, settings)
+            if payload.fish_runtime is not None and payload.fish_runtime != settings.fish_runtime:
+                raise HTTPException(
+                    status_code=409, detail="This speech service does not use the requested Fish runtime."
+                )
             if selected_backend == "vibevoice" and not settings.fish_opportunistic:
                 raise HTTPException(
                     status_code=503, detail="Speech synthesis is unavailable."

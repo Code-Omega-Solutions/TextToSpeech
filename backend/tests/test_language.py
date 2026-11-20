@@ -7,7 +7,7 @@ from app.models import SpeechRequest
 
 @pytest.mark.parametrize(
     ("text", "expected"),
-    [("a" * 19, "en-US"), ("a" * 20, "en-US"), ("ä" * 20, "en-US"), ("1" * 30 + "ä" * 19, "en-US")],
+    [("a" * 19, "de-DE"), ("a" * 20, "de-DE"), ("ä" * 20, "de-DE"), ("1" * 30 + "ä" * 19, "de-DE")],
 )
 def test_short_input_counts_unicode_alphabetic_characters(text, expected, settings):
     called = []
@@ -48,17 +48,17 @@ def test_supported_detected_languages(detected, expected, settings):
 
 
 @pytest.mark.parametrize("detected", ["fr", "it", "", "en-GB"])
-def test_unsupported_detected_language_falls_back_to_en_us(settings_factory, detected):
+def test_unsupported_detected_language_falls_back_to_german(settings_factory, detected):
     request = SpeechRequest(input="a" * 20)
-    settings = settings_factory(default_language="de-DE")
-    assert resolve_language(request, settings, lambda _text: detected) == "en-US"
+    settings = settings_factory(default_language="en-US")
+    assert resolve_language(request, settings, lambda _text: detected) == "de-DE"
 
 
 def test_short_input_retains_configured_default(settings_factory):
-    settings = settings_factory(default_language="de-DE")
+    settings = settings_factory(default_language="en-US")
     assert resolve_language(
         SpeechRequest(input="short"), settings, lambda _text: pytest.fail("classifier called")
-    ) == "de-DE"
+    ) == "en-US"
 
 
 def test_detection_boundary_ignores_digits_and_punctuation(settings):
@@ -82,10 +82,10 @@ def test_voice_hint_does_not_affect_detection(settings):
 
 def test_detector_uses_langid_full_language_classifier(monkeypatch):
     if language.langid is None:
-        assert detect_language("un texte suffisamment long") == "en-US"
+        assert detect_language("un texte suffisamment long") == "de-DE"
         return
     monkeypatch.setattr("app.language.langid.classify", lambda _text: ("fr", 0.9))
-    assert detect_language("un texte suffisamment long") == "en-US"
+    assert detect_language("un texte suffisamment long") == "de-DE"
 
 
 def test_detector_errors_are_not_silently_converted_to_fallback(monkeypatch, settings):
@@ -108,3 +108,6 @@ def test_missing_classifier_uses_bounded_marker_fallback(monkeypatch, settings):
     assert resolve_language(
         SpeechRequest(input="This is a private English sentence."), settings
     ) == "en-US"
+    assert resolve_language(
+        SpeechRequest(input="texte suffisamment long sans marqueurs"), settings
+    ) == "de-DE"

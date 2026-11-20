@@ -20,14 +20,17 @@ def _fallback_language(text: str) -> str:
     """Keep native fallback usable when the optional classifier is absent."""
 
     german_markers = {"der", "die", "das", "und", "nicht", "ist", "ich"}
+    english_markers = {"the", "and", "not", "is", "this", "that", "i"}
     words = {word.casefold().strip(".,!?;:") for word in text.split()}
-    return "de-DE" if words & german_markers else "en-US"
+    if words & german_markers:
+        return "de-DE"
+    return "en-US" if words & english_markers else "de-DE"
 
 
 def _resolve_detected_language(detected: str) -> str:
-    if detected in {"de", "de-DE"}:
-        return "de-DE"
-    return "en-US"
+    if detected in {"en", "en-US"}:
+        return "en-US"
+    return "de-DE"
 
 
 def resolve_language(

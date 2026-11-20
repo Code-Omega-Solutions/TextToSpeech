@@ -80,6 +80,13 @@ def test_defaults_and_environment_values(settings):
     assert settings.higher_priority_memory_reserve_bytes is None
 
 
+def test_default_language_is_german_unless_configured(monkeypatch):
+    monkeypatch.delenv("TTS_DEFAULT_LANGUAGE", raising=False)
+    assert Settings.from_env().default_language == "de-DE"
+    monkeypatch.setenv("TTS_DEFAULT_LANGUAGE", "en-US")
+    assert Settings.from_env().default_language == "en-US"
+
+
 def test_all_interface_host_binding_is_configurable(monkeypatch):
     monkeypatch.setenv("TTS_HOST", "0.0.0.0")
     monkeypatch.setenv("TTS_API_KEY", "unit-test-api-key")

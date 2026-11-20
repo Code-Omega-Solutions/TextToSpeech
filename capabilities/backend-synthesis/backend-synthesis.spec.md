@@ -148,8 +148,11 @@ a 32 KiB encoded request-body limit while streaming, independent of
 
 Explicit supported locales SHALL bypass detection. Otherwise, inputs with fewer
 than the configured minimum alphabetic characters SHALL use
-`TTS_DEFAULT_LANGUAGE`; longer inputs SHALL use `langid` and resolve German to
-`de-DE` and English to `en-US`. Other detected languages fall back to `en-US`.
+`TTS_DEFAULT_LANGUAGE` (default `de-DE`); longer inputs SHALL use `langid` and
+resolve German to `de-DE` and English to `en-US`. Other detected languages fall
+back to `de-DE`. If the classifier is unavailable, a bounded German/English
+word-marker heuristic selects the language; unrecognized text falls back to
+`de-DE`.
 Unexpected detector failures remain errors.
 
 #### Scenario: text is too short for detection
@@ -160,7 +163,7 @@ Unexpected detector failures remain errors.
 #### Scenario: detection selects an unsupported language
 
 - **WHEN** automatic detection does not identify German or English
-- **THEN** the service selects `en-US` for synthesis.
+- **THEN** the service selects `de-DE` for synthesis.
 
 ### Synthesis uses configured bounded speech engines
 <!-- touches: backend/app/services.py, backend/app/voices.py, backend/app/models.py, backend/app/config.py, backend/app/engines.py, backend/app/fish_speech.py, backend/deployment/fish_worker_launcher.py, backend/tests/test_services.py, backend/tests/test_models.py, backend/tests/test_config.py, backend/tests/test_api.py, backend/tests/test_engines.py, backend/tests/test_fish_speech.py, backend/tests/test_engine_catalog.py, backend/tests/test_voices.py, backend/tests/test_fish_worker_launcher.py -->

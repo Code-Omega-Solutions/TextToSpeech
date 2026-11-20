@@ -109,15 +109,17 @@ request limit is 5,000 UTF-16 code units; the service applies bounded request,
 concurrency, timeout, output, and per-request temporary-storage limits.
 
 When no language is specified, short inputs use `TTS_DEFAULT_LANGUAGE`; longer
-inputs use language detection. An unsupported detection falls back to `en-US`.
+inputs use language detection. An unsupported detection falls back to `de-DE`.
 Explicit supported languages bypass detection; unsupported explicit languages
-remain invalid.
+remain invalid. When the optional classifier is unavailable, a bounded
+German/English word-marker heuristic is used; unrecognized text falls back to
+`de-DE`.
 
 For Open WebUI's OpenAI-compatible TTS engine, select `macos-say` or an enabled
 `fish-speech` engine in the existing model field. Open WebUI does not send a
 language field. Detection runs when text has at least
 `TTS_MIN_DETECTION_CHARS` alphabetic characters (default `20`); shorter text
-uses `TTS_DEFAULT_LANGUAGE` (default `en-US`). An authenticated
+uses `TTS_DEFAULT_LANGUAGE` (default `de-DE`). An authenticated
 `GET /v1/audio/engines` response lists configured engines, supported languages,
 and public voice identifiers for clients that support discovery.
 

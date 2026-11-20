@@ -22,7 +22,7 @@ class _SettingsValues(BaseModel):
     voice_de_de: str = "Anna (Deutsch (Deutschland))"
     voice_en_us: str = "Samantha"
     voice_en_gb: str = "Daniel"
-    default_language: str = "en-US"
+    default_language: str = "de-DE"
     min_detection_chars: int = Field(default=20, ge=1, le=1000)
     base_rate_wpm: int = Field(default=180, ge=60, le=300)
     max_concurrent_synthesis: int = Field(default=2, ge=1, le=8)

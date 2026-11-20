@@ -343,7 +343,7 @@ def test_legacy_vibevoice_override_returns_unavailable_before_synthesis(settings
     assert response.json() == {"detail": "Speech synthesis is unavailable."}
 
 
-def test_unsupported_detected_language_synthesizes_with_en_us(settings_factory, monkeypatch):
+def test_unsupported_detected_language_synthesizes_with_german(settings_factory, monkeypatch):
     settings = settings_factory(default_language="de-DE")
     app = create_app(settings)
     calls = []
@@ -362,7 +362,7 @@ def test_unsupported_detected_language_synthesizes_with_en_us(settings_factory, 
     assert response.status_code == 200
     assert response.content == b"fixture-audio"
     assert response.headers["content-type"] == "audio/mpeg"
-    assert calls == [("en-US", "macos-say", None)]
+    assert calls == [("de-DE", "macos-say", None)]
 
 
 def test_speech_body_limit_accepts_exact_32_kib(settings, monkeypatch):

@@ -95,8 +95,8 @@ not client access control, and TLS/access controls remain a separately reviewed
 network-boundary responsibility.
 
 The [language detection fallback feature](004-language-detection-fallback/spec.md)
-describes the change from rejecting unsupported automatic detections to using
-en-US. The backend living specification records the current behavior.
+describes the earlier change from rejecting unsupported automatic detections to
+using en-US. The backend living specification records the current German fallback.
 
 The root [LICENSE](../LICENSE) is a proposed custom attribution license, not an
 OSI-approved standard license or legal advice. Its use is subject to legal

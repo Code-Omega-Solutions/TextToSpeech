@@ -153,6 +153,7 @@ def test_synthesis_sends_bounded_messagepack_request_and_validates_wav(
         "text": "Guten Morgen",
         "format": "wav",
         "reference_id": "de-reference",
+        "use_memory_cache": "on",
     }
 
 

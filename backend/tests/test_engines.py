@@ -251,6 +251,32 @@ def test_fish_default_uses_qualified_locale_voice(
     assert result.fallback == (reference is None)
 
 
+def test_german_male_only_limits_fish_catalog_and_requests(settings_factory, monkeypatch):
+    monkeypatch.setattr("app.services.load_qualified_reference_catalog", lambda *_: {
+        "de-DE": ("de-female", "de-male"), "en-US": ("en-female", "en-male"),
+    })
+    service = SpeechService(settings_factory(
+        default_backend="fish-speech", fish_enabled=True, fish_references_approved=True,
+        fish_opportunistic=True, fish_german_male_only=True,
+    ))
+    assert service.fish_reference_voices == {
+        "de-DE": ("de-male",), "en-US": ("en-female", "en-male"),
+    }
+    calls = []
+
+    def fish(*args, **_kwargs):
+        calls.append(args[5])
+        return SynthesisResult(b"fish", "audio/wav", "speech.wav", actual_backend="fish-speech")
+
+    monkeypatch.setattr(service, "_synthesize_fish", fish)
+    monkeypatch.setattr(service.fish_process, "run", lambda callback, **_: callback())
+    service.synthesize_reserved("Guten Morgen", "de-DE", 1, "wav")
+    with pytest.raises(SynthesisUnavailable):
+        service.synthesize_reserved("Guten Morgen", "de-DE", 1, "wav", voice="de-female")
+    service.synthesize_reserved("Good morning", "en-US", 1, "wav")
+    assert calls == ["de-male", "en-female"]
+
+
 def test_fallback_does_not_restart_expired_overall_deadline(settings_factory, monkeypatch):
     service = SpeechService(settings_factory(fish_enabled=True, fish_opportunistic=True))
     clock = [100.0]

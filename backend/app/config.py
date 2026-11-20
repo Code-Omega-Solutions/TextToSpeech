@@ -41,6 +41,7 @@ class _SettingsValues(BaseModel):
     fish_reference_root: str | None = None
     fish_artifacts_approved: bool = False
     fish_references_approved: bool = False
+    fish_german_male_only: bool = False
     fish_opportunistic: bool = False
     fish_worker_command: tuple[str, ...] | None = Field(default=None, repr=False)
     fish_worker_peak_memory_bytes: int = Field(default=16 * 1024**3, ge=1)
@@ -246,6 +247,7 @@ class Settings:
     vibevoice_model_path: str | None
     vibevoice_worker_peak_memory_bytes: int | None
     higher_priority_memory_reserve_bytes: int | None
+    fish_german_male_only: bool = False
     fish_opportunistic: bool = False
     fish_worker_command: tuple[str, ...] | None = field(default=None, repr=False)
     fish_worker_peak_memory_bytes: int = 16 * 1024**3
@@ -283,6 +285,7 @@ class Settings:
             "TTS_FISH_REFERENCE_ROOT": "fish_reference_root",
             "TTS_FISH_ARTIFACTS_APPROVED": "fish_artifacts_approved",
             "TTS_FISH_REFERENCES_APPROVED": "fish_references_approved",
+            "TTS_FISH_GERMAN_MALE_ONLY": "fish_german_male_only",
             "TTS_FISH_OPPORTUNISTIC": "fish_opportunistic",
             "TTS_FISH_WORKER_COMMAND": "fish_worker_command",
             "TTS_FISH_WORKER_PEAK_MEMORY_BYTES": "fish_worker_peak_memory_bytes",

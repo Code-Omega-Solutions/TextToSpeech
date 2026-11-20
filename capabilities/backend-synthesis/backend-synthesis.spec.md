@@ -195,6 +195,11 @@ identify the engine that generated it and any explicitly configured fallback.
 - **WHEN** Fish returns valid bounded WAV audio for an MP3, WAV, or speed-adjusted request
 - **THEN** the existing conversion path returns the requested format within configured output, time, and temporary-storage limits.
 
+#### Scenario: a Fish reference is reused
+
+- **WHEN** the adapter sends a request with a selected reference
+- **THEN** it requests Fish's in-memory reference cache, which lasts only for the worker's lifetime.
+
 #### Scenario: the Fish service fails
 
 - **WHEN** the loopback Fish service is unavailable, times out, is cancelled, exceeds limits, or returns invalid audio
@@ -279,6 +284,13 @@ separate gates.
 - **THEN** the service selects `de-female` for `de-DE` or `en-female` for `en-US`
   only if that profile is in the approved catalog; unsupported locales can
   use the native fallback under the headroom-first policy.
+
+#### Scenario: a deployment limits German Fish to the male reference
+
+- **WHEN** `TTS_FISH_GERMAN_MALE_ONLY` is enabled
+- **THEN** German Fish discovery and default selection use only the qualified
+  `de-male` profile, requests for `de-female` are rejected, and English
+  selection and manifest validation remain unchanged.
 
 #### Scenario: a valid optional selection cannot run
 

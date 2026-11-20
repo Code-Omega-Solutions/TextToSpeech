@@ -158,7 +158,10 @@ upstream requests. Do not configure Fish to call an unreviewed remote host.
 
 The adapter sends bounded MessagePack requests to the configured Fish service
 and accepts validated WAV audio. The existing encoder handles MP3 output and
-speed conversion. Fish weights, codecs, runtime packages, and voices are not
+speed conversion. For a selected reference it requests Fish's in-memory
+conditioning cache. The cache lasts only for the worker's lifetime; restarting
+or unloading the worker clears it, and changed references require a restart.
+Fish weights, codecs, runtime packages, and voices are not
 bundled or downloaded by the speech API. Select and install an exact candidate
 only after its checkpoint-specific terms, voice provenance, target capacity,
 and permitted use have been reviewed. Private use does not waive these checks.
@@ -236,6 +239,7 @@ private reference files to the source tree.
 | `TTS_FISH_REFERENCE_ROOT` | unset | Private reference-data root containing exact `references/<id>` files; separate from the clean Fish source checkout |
 | `TTS_FISH_ARTIFACTS_APPROVED` | `false` | Exact approval manifest gate; keep false until terms and hashes are reviewed |
 | `TTS_FISH_REFERENCES_APPROVED` | `false` | Four-way dataset-terms reference gate; keep false until WAV/transcript hashes and permission basis are complete |
+| `TTS_FISH_GERMAN_MALE_ONLY` | `false` | Expose and default to `de-male` for German Fish requests; reject explicit `de-female` requests without altering the approved manifest or English voices |
 | `TTS_FISH_WORKER_COMMAND` | unset | Operator-only local argv; no shell expansion |
 | `TTS_FISH_WORKER_PEAK_MEMORY_BYTES` | `17179869184` | 16 GiB monitored process-group RSS budget |
 | `TTS_FISH_STARTUP_MEMORY_BYTES` | unset | Cold-start allowance added to reserve; defaults to full worker budget. A positive override no greater than the worker budget permits more aggressive startup without changing runtime limits |

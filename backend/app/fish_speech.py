@@ -249,6 +249,7 @@ class FishSpeechEngine:
         payload: dict[str, object] = {"text": text, "format": "wav"}
         if voice is not None:
             payload["reference_id"] = voice
+            payload["use_memory_cache"] = "on"
         body = msgpack.packb(payload, use_bin_type=True)
         request = Request(
             f"{self.settings.fish_server_url}/v1/tts?format=msgpack",

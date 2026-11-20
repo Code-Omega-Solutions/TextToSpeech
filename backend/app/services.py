@@ -175,6 +175,13 @@ class SpeechService:
         self.fish_reference_voices = load_qualified_reference_catalog(
             settings.fish_reference_manifest, settings.fish_reference_root
         )
+        if settings.fish_german_male_only and "de-DE" in self.fish_reference_voices:
+            self.fish_reference_voices = {
+                **self.fish_reference_voices,
+                "de-DE": tuple(
+                    voice for voice in self.fish_reference_voices["de-DE"] if voice == "de-male"
+                ),
+            }
         self.engine_registry = EngineRegistry(
             (
                 EngineRegistration(
@@ -253,6 +260,11 @@ class SpeechService:
         deadline: float | None = None,
     ) -> SynthesisResult:
         selected_backend = backend or self.settings.default_backend
+        if selected_backend == "fish-speech" and self.settings.fish_german_male_only:
+            if voice == "de-female":
+                raise SynthesisUnavailable
+            if voice is None and language == "de-DE" and self.settings.fish_references_approved:
+                voice = "de-male"
         if (
             voice is None
             and selected_backend == self.settings.default_backend == "fish-speech"

@@ -14,13 +14,19 @@ service without adding browser-side text persistence.
 <!-- touches: frontend/app.js, frontend/index.html, frontend/tests/e2e/** -->
 <!-- adopted: frontend/app.js, frontend/index.html, frontend/tests/e2e/speech.spec.js -->
 
-The form SHALL require text, limit entry to 5,000 UTF-16 code units, show its
-current length, and provide clear and clipboard-paste controls.
+The form SHALL require text, show its current length, and provide clear and
+clipboard-paste controls. It SHALL retain text beyond 5,000 UTF-16 code units
+and enforce the existing 32 KiB encoded-request boundary without truncation.
 
-#### Scenario: clipboard text exceeds the limit
+#### Scenario: clipboard text exceeds the former limit
 
 - **WHEN** a permitted paste returns more than 5,000 units
-- **THEN** the input contains the first 5,000 units and a truncation message appears.
+- **THEN** the full text remains in the input.
+
+#### Scenario: the encoded request exceeds the boundary
+
+- **WHEN** a user submits a request whose complete encoded body exceeds 32 KiB
+- **THEN** the text remains available, a size error is shown, and no request is sent.
 
 #### Scenario: clearing the form
 
@@ -132,4 +138,3 @@ live status feedback, responsive layout, and the recovered visual identity.
   remain proposed in [the backend feature](../../specs/001-macos-backend/spec.md).
 - Plain input editing does not currently invalidate existing audio. Changing
   settings during an in-flight request is not specified as snapshot-isolated.
-- A text limit does not guarantee the encoded request fits the current proxy limit.

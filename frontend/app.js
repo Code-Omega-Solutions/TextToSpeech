@@ -22,6 +22,7 @@ const speechPanel = document.querySelector("#speech-panel");
 const configurationPanel = document.querySelector("#configuration-panel");
 const targetSelect = document.querySelector("#target");
 
+const maxRequestBytes = 32 * 1024;
 const supportedLanguages = new Set(["de-DE", "en-US", "en-GB"]);
 const voiceDisplayNames = new Map([
   ["de-male", "Male (German)"],
@@ -97,7 +98,7 @@ function clearAudio() {
 }
 
 textInput.addEventListener("input", () => {
-  characterCount.textContent = `${textInput.value.length.toLocaleString()} / 5,000`;
+  characterCount.textContent = `${textInput.value.length.toLocaleString()} characters`;
   clearTextButton.disabled = textInput.value.length === 0;
 });
 
@@ -105,15 +106,12 @@ pasteTextButton.addEventListener("click", async () => {
   statusMessage.textContent = "";
   try {
     const clipboardText = await navigator.clipboard.readText();
-    textInput.value = clipboardText.slice(0, 5000);
+    textInput.value = clipboardText;
     textInput.dispatchEvent(new Event("input"));
     clearAudio();
     textInput.focus();
     if (clipboardText.length === 0) {
       statusMessage.textContent = "The clipboard does not contain any text.";
-    } else if (clipboardText.length > 5000) {
-      statusMessage.textContent =
-        "Clipboard text was truncated to the 5,000-character limit.";
     }
   } catch {
     statusMessage.textContent =
@@ -335,14 +333,6 @@ form.addEventListener("submit", async (event) => {
   );
   if ((!selectedEngine && availableEngines.length > 0) || generateButton.disabled) return;
   statusMessage.textContent = "";
-  clearAudio();
-  generateButton.disabled = true;
-  const speechRevision = endpointRevision;
-  const speechRequest = ++speechRequestSequence;
-  currentSpeechRequest = speechRequest;
-  currentSpeechRevision = speechRevision;
-  generateButton.firstElementChild.textContent = "Generating…";
-
   const request = {
     input: textInput.value,
     response_format: document.querySelector("#format").value,
@@ -352,12 +342,26 @@ form.addEventListener("submit", async (event) => {
   const language = languageSelect.value;
   if (language) request.language = language;
   if (voiceSelect.value) request.voice = voiceSelect.value;
+  const body = JSON.stringify(request);
+  if (new TextEncoder().encode(body).length > maxRequestBytes) {
+    statusMessage.textContent =
+      "The request exceeds the 32 KiB limit. Reduce the text and try again.";
+    return;
+  }
+
+  clearAudio();
+  generateButton.disabled = true;
+  const speechRevision = endpointRevision;
+  const speechRequest = ++speechRequestSequence;
+  currentSpeechRequest = speechRequest;
+  currentSpeechRevision = speechRevision;
+  generateButton.firstElementChild.textContent = "Generating…";
 
   try {
     const response = await fetch("/api/v1/audio/speech", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(request),
+      body,
       cache: "no-store",
     });
     if (!response.ok) {

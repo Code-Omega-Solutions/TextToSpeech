@@ -8,7 +8,6 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.main import create_app
-from app.fish_speech import FishSpeechError
 from app.services import (
     AudioTooLarge,
     SynthesisFailure,
@@ -16,6 +15,7 @@ from app.services import (
     SynthesisTimeout,
     SynthesisUnavailable,
 )
+from phonon_test_support import phonon_settings
 
 
 def client_for(settings):
@@ -147,48 +147,36 @@ def test_success_returns_binary_audio_and_expected_headers(settings, monkeypatch
     assert response.headers["x-request-id"]
 
 
-def test_response_reports_actual_backend(settings_factory, monkeypatch):
-    settings = settings_factory(
-        fish_enabled=True,
-        fish_server_url="http://127.0.0.1:8080",
-        fish_api_key="unit-test-fish-key",
-    )
+def test_phonon_response_reports_actual_backend_and_complete_audio(
+    settings_factory, monkeypatch
+):
+    settings = phonon_settings(settings_factory)
     app = create_app(settings)
+    audio = b"complete fixture audio"
     monkeypatch.setattr(
         app.state.speech_service,
         "synthesize_reserved",
         lambda *_args: SynthesisResult(
-            b"audio", "audio/wav", "speech.wav", actual_backend="fish-speech"
+            audio, "audio/wav", "speech.wav", actual_backend="phonon"
         ),
     )
     response = TestClient(app).post(
         "/v1/audio/speech",
-        json={"input": "Hello there", "model": "fish-speech", "language": "en-US"},
+        json={"input": "Hello there", "model": "phonon", "language": "en-US"},
         headers={"Authorization": f"Bearer {settings.api_key}"},
     )
     assert response.status_code == 200
-    assert response.headers["x-speech-backend"] == "fish-speech"
+    assert response.content == audio
+    assert response.headers["x-speech-backend"] == "phonon"
     assert response.headers["x-speech-fallback"] == "false"
 
 
-def test_fish_failure_returns_unavailable_without_silent_macos_fallback(
-    settings_factory, monkeypatch
-):
-    settings = settings_factory(
-        fish_enabled=True,
-        fish_server_url="http://127.0.0.1:8080",
-        fish_api_key="unit-test-fish-key",
-    )
+def test_retired_fish_returns_unavailable_before_synthesis(settings, monkeypatch):
     app = create_app(settings)
     monkeypatch.setattr(
-        app.state.speech_service.fish_speech,
-        "synthesize_wav",
-        lambda *_args, **_kwargs: (_ for _ in ()).throw(FishSpeechError("fixture failure")),
-    )
-    monkeypatch.setattr(
         app.state.speech_service,
-        "_synthesize_macos",
-        lambda *_args, **_kwargs: pytest.fail("Fish failure silently fell back to macOS"),
+        "try_acquire",
+        lambda: pytest.fail("retired Fish request reached synthesis admission"),
     )
     response = TestClient(app).post(
         "/v1/audio/speech",
@@ -213,65 +201,6 @@ def test_legacy_vibevoice_selector_is_safe_unavailable_without_admission(setting
     )
     assert response.status_code == 503
     assert response.json() == {"detail": "Speech synthesis is unavailable."}
-
-
-@pytest.mark.parametrize(
-    ("model", "language", "voice"),
-    [
-        ("fish-speech", "de", "neural-reference"),
-        ("fish-speech", "en", "neural-reference"),
-        ("vibevoice", "de", "de-Spk0_man"),
-        ("vibevoice", "en", "en-Carter_man"),
-    ],
-)
-def test_optional_fallback_is_authenticated_language_only_and_observable(
-    settings_factory, monkeypatch, caplog, model, language, voice
-):
-    settings = settings_factory(fish_opportunistic=True)
-    app = create_app(settings)
-    calls = []
-
-    def native(*args, **kwargs):
-        calls.append(args)
-        assert kwargs["deadline"] <= time.monotonic() + settings.request_timeout_seconds
-        return SynthesisResult(b"native audio", "audio/wav", "speech.wav")
-
-    monkeypatch.setattr(app.state.speech_service, "_synthesize_macos", native)
-    with TestClient(app) as client:
-        body = {
-            "input": "synthetic speech marker", "model": model,
-            "language": language, "voice": voice, "response_format": "wav",
-        }
-        assert client.post("/v1/audio/speech", json=body).status_code == 401
-        assert calls == []
-        with caplog.at_level(logging.INFO):
-            response = client.post(
-                "/v1/audio/speech", json=body,
-                headers={"Authorization": f"Bearer {settings.api_key}"},
-            )
-        assert response.status_code == 200
-        assert calls[0][1] == {"de": "de-DE", "en": "en-US"}[language]
-        assert calls[0][5] is None
-        assert response.content == b"native audio"
-        assert response.headers["x-speech-backend"] == "macos-say"
-        assert response.headers["x-speech-fallback"] == "true"
-        body["model"] = "unknown"
-        assert client.post(
-            "/v1/audio/speech", json=body,
-            headers={"Authorization": f"Bearer {settings.api_key}"},
-        ).status_code == 422
-        assert len(calls) == 1
-    assert "synthetic speech marker" not in caplog.text
-    assert settings.api_key not in caplog.text
-
-
-def test_application_shutdown_closes_managed_worker(settings_factory, monkeypatch):
-    app = create_app(settings_factory(fish_opportunistic=True))
-    closed = []
-    monkeypatch.setattr(app.state.speech_service.fish_process, "close", lambda: closed.append(True))
-    with TestClient(app):
-        assert not closed
-    assert closed == [True]
 
 
 def test_invalid_vibevoice_voice_is_rejected_before_capacity(settings_factory, monkeypatch):
@@ -302,12 +231,7 @@ def test_invalid_vibevoice_voice_is_rejected_before_capacity(settings_factory, m
 
 
 def test_configured_backend_and_explicit_override_reach_service(settings_factory, monkeypatch):
-    settings = settings_factory(
-        default_backend="fish-speech",
-        fish_enabled=True,
-        fish_server_url="http://127.0.0.1:8080",
-        fish_api_key="unit-test-fish-key",
-    )
+    settings = phonon_settings(settings_factory, default_backend="phonon")
     app = create_app(settings)
     calls = []
 
@@ -324,7 +248,8 @@ def test_configured_backend_and_explicit_override_reach_service(settings_factory
             payload["model"] = model
         response = client.post("/v1/audio/speech", json=payload, headers=headers)
         assert response.status_code == 200
-    assert [call[-2:] for call in calls] == [("fish-speech", None), ("macos-say", None)]
+    assert [call[-3:-1] for call in calls] == [("phonon", None), ("macos-say", None)]
+    assert all(call[-1] is not None for call in calls)
 
 
 def test_legacy_vibevoice_override_returns_unavailable_before_synthesis(settings, monkeypatch):
@@ -349,7 +274,9 @@ def test_unsupported_detected_language_synthesizes_with_en_us(settings_factory, 
     calls = []
     monkeypatch.setattr("app.language.langid.classify", lambda _text: ("fr", 0.9))
 
-    def synthesize(text, language, speed, response_format, cancel_event, backend, voice):
+    def synthesize(
+        text, language, speed, response_format, cancel_event, backend, voice, deadline
+    ):
         calls.append((language, backend, voice))
         return SynthesisResult(b"fixture-audio", "audio/mpeg", "speech.mp3")
 

@@ -1,0 +1,715 @@
+{
+  "workflow": "companion",
+  "specName": "Replace Fish Speech with Ollama Phonon",
+  "branch": "007-replace-phonon",
+  "currentStep": "implement",
+  "status": "implemented",
+  "history": [
+    {
+      "step": "specify",
+      "substep": null,
+      "kind": "start",
+      "by": "extension",
+      "at": "2026-11-24T09:05:58.000Z"
+    },
+    {
+      "step": "specify",
+      "substep": null,
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-24T09:08:43.918Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "kind": "start",
+      "by": "extension",
+      "at": "2026-11-24T18:30:46.642Z"
+    },
+    {
+      "step": "tasks",
+      "substep": "generate",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-24T18:53:48.693Z"
+    },
+    {
+      "step": "tasks",
+      "substep": null,
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-24T18:54:02.676Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T001",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-24T18:54:29.120Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T002",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-24T18:55:32.070Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T003",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-24T18:55:51.140Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T004",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-24T19:01:59.700Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T005",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-24T19:01:59.891Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T006",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-24T19:02:00.129Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T007",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-24T19:02:00.378Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T008",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-24T19:02:00.642Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T009",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-24T19:02:00.904Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T010",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-24T19:02:01.117Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T011",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-24T19:02:01.368Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T012",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-24T19:02:01.648Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T013",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-24T19:02:01.993Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T014",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-24T19:02:02.351Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T015",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-24T19:04:27.307Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T016",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-24T19:13:04.506Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T017",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-24T19:13:04.702Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T018",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-24T19:14:07.014Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T019",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-24T19:17:19.136Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T020",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-24T19:19:33.838Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T021",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-24T19:20:00.872Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T022",
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-24T19:25:13.664Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T023",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-24T19:28:58.579Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T024",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-24T23:36:33.498Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-24T23:36:33.541Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T025",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-24T23:58:38.625Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T026",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-24T23:58:38.627Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T027",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-24T23:58:38.628Z"
+    }
+  ],
+  "telemetryInstanceId": "addb31c1-ab43-4647-9c49-d84821dbca04",
+  "assistant": "ide-chat",
+  "planBlocks": [
+    "calls",
+    "states"
+  ],
+  "planBlocksPicked": [
+    "calls",
+    "states"
+  ],
+  "verified": [
+    {
+      "what": "plan blocks check out",
+      "command": "python3 .specify/extensions/companion/scripts/check_plan.py --feature-dir specs/007-replace-phonon --strict",
+      "source": "derived",
+      "exitCode": 0,
+      "durationSeconds": 0.0,
+      "result": "[plan-check] plan.md: 1 call path, 6 lines, 1 state block (6 states). Every cited file and line checks out."
+    },
+    {
+      "what": "Companion validation",
+      "command": "bash checks/run_companion_validation.sh",
+      "source": "derived",
+      "exitCode": 0,
+      "durationSeconds": 44.2,
+      "result": "Ran 13 tests in 0.070s · OK · native zsh recreation tests unavailable in this environment; run them on the authorized macOS target",
+      "commit": "e5b36c3",
+      "tree": "47c1a54a1fad1d6ba2f7602c4ef974098be2975e"
+    },
+    {
+      "what": "Opt-in live qualification for the approved English and German models over a loopback SSH tunnel",
+      "result": "1 passed"
+    },
+    {
+      "what": "Production API Phonon English and German WAV, English MP3, native speech and auth rejection",
+      "result": "passed; native remains the default"
+    },
+    {
+      "what": "Ollama Phonon inference on Apple Silicon",
+      "result": "MLX runner initialized with GPU for both approved models"
+    },
+    {
+      "what": "Project validation",
+      "command": "bash checks/run_companion_validation.sh",
+      "source": "derived",
+      "exitCode": 0,
+      "durationSeconds": 51.6,
+      "result": "Ran 15 tests in 0.605s · OK (skipped=1) · native zsh recreation tests unavailable in this environment; run them on the authorized macOS target",
+      "commit": "e5b36c3",
+      "tree": "91af6a5b10c850e870d38c5f6e534c7b9abbf911"
+    },
+    {
+      "what": "Final project validation",
+      "command": "bash checks/run_companion_validation.sh",
+      "source": "derived",
+      "exitCode": 0,
+      "durationSeconds": 50.8,
+      "result": "Ran 15 tests in 0.571s · OK (skipped=1) · native zsh recreation tests unavailable in this environment; run them on the authorized macOS target",
+      "commit": "e5b36c3",
+      "tree": "17b56ef9cacfc1b193137b270935c9285879119e"
+    }
+  ],
+  "decisions": [
+    {
+      "decision": "Use the Ollama OpenAI-compatible speech endpoint with bounded PCM, then wrap and transcode the complete result.",
+      "why": "It avoids Ollama WAV placeholder lengths and preserves the service complete response, speed, format, timeout, and output bounds.",
+      "rejected": "Returning Ollama WAV directly or introducing client-facing MP3 streaming before those guarantees are proven.",
+      "by": "agent",
+      "at": "2026-11-24T18:42:39.401Z"
+    },
+    {
+      "decision": "Treat phonon:31m-en and phonon:40m-de as candidates, not runtime defaults, and require explicit reviewed model and voice approval before availability.",
+      "why": "Official pages identify the language fit and different licenses, while exact asset identity, voice terms, target compatibility, and use approval remain open.",
+      "rejected": "Unreviewed hard-coded tags or placeholder voice IDs.",
+      "by": "agent",
+      "at": "2026-11-24T18:42:39.401Z"
+    },
+    {
+      "decision": "Leave the Phonon endpoint unset by default and initially accept only a verified loopback origin without redirects or ambient proxies.",
+      "why": "Ollama local speech is unauthenticated and the deployment path is not yet verified.",
+      "rejected": "Accepting arbitrary remote origins or assuming container-to-host networking is trusted.",
+      "by": "agent",
+      "at": "2026-11-24T18:42:39.401Z"
+    },
+    {
+      "decision": "Split client text at safe boundaries under the documented 4096-character API limit and preserve all segments under shared request and output bounds.",
+      "why": "The API does not perform CLI long-input splitting, and rejecting or truncating such requests would violate the feature requirements.",
+      "rejected": "Relying on API truncation or sending oversized requests.",
+      "by": "agent",
+      "at": "2026-11-24T18:42:39.401Z"
+    }
+  ],
+  "concerns": [
+    {
+      "note": "The Companion no-regress guard refused to record a plan start because the context already says implement/implementing; no plan lifecycle advance was written.",
+      "step": "plan"
+    },
+    {
+      "note": "Exact model and voice provenance/terms, installed identity, and the trusted service network path remain unresolved release gates.",
+      "step": "plan"
+    },
+    {
+      "note": "The Companion context already reports implement/implementing, so task-start and task-completion lifecycle writes may be rejected; no manual context edit was made.",
+      "step": "tasks"
+    },
+    {
+      "note": "T024 live English/German qualification remains intentionally unrun pending exact asset and provenance approval, target compatibility review, trusted endpoint verification, and separate operational consent.",
+      "step": "implement"
+    },
+    {
+      "note": "Linux validation could not run native zsh recreation tests because zsh is unavailable; two existing pixel-fidelity E2E tests were skipped.",
+      "step": "implement"
+    },
+    {
+      "note": "German model use is limited to the approved private noncommercial purpose; upstream source access conditions are gated and were not accepted on behalf of the operator. Ollama-distributed packages and their bundled license layers were reviewed.",
+      "step": "implement"
+    },
+    {
+      "note": "PowerShell branch-hook parity could not run because pwsh is unavailable on this Linux host; native zsh tests also remain unrun here. The production UI was not deployed.",
+      "step": "implement"
+    }
+  ],
+  "step_summaries": {
+    "plan": {
+      "summary": "Planned a disabled-by-default Phonon integration with bounded PCM conversion and explicit asset and network gates.",
+      "key_finding": "The official speech API supports PCM and named voices but caps each input at 4096 characters and does not provide speed or MP3."
+    },
+    "tasks": {
+      "summary": "Generated 24 dependency-ordered tasks across Setup, Foundational, three user stories, and Polish, with a separate approved live-qualification gate."
+    },
+    "implement": {
+      "summary": "Aligned the UI with Phonon and the existing request-size boundary."
+    }
+  },
+  "approach": "Use a small standard-library adapter behind the existing engine registry. Keep model and voice assets unavailable until an approved record and trusted local endpoint are configured; preserve the existing complete-response conversion path.",
+  "coverage": {
+    "FR-001": {
+      "title": "The replacement MUST remove Fish as a selectable engine and MUST NOT require Fish assets or services for the speech service to start or become ready.",
+      "tasks": [
+        "T020",
+        "T021",
+        "T022"
+      ]
+    },
+    "FR-002": {
+      "title": "The replacement MUST provide Phonon speech for English and German when the approved model, voice, and target environment support the requested language.",
+      "tasks": [
+        "T001",
+        "T003",
+        "T005",
+        "T014",
+        "T024"
+      ]
+    },
+    "FR-003": {
+      "title": "The replacement MUST retain native macOS `say` as an available speech option where the host supports it.",
+      "tasks": [
+        "T019"
+      ]
+    },
+    "FR-004": {
+      "title": "The replacement MUST preserve established authentication, speed control, voice selection, MP3/WAV output, response metadata, and the existing encoded-request size safeguard. It MUST NOT retain a fixed 5,000-unit text limit.",
+      "tasks": [
+        "T002",
+        "T003",
+        "T006"
+      ]
+    },
+    "FR-005": {
+      "title": "The replacement MUST handle text beyond a selected model's per-input capacity by dividing it into supported segments and returning a complete result that preserves the text's order and content, subject to existing request, time, and audio-output safeguards.",
+      "tasks": [
+        "T007",
+        "T016",
+        "T017"
+      ]
+    },
+    "FR-006": {
+      "title": "The replacement SHOULD stream MP3 audio to the user when it can preserve the established response behavior, bounded output, cancellation, timeout, and safe-error guarantees. If it cannot, it MUST retain the current complete-response behavior and MUST NOT claim that client-facing streaming is supported.",
+      "tasks": [
+        "T008",
+        "T017"
+      ]
+    },
+    "FR-007": {
+      "title": "Successful responses MUST continue to identify the engine that actually generated the audio and preserve the existing response metadata required by clients.",
+      "tasks": [
+        "T009",
+        "T018"
+      ]
+    },
+    "FR-008": {
+      "title": "The service MUST retain its existing user authentication. The unauthenticated Phonon service MUST remain reachable only over a verified, trusted path and MUST NOT be exposed beyond the separately approved network boundary.",
+      "tasks": [
+        "T010",
+        "T015",
+        "T024"
+      ]
+    },
+    "FR-009": {
+      "title": "Errors and logs MUST NOT disclose speech text, credentials, or private host configuration.",
+      "tasks": [
+        "T011"
+      ]
+    },
+    "FR-010": {
+      "title": "Exact Phonon model and voice assets MUST NOT be used until their source, terms, provenance, and compatibility with the stated private, non-commercial intended use have been reviewed.",
+      "tasks": [
+        "T001",
+        "T012",
+        "T015",
+        "T024"
+      ]
+    },
+    "FR-011": {
+      "title": "The replacement MUST report Phonon as unavailable when its required model or service is unavailable; it MUST NOT silently route a selected Phonon request to native macOS speech.",
+      "tasks": [
+        "T013",
+        "T017",
+        "T018"
+      ]
+    },
+    "FR-012": {
+      "title": "The replacement MUST NOT require a predefined quality threshold before productive use. If the requester reports after productive use that expectations are not met, a dedicated follow-up MUST be created; this does not waive rights, platform, privacy, or operational gates.",
+      "assumes": "No post-use report has been made; create a dedicated follow-up if one occurs. No pre-use quality threshold is added."
+    },
+    "FR-013": {
+      "tests": [
+        "frontend/tests/e2e/speech.spec.js"
+      ]
+    },
+    "FR-014": {
+      "tests": [
+        "frontend/tests/e2e/engine-discovery.spec.js"
+      ]
+    },
+    "FR-015": {
+      "tests": [
+        "frontend/tests/e2e/engine-discovery.spec.js"
+      ]
+    }
+  },
+  "currentTask": "T027",
+  "task_summaries": {
+    "T001": {
+      "status": "DONE",
+      "did": "Reviewed public model, voice, terms, and endpoint evidence; unresolved target approval and asset identity remain gated.",
+      "files": [
+        "specs/007-replace-phonon/research.md"
+      ]
+    },
+    "T002": {
+      "status": "DONE",
+      "did": "Added the long-input regression and confirmed it fails against the 5,000-unit cap.",
+      "files": [
+        "backend/tests/test_models.py"
+      ]
+    },
+    "T003": {
+      "status": "DONE",
+      "did": "Removed the model-level text cap and retained the unpaired-surrogate validation; the request-model suite passes.",
+      "files": [
+        "backend/app/models.py",
+        "backend/tests/test_models.py"
+      ]
+    },
+    "T004": {
+      "status": "DONE"
+    },
+    "T005": {
+      "status": "DONE"
+    },
+    "T006": {
+      "status": "DONE"
+    },
+    "T007": {
+      "status": "DONE"
+    },
+    "T008": {
+      "status": "DONE"
+    },
+    "T009": {
+      "status": "DONE"
+    },
+    "T010": {
+      "status": "DONE"
+    },
+    "T011": {
+      "status": "DONE"
+    },
+    "T012": {
+      "status": "DONE"
+    },
+    "T013": {
+      "status": "DONE"
+    },
+    "T014": {
+      "status": "DONE"
+    },
+    "T015": {
+      "status": "DONE",
+      "did": "Added fail-closed Phonon configuration, protected provenance loading, and loopback endpoint validation.",
+      "files": [
+        "backend/app/config.py",
+        "backend/tests/test_config.py",
+        "backend/tests/test_phonon_approval.py"
+      ]
+    },
+    "T016": {
+      "status": "DONE",
+      "did": "Implemented the bounded, proxy-free Ollama speech adapter and validated its fake-transport tests.",
+      "files": [
+        "backend/app/phonon.py"
+      ]
+    },
+    "T017": {
+      "status": "DONE",
+      "did": "Integrated Phonon with existing bounded WAV/FFmpeg handling, retained native macOS behavior, removed Fish dispatch/configuration, and validated focused config/service/engine tests.",
+      "files": [
+        "backend/app/services.py",
+        "backend/app/config.py",
+        "backend/app/engines.py",
+        "backend/tests/test_config.py",
+        "backend/tests/test_services.py",
+        "backend/tests/test_engines.py"
+      ]
+    },
+    "T018": {
+      "status": "DONE",
+      "did": "Added the Phonon public selector and request deadline propagation, made retired Fish fail safely after authentication, removed Fish readiness reporting, and verified complete response metadata with fake endpoints.",
+      "files": [
+        "backend/app/models.py",
+        "backend/app/routers.py",
+        "backend/tests/test_api.py",
+        "backend/tests/test_services.py",
+        "backend/tests/test_engines.py",
+        "backend/tests/test_speech_contract.py",
+        "backend/tests/test_vibevoice_startup.py",
+        "backend/tests/test_phonon_request_contract.py",
+        "backend/tests/test_phonon_segmentation.py",
+        "backend/tests/phonon_test_support.py"
+      ]
+    },
+    "T019": {
+      "status": "DONE",
+      "did": "Verified the public engine catalog, readiness route, and speech API retain macos-say when Phonon is disabled.",
+      "files": [
+        "backend/tests/test_native_speech_preservation.py"
+      ]
+    },
+    "T020": {
+      "status": "DONE",
+      "did": "Added authenticated public API tests for engine discovery, retired-selection no-fallback behavior, and Phonon-independent readiness; all pass.",
+      "files": [
+        "backend/tests/test_fish_retirement.py"
+      ]
+    },
+    "T021": {
+      "status": "DONE",
+      "did": "Removed the Fish adapter, managed-process supervisor, worker launcher, and their Fish-only tests; focused retirement, discovery, native-preservation, and engine tests pass.",
+      "files": [
+        "backend/app/fish_speech.py",
+        "backend/app/fish_process.py",
+        "backend/deployment/fish_worker_launcher.py",
+        "backend/tests/test_fish_speech.py",
+        "backend/tests/test_fish_process.py",
+        "backend/tests/test_fish_worker_launcher.py"
+      ]
+    },
+    "T022": {
+      "status": "DONE",
+      "did": "Replaced active Fish setup guidance with the disabled-by-default Phonon boundary, marked Fish operations/voice preparation as historical, removed retired Fish template variables while retaining the plist and generic recreation tests, and aligned living requirements, coverage, registry, and index.",
+      "files": [
+        "backend/README.md",
+        "backend/deployment/prototype-operations.md",
+        "backend/voice-preparation.md",
+        "backend/tests/test_fish_deployment_template.py",
+        "backend/deployment/com.example.private-speech-studio-backend.plist",
+        "capabilities/backend-synthesis/backend-synthesis.spec.md",
+        "capabilities/backend-synthesis/backend-synthesis.coverage.md",
+        "living-specs.yml",
+        "specs/README.md"
+      ]
+    },
+    "T023": {
+      "status": "DONE",
+      "did": "The required Companion validation hook passed; the live qualification gate remains pending.",
+      "files": [
+        "checks/run_companion_validation.sh"
+      ]
+    },
+    "T024": {
+      "status": "DONE",
+      "did": "Opt-in English and German live test passed through a loopback SSH tunnel to reviewed models; production API and MLX GPU also verified.",
+      "files": [
+        "backend/tests/test_phonon_live.py"
+      ]
+    },
+    "T025": {
+      "status": "DONE",
+      "did": "Aligned browser long-input, Phonon discovery, metadata disclosure, and living-spec coverage.",
+      "files": [
+        "frontend/app.js",
+        "frontend/index.html",
+        "frontend/tests/e2e/speech.spec.js",
+        "frontend/tests/e2e/engine-discovery.spec.js",
+        "frontend/README.md",
+        "capabilities/speech-generation/speech-generation.spec.md",
+        "capabilities/speech-generation/speech-generation.coverage.md"
+      ],
+      "wave": "T025-T027"
+    },
+    "T026": {
+      "status": "DONE",
+      "did": "Aligned browser long-input, Phonon discovery, metadata disclosure, and living-spec coverage.",
+      "files": [
+        "frontend/app.js",
+        "frontend/index.html",
+        "frontend/tests/e2e/speech.spec.js",
+        "frontend/tests/e2e/engine-discovery.spec.js",
+        "frontend/README.md",
+        "capabilities/speech-generation/speech-generation.spec.md",
+        "capabilities/speech-generation/speech-generation.coverage.md"
+      ],
+      "wave": "T025-T027"
+    },
+    "T027": {
+      "status": "DONE",
+      "did": "Aligned browser long-input, Phonon discovery, metadata disclosure, and living-spec coverage.",
+      "files": [
+        "frontend/app.js",
+        "frontend/index.html",
+        "frontend/tests/e2e/speech.spec.js",
+        "frontend/tests/e2e/engine-discovery.spec.js",
+        "frontend/README.md",
+        "capabilities/speech-generation/speech-generation.spec.md",
+        "capabilities/speech-generation/speech-generation.coverage.md"
+      ],
+      "wave": "T025-T027"
+    }
+  },
+  "last_action": "Completed T024 after explicit operator approval and trusted loopback service verification.",
+  "risk": {
+    "tier": "high",
+    "computed": "high",
+    "reasons": [
+      "49 files changed"
+    ]
+  }
+}

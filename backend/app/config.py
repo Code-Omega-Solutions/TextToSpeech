@@ -5,7 +5,8 @@ import os
 import stat
 from dataclasses import dataclass, field
 from ipaddress import ip_address
-from pathlib import PurePosixPath
+from pathlib import Path
+from types import MappingProxyType
 from typing import Literal
 from urllib.parse import urlsplit
 
@@ -31,24 +32,11 @@ class _SettingsValues(BaseModel):
     max_temp_bytes: int = Field(default=268_435_456, ge=1, le=1_073_741_824)
     say_path: str = "/usr/bin/say"
     ffmpeg_path: str = "ffmpeg"
-    default_backend: Literal["macos-say", "fish-speech"] = "macos-say"
-    fish_enabled: bool = False
-    fish_server_url: str | None = None
-    fish_api_key: str | None = Field(default=None, repr=False)
-    fish_request_timeout_seconds: int = Field(default=30, ge=1, le=180)
-    fish_artifact_manifest: str | None = None
-    fish_reference_manifest: str | None = None
-    fish_reference_root: str | None = None
-    fish_artifacts_approved: bool = False
-    fish_references_approved: bool = False
-    fish_german_male_only: bool = False
-    fish_opportunistic: bool = False
-    fish_worker_command: tuple[str, ...] | None = Field(default=None, repr=False)
-    fish_worker_peak_memory_bytes: int = Field(default=16 * 1024**3, ge=1)
-    fish_startup_memory_bytes: int | None = Field(default=None, ge=1)
-    fish_memory_reserve_bytes: int = Field(default=12 * 1024**3, ge=1)
-    fish_idle_timeout_seconds: int = Field(default=30, ge=1, le=600)
-    fish_cooldown_seconds: int = Field(default=30, ge=1, le=600)
+    default_backend: Literal["macos-say", "phonon"] = "macos-say"
+    phonon_enabled: bool = False
+    phonon_server_url: str | None = None
+    phonon_request_timeout_seconds: int = Field(default=30, ge=1, le=180)
+    phonon_approval_file: str | None = None
     vibevoice_enabled: bool = False
     vibevoice_research_only: bool = False
     vibevoice_qualified: bool = False
@@ -75,61 +63,10 @@ class _SettingsValues(BaseModel):
         return self
 
     @model_validator(mode="after")
-    def fish_requires_loopback_service_and_credential(self) -> _SettingsValues:
-        if (
-            self.fish_startup_memory_bytes is not None
-            and self.fish_startup_memory_bytes > self.fish_worker_peak_memory_bytes
-        ):
-            raise ValueError("Fish startup allowance must not exceed the worker memory budget")
-        if self.default_backend == "fish-speech" and not self.fish_enabled and not self.fish_opportunistic:
-            raise ValueError("TTS_DEFAULT_BACKEND=fish-speech requires TTS_FISH_ENABLED=true")
-        if self.fish_enabled and (
-            self.fish_server_url is None
-            or self.fish_api_key is None and self.api_key is None
-        ):
-            raise ValueError(
-                "Fish Speech requires a loopback service URL and the shared API key"
-            )
-        if self.fish_enabled and not self.fish_artifacts_approved:
-            raise ValueError(
-                "Fish Speech requires exact artifact metadata and terms approval"
-            )
-        if self.fish_enabled and not self.fish_artifact_manifest:
-            raise ValueError("Fish Speech requires an exact artifact approval manifest")
-        if self.fish_enabled and not self.fish_references_approved:
-            raise ValueError(
-                "Fish Speech requires approved German/English reference voices"
-            )
-        if self.fish_enabled and not self.fish_reference_manifest:
-            raise ValueError("Fish Speech requires a qualified reference manifest")
-        if self.fish_enabled and not self.fish_reference_root:
-            raise ValueError("Fish Speech requires the approved reference data root")
-        if self.fish_opportunistic:
-            if self.fish_enabled and self.fish_worker_command is None:
-                raise ValueError("Opportunistic Fish requires a managed worker command")
-            if self.max_concurrent_synthesis < 2:
-                raise ValueError("Opportunistic Fish requires reserved native capacity")
+    def phonon_default_requires_explicit_enable(self) -> _SettingsValues:
+        if self.default_backend == "phonon" and not self.phonon_enabled:
+            raise ValueError("TTS_DEFAULT_BACKEND=phonon requires TTS_PHONON_ENABLED=true")
         return self
-
-    @field_validator("fish_worker_command", mode="before")
-    @classmethod
-    def fish_command_is_local_argv(cls, value: object) -> tuple[str, ...] | None:
-        if value is None:
-            return None
-        if isinstance(value, str):
-            try:
-                value = json.loads(value)
-            except ValueError:
-                raise ValueError("Fish worker command must be a JSON argv list") from None
-        if (
-            not isinstance(value, (list, tuple))
-            or not value
-            or any(not isinstance(part, str) or not part.strip() or "\0" in part for part in value)
-        ):
-            raise ValueError("Fish worker command must be a nonempty string argv list")
-        if not PurePosixPath(value[0]).is_absolute():
-            raise ValueError("Fish worker executable must be an absolute POSIX path")
-        return tuple(value)
 
     @field_validator("api_key")
     @classmethod
@@ -138,16 +75,9 @@ class _SettingsValues(BaseModel):
             raise ValueError("TTS_API_KEY must not be blank")
         return value
 
-    @field_validator("fish_api_key")
+    @field_validator("phonon_server_url")
     @classmethod
-    def fish_api_key_must_not_be_blank(cls, value: str | None) -> str | None:
-        if value is not None and (not value.strip() or "\n" in value or "\r" in value):
-            raise ValueError("TTS_FISH_API_KEY must be a nonempty single-line credential")
-        return value
-
-    @field_validator("fish_server_url")
-    @classmethod
-    def fish_server_must_be_loopback_origin(cls, value: str | None) -> str | None:
+    def phonon_server_must_be_loopback_origin(cls, value: str | None) -> str | None:
         if value is None:
             return None
         try:
@@ -172,7 +102,7 @@ class _SettingsValues(BaseModel):
             or parsed.fragment
             or port is not None and not 1 <= port <= 65535
         ):
-            raise ValueError("TTS_FISH_SERVER_URL must be an HTTP(S) loopback origin")
+            raise ValueError("TTS_PHONON_SERVER_URL must be an HTTP(S) loopback origin")
         return value.rstrip("/")
 
     @model_validator(mode="after")
@@ -195,14 +125,7 @@ class _SettingsValues(BaseModel):
             raise ValueError("configured string settings must not be blank")
         return value
 
-    @field_validator(
-        "fish_artifact_manifest",
-        "fish_reference_manifest",
-        "fish_reference_root",
-        "vibevoice_worker_python",
-        "vibevoice_source_path",
-        "vibevoice_model_path",
-    )
+    @field_validator("phonon_approval_file", "vibevoice_worker_python", "vibevoice_source_path", "vibevoice_model_path")
     @classmethod
     def optional_path_must_not_be_blank(cls, value: str | None) -> str | None:
         if value is not None and not value.strip():
@@ -228,16 +151,7 @@ class Settings:
     max_temp_bytes: int
     say_path: str
     ffmpeg_path: str
-    default_backend: Literal["macos-say", "fish-speech"]
-    fish_enabled: bool
-    fish_server_url: str | None
-    fish_api_key: str | None = field(repr=False)
-    fish_request_timeout_seconds: int
-    fish_artifact_manifest: str | None
-    fish_reference_manifest: str | None
-    fish_reference_root: str | None
-    fish_artifacts_approved: bool
-    fish_references_approved: bool
+    default_backend: Literal["macos-say", "phonon"]
     vibevoice_enabled: bool
     vibevoice_research_only: bool
     vibevoice_qualified: bool
@@ -247,14 +161,11 @@ class Settings:
     vibevoice_model_path: str | None
     vibevoice_worker_peak_memory_bytes: int | None
     higher_priority_memory_reserve_bytes: int | None
-    fish_german_male_only: bool = False
-    fish_opportunistic: bool = False
-    fish_worker_command: tuple[str, ...] | None = field(default=None, repr=False)
-    fish_worker_peak_memory_bytes: int = 16 * 1024**3
-    fish_startup_memory_bytes: int | None = None
-    fish_memory_reserve_bytes: int = 12 * 1024**3
-    fish_idle_timeout_seconds: int = 30
-    fish_cooldown_seconds: int = 30
+    phonon_enabled: bool = False
+    phonon_server_url: str | None = None
+    phonon_request_timeout_seconds: int = 30
+    phonon_approval_file: str | None = None
+    phonon_approval: PhononApproval | None = None
 
     @classmethod
     def from_env(cls) -> Settings:
@@ -276,23 +187,10 @@ class Settings:
             "TTS_SAY_PATH": "say_path",
             "TTS_FFMPEG_PATH": "ffmpeg_path",
             "TTS_DEFAULT_BACKEND": "default_backend",
-            "TTS_FISH_ENABLED": "fish_enabled",
-            "TTS_FISH_SERVER_URL": "fish_server_url",
-            "TTS_FISH_API_KEY": "fish_api_key",
-            "TTS_FISH_REQUEST_TIMEOUT_SECONDS": "fish_request_timeout_seconds",
-            "TTS_FISH_ARTIFACT_MANIFEST": "fish_artifact_manifest",
-            "TTS_FISH_REFERENCE_MANIFEST": "fish_reference_manifest",
-            "TTS_FISH_REFERENCE_ROOT": "fish_reference_root",
-            "TTS_FISH_ARTIFACTS_APPROVED": "fish_artifacts_approved",
-            "TTS_FISH_REFERENCES_APPROVED": "fish_references_approved",
-            "TTS_FISH_GERMAN_MALE_ONLY": "fish_german_male_only",
-            "TTS_FISH_OPPORTUNISTIC": "fish_opportunistic",
-            "TTS_FISH_WORKER_COMMAND": "fish_worker_command",
-            "TTS_FISH_WORKER_PEAK_MEMORY_BYTES": "fish_worker_peak_memory_bytes",
-            "TTS_FISH_STARTUP_MEMORY_BYTES": "fish_startup_memory_bytes",
-            "TTS_FISH_MEMORY_RESERVE_BYTES": "fish_memory_reserve_bytes",
-            "TTS_FISH_IDLE_TIMEOUT_SECONDS": "fish_idle_timeout_seconds",
-            "TTS_FISH_COOLDOWN_SECONDS": "fish_cooldown_seconds",
+            "TTS_PHONON_ENABLED": "phonon_enabled",
+            "TTS_PHONON_SERVER_URL": "phonon_server_url",
+            "TTS_PHONON_REQUEST_TIMEOUT_SECONDS": "phonon_request_timeout_seconds",
+            "TTS_PHONON_APPROVAL_FILE": "phonon_approval_file",
             "TTS_VIBEVOICE_ENABLED": "vibevoice_enabled",
             "TTS_VIBEVOICE_RESEARCH_ONLY": "vibevoice_research_only",
             "TTS_VIBEVOICE_QUALIFIED": "vibevoice_qualified",
@@ -312,20 +210,123 @@ class Settings:
             if "TTS_API_KEY" in os.environ:
                 raise ValueError("TTS_API_KEY and TTS_API_KEY_FILE cannot both be set")
             values["api_key"] = _read_credential_file(os.environ["TTS_API_KEY_FILE"])
-        if "TTS_FISH_API_KEY_FILE" in os.environ:
-            if "TTS_FISH_API_KEY" in os.environ:
-                raise ValueError("TTS_FISH_API_KEY and TTS_FISH_API_KEY_FILE cannot both be set")
-            values["fish_api_key"] = _read_credential_file(os.environ["TTS_FISH_API_KEY_FILE"])
-        if (
-            str(values.get("fish_enabled", "")).lower() in {"true", "1", "yes", "on"}
-            and "fish_api_key" not in values
-            and "api_key" in values
-        ):
-            # Fish is an internal prototype transport. Reuse the authenticated
-            # backend bearer credential rather than provisioning a second secret.
-            values["fish_api_key"] = values["api_key"]
         parsed = _SettingsValues.model_validate(values)
-        return cls(**parsed.model_dump())
+        return cls(
+            **parsed.model_dump(),
+            phonon_approval=load_phonon_approval(parsed.phonon_approval_file),
+        )
+
+
+@dataclass(frozen=True)
+class PhononApproval:
+    models_by_language: dict[str, str]
+    voices_by_language: dict[str, tuple[str, ...]]
+    default_voices_by_language: dict[str, str]
+
+    def __post_init__(self) -> None:
+        object.__setattr__(
+            self, "models_by_language", MappingProxyType(dict(self.models_by_language))
+        )
+        object.__setattr__(
+            self,
+            "voices_by_language",
+            MappingProxyType(
+                {language: tuple(voices) for language, voices in self.voices_by_language.items()}
+            ),
+        )
+        object.__setattr__(
+            self,
+            "default_voices_by_language",
+            MappingProxyType(dict(self.default_voices_by_language)),
+        )
+
+
+_PHONON_LANGUAGES = {"en-US", "de-DE"}
+_PHONON_APPROVAL_MAX_BYTES = 64 * 1024
+
+
+def _approved_provenance(record: object) -> bool:
+    if not isinstance(record, dict):
+        return False
+    return all(
+        isinstance(record.get(field), str) and bool(record[field].strip())
+        for field in ("source_revision", "terms_revision")
+    ) and all(
+        isinstance(record.get(field), str) and record[field].startswith("https://")
+        for field in ("source_url", "terms_url")
+    ) and record.get("terms_status") == "approved"
+
+
+def load_phonon_approval(path: str | None) -> PhononApproval | None:
+    """Load a bounded, explicit provenance record; invalid records fail closed."""
+    if not path:
+        return None
+    try:
+        candidate = Path(path).expanduser()
+        if candidate.is_symlink() or not candidate.is_file():
+            return None
+        details = candidate.stat()
+        if (
+            not stat.S_ISREG(details.st_mode)
+            or details.st_size > _PHONON_APPROVAL_MAX_BYTES
+            or os.name != "nt"
+            and details.st_uid != os.geteuid()
+            or os.name != "nt"
+            and details.st_mode & 0o022
+        ):
+            return None
+        document = json.loads(candidate.read_text(encoding="utf-8"))
+        if (
+            not isinstance(document, dict)
+            or document.get("status") != "approved"
+            or document.get("intended_use") != "private-noncommercial"
+            or set(document.get("models", {})) != _PHONON_LANGUAGES
+            or set(document.get("voices", {})) != _PHONON_LANGUAGES
+        ):
+            return None
+
+        models: dict[str, str] = {}
+        voices: dict[str, tuple[str, ...]] = {}
+        defaults: dict[str, str] = {}
+        for language in _PHONON_LANGUAGES:
+            model_record = document["models"][language]
+            voice_record = document["voices"][language]
+            if (
+                not isinstance(model_record, dict)
+                or not isinstance(model_record.get("tag"), str)
+                or not model_record["tag"].strip()
+                or len(model_record["tag"]) > 128
+                or any(character.isspace() or ord(character) < 32 for character in model_record["tag"])
+                or not _approved_provenance(model_record)
+                or not isinstance(model_record.get("license"), str)
+                or not model_record["license"].strip()
+                or not isinstance(voice_record, dict)
+                or not _approved_provenance(voice_record)
+            ):
+                return None
+            voice_ids = voice_record.get("ids")
+            default_voice = voice_record.get("default")
+            if (
+                not isinstance(voice_ids, list)
+                or not voice_ids
+                or any(
+                    not isinstance(voice, str)
+                    or not voice.strip()
+                    or voice != voice.strip()
+                    or len(voice) > 128
+                    or any(ord(character) < 32 for character in voice)
+                    for voice in voice_ids
+                )
+                or len(set(voice_ids)) != len(voice_ids)
+                or default_voice not in voice_ids
+            ):
+                return None
+            models[language] = model_record["tag"]
+            voices[language] = tuple(voice_ids)
+            defaults[language] = default_voice
+        return PhononApproval(models, voices, defaults)
+    except (OSError, UnicodeError, TypeError, ValueError, json.JSONDecodeError):
+        return None
 
 
 def _read_credential_file(path: str) -> str:

@@ -79,14 +79,13 @@ or start a backend.
 The origin must be reachable **from inside the container**. For a service on
 the Docker Desktop host, use `http://host.docker.internal:8000`, not `localhost`.
 Use the authorized machine's reachable origin if the backend runs elsewhere.
-For a Fish-default backend with native `say` fallback, point at the authenticated
-speech API on its deployed port (for example `http://speech-service.example:8000`),
-not the loopback Fish inference worker or a retired prototype port. Engine
-selection and fallback remain backend responsibilities; the UI proxy keeps
-using the existing backend bearer credential.
+Point at the authenticated speech API on its deployed port (for example
+`http://speech-service.example:8000`), not the unauthenticated inference
+worker. The UI proxy uses the existing backend bearer credential.
 The current UI initially selects `macos-say` when it is available. Select
-`fish-speech` in the Speech Engine menu to request Fish from the UI; the
-backend's default applies only to requests that omit `model`.
+`phonon` when advertised for an approved language and voice; the backend's
+default applies only to requests that omit `model`. A Phonon failure does not
+silently fall back to native speech.
 
 Compose accepts only the protected file form for the container credential:
 `TTS_API_KEY_FILE` points to a local, protected source file and Compose mounts it
@@ -273,9 +272,10 @@ Playwright traces and reports are ignored by Git.
 
 ## Preserved interface and backend contract
 
-The UI supports a required text field limited to 5,000 JavaScript string code
-units, clipboard paste and clear, auto-detection or `de-DE`/`en-US`/`en-GB`,
-MP3/WAV, and speed 0.5-2.0 in steps of 0.1 (default 1.0).
+The UI supports a required text field, clipboard paste and clear,
+auto-detection or `de-DE`/`en-US`/`en-GB`, MP3/WAV, and speed 0.5-2.0
+in steps of 0.1 (default 1.0). It retains longer text without truncation and
+rejects a complete encoded request over 32 KiB before sending it.
 
 | Browser endpoint | Upstream endpoint | Behavior |
 | --- | --- | --- |
@@ -303,8 +303,8 @@ and blocked-autoplay states have user-visible feedback.
 The recovered Nginx configuration enforces a 32 KiB request-body limit, speech
 POST restriction, 5-second connection timeout, read timeouts of 10/15/75 seconds
 for health/readiness/speech, disabled speech proxy buffering, security headers,
-and 404 responses for unknown static paths. The 5,000-unit text limit and
-32 KiB encoded request limit are distinct constraints.
+and 404 responses for unknown static paths. The 32 KiB limit applies to the
+entire UTF-8 encoded JSON request, not just the input text.
 
 The original app marks the service unavailable after a generation failure and
 connected after success; it does not poll health continuously. No frontend text

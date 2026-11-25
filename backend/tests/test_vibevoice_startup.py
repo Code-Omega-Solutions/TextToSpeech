@@ -1,6 +1,8 @@
+import pytest
 from fastapi.testclient import TestClient
 
 from app.main import create_app
+from app.phonon import PhononEngine
 from app.vibevoice import VibeVoiceWorker
 
 
@@ -23,21 +25,20 @@ def test_readiness_keeps_macos_baseline_when_optional_engines_are_disabled(setti
     assert response.status_code == 200
     assert response.json() == {"status": "ready"}
     assert response.headers["x-vibevoice-status"] == "disabled"
-    assert response.headers["x-fish-speech-status"] == "disabled"
+    assert "x-fish-speech-status" not in response.headers
 
 
-def test_unavailable_fish_service_does_not_block_macos_readiness(settings_factory, monkeypatch):
+def test_unavailable_phonon_does_not_block_macos_readiness(settings_factory, monkeypatch):
     prepare_macos_readiness(monkeypatch)
-    monkeypatch.setattr("app.services.FishSpeechEngine.is_available", lambda _self: False)
+    monkeypatch.setattr(PhononEngine, "is_available", lambda _self: False)
     settings = settings_factory(
-        fish_enabled=True,
-        fish_server_url="http://127.0.0.1:8080",
-        fish_api_key="unit-test-fish-key",
+        phonon_enabled=True,
+        phonon_server_url="http://127.0.0.1:11434",
     )
     response = TestClient(create_app(settings)).get("/readyz")
     assert response.status_code == 200
     assert response.json() == {"status": "ready"}
-    assert response.headers["x-fish-speech-status"] == "unavailable"
+    assert "x-fish-speech-status" not in response.headers
 
 
 def test_serving_application_never_constructs_vibevoice_worker(settings, monkeypatch):

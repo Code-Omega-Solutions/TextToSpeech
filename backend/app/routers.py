@@ -35,27 +35,6 @@ from app.voices import (
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
-_FALLBACK_REASONS = {
-    "fish_busy",
-    "fish_cancelled",
-    "fish_cleanup_failed",
-    "fish_cooldown",
-    "fish_endpoint_unverified",
-    "fish_external_service",
-    "fish_idle",
-    "fish_memory_reserve",
-    "fish_memory_unreadable",
-    "fish_platform_unqualified",
-    "fish_request_aborted",
-    "fish_shutdown",
-    "fish_start_failed",
-    "fish_timeout",
-    "fish_unavailable",
-    "fish_worker_budget",
-    "fish_worker_exited",
-}
-
-
 def _authenticate(authorization: str | None, settings: Settings) -> None:
     if not settings.auth_enabled:
         return
@@ -105,7 +84,7 @@ def build_router(settings: Settings, speech_service: SpeechService) -> APIRouter
         status_code = 500
         try:
             _authenticate(authorization, settings)
-            if selected_backend == "vibevoice" and not settings.fish_opportunistic:
+            if selected_backend in {"fish-speech", "vibevoice"}:
                 raise HTTPException(
                     status_code=503, detail="Speech synthesis is unavailable."
                 )
@@ -123,10 +102,7 @@ def build_router(settings: Settings, speech_service: SpeechService) -> APIRouter
                     selected_backend,
                     payload.voice,
                 )
-                if settings.fish_opportunistic:
-                    synthesis_arguments += (
-                        started + settings.request_timeout_seconds,
-                    )
+                synthesis_arguments += (started + settings.request_timeout_seconds,)
                 synthesis = asyncio.create_task(
                     run_in_threadpool(
                         speech_service.synthesize_reserved,
@@ -149,12 +125,8 @@ def build_router(settings: Settings, speech_service: SpeechService) -> APIRouter
             fallback = result.fallback
             diagnostic_headers = {}
             if fallback:
-                failure_reason = (
-                    result.failure_reason
-                    if result.failure_reason in _FALLBACK_REASONS
-                    else "unknown"
-                )
-                diagnostic_headers["X-Speech-Fallback-Reason"] = failure_reason
+                failure_reason = "unknown"
+                diagnostic_headers["X-Speech-Fallback-Reason"] = "unknown"
             return Response(
                 content=result.audio,
                 media_type=result.media_type,
@@ -224,9 +196,7 @@ def build_router(settings: Settings, speech_service: SpeechService) -> APIRouter
     return api
 
 
-def build_health_router(
-    settings: Settings, vibevoice_worker=None, engine_registry=None
-) -> APIRouter:
+def build_health_router(settings: Settings, vibevoice_worker=None, engine_registry=None) -> APIRouter:
     health = APIRouter()
 
     @health.get("/healthz")
@@ -262,13 +232,6 @@ def build_health_router(
             headers={
                 "X-VibeVoice-Status": (
                     vibevoice_worker.status if vibevoice_worker is not None else "disabled"
-                ),
-                "X-Fish-Speech-Status": (
-                    "disabled"
-                    if engine_registry is None
-                    or (fish := engine_registry.resolve("fish-speech")) is None
-                    or not fish.enabled()
-                    else "available" if fish.is_available() else "unavailable"
                 ),
             },
         )

@@ -20,12 +20,12 @@ const catalog = {
       },
     },
     {
-      id: "fish-speech",
+      id: "phonon",
       available: true,
       languages: ["de-DE", "en-US"],
       voices: {
-        "de-DE": ["de-female", "de-male"],
-        "en-US": ["en-female", "en-male"],
+        "de-DE": ["Henrik"],
+        "en-US": ["default"],
       },
     },
     {
@@ -64,7 +64,7 @@ test("populates only available engines and filters choices by language", async (
     await engine
       .locator("option")
       .evaluateAll((options) => options.map((option) => option.value)),
-  ).toEqual(["macos-say", "fish-speech"]);
+  ).toEqual(["macos-say", "phonon"]);
   await expect(engine).toHaveValue("macos-say");
   expect(
     await voice
@@ -89,22 +89,47 @@ test("populates only available engines and filters choices by language", async (
     await engine
       .locator("option")
       .evaluateAll((options) => options.map((option) => option.value)),
-  ).toEqual(["macos-say", "fish-speech"]);
-  await engine.selectOption("fish-speech");
+  ).toEqual(["macos-say", "phonon"]);
+  await engine.selectOption("phonon");
   expect(
     await voice
       .locator("option")
       .evaluateAll((options) => options.map((option) => option.value)),
-  ).toEqual(["", "de-female", "de-male"]);
+  ).toEqual(["", "Henrik"]);
   expect(
     await voice
       .locator("option")
       .evaluateAll((options) => options.map((option) => option.textContent)),
-  ).toEqual(["Engine default", "Female (German)", "Male (German)"]);
+  ).toEqual(["Engine default", "Henrik"]);
   await expect(page.locator("#discovery-status")).toHaveText(
     "Speech options are ready.",
   );
 });
+
+for (const [language, voice] of [["en-US", "default"], ["de-DE", "Henrik"]]) {
+  test(`submits ${language} Phonon selection and discloses the actual engine`, async ({ page }) => {
+    let payload;
+    await page.route(`**${speechPath}`, (route) => {
+      payload = route.request().postDataJSON();
+      return route.fulfill({
+        contentType: "audio/wav",
+        headers: { "X-Speech-Backend": "phonon", "X-Speech-Fallback": "false" },
+        body: audio,
+      });
+    });
+    await open(page);
+    await page.locator("#language").selectOption(language);
+    await page.locator("#engine").selectOption("phonon");
+    await page.locator("#voice").selectOption(voice);
+    const text = "A".repeat(5001);
+    await page.locator("#speech-text").fill(text);
+    await page.locator("#generate").click();
+    await expect(page.locator("#speech-engine-disclosure")).toHaveText(
+      "Actual engine: phonon. No fallback.",
+    );
+    expect(payload).toMatchObject({ input: text, language, model: "phonon", voice });
+  });
+}
 
 test("discovery failure displays a safe status and prevents submission", async ({
   page,
@@ -206,8 +231,8 @@ test("submits selected engine and voice and preserves audio playback and downloa
   await page.locator("#language").selectOption("de-DE");
   await page
     .getByRole("combobox", { name: "SPEECH ENGINE" })
-    .selectOption("fish-speech");
-  await page.getByRole("combobox", { name: "VOICE" }).selectOption("de-male");
+    .selectOption("phonon");
+  await page.getByRole("combobox", { name: "VOICE" }).selectOption("Henrik");
   await page.locator("#format").selectOption("wav");
   await page.locator("#speed").fill("1.3");
   await page.getByRole("textbox", { name: "YOUR TEXT" }).fill("Guten Morgen");
@@ -222,8 +247,8 @@ test("submits selected engine and voice and preserves audio playback and downloa
     response_format: "wav",
     speed: 1.3,
     language: "de-DE",
-    model: "fish-speech",
-    voice: "de-male",
+    model: "phonon",
+    voice: "Henrik",
   });
   await expect(
     page.getByRole("heading", { name: "Ready to listen." }),

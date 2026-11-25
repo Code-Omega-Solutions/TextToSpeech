@@ -6,7 +6,9 @@
 ## Purpose
 
 Provide a bounded HTTP API for German and English speech synthesis using the
-host's macOS `say` voices and ffmpeg, with binary MP3 or WAV responses.
+host's macOS `say` voices and ffmpeg, with binary MP3 or WAV responses. Phonon
+is an optional, disabled-by-default engine. Fish is retired and has no runtime
+adapter, managed worker, or launcher.
 
 ## Requirements
 
@@ -45,24 +47,19 @@ SHALL not disclose credential values or credential-file paths.
 - **THEN** a valid speech request can proceed without an Authorization header.
 
 ### Speech engines are selected explicitly and discovered
-<!-- touches: backend/app/config.py, backend/app/models.py, backend/app/engines.py, backend/app/fish_speech.py, backend/app/services.py, backend/app/routers.py, backend/deployment/fish_worker_launcher.py, backend/tests/test_config.py, backend/tests/test_models.py, backend/tests/test_engines.py, backend/tests/test_fish_speech.py, backend/tests/test_engine_catalog.py, backend/tests/test_fish_worker_launcher.py -->
+<!-- touches: backend/app/config.py, backend/app/models.py, backend/app/engines.py, backend/app/phonon.py, backend/app/services.py, backend/app/routers.py, backend/tests/test_config.py, backend/tests/test_models.py, backend/tests/test_engines.py, backend/tests/test_engine_catalog.py, backend/tests/test_fish_retirement.py, backend/tests/test_phonon_approval.py, backend/tests/test_phonon_availability.py -->
 
 The serving application SHALL use a fixed registry of configured speech
 engines. The `model` field SHALL select an enabled engine; omitting it SHALL
-select the configured default. A request using legacy `vibevoice` SHALL return
-503 without synthesis or fallback under the default strict policy. An unknown, disabled, or unavailable engine
-SHALL return a safe unavailable response and SHALL NOT silently select another
-engine unless the explicit headroom-first policy below applies to a valid
-neural selection. Authenticated `GET /v1/audio/engines` SHALL list public engine IDs,
-availability, supported English/German locales, and public voice IDs without
-private paths or credentials. Fish Speech SHALL remain disabled unless a
-loopback service origin, a server-side credential, exact artifact/terms
-approval, and a complete qualified German/English male/female reference
-catalog are configured. By default, the Fish transport reuses the
-authenticated `TTS_API_KEY` credential; an explicit Fish credential is optional
-for separately authorized deployments. Engine discovery SHALL advertise Fish
-only when its qualified voice catalog is nonempty; no unqualified default or
-public/celebrity clone may be advertised.
+select the configured default. Phonon SHALL be disabled unless explicitly
+configured with reviewed model/voice approval and a trusted loopback service
+endpoint. A request using retired `fish-speech` or legacy `vibevoice` SHALL
+return a safe 503 before synthesis admission, without fallback. Unknown,
+disabled, or unavailable engines SHALL return a safe unavailable response and
+SHALL NOT silently select another engine. Authenticated
+`GET /v1/audio/engines` SHALL list only configured public engine IDs,
+availability, supported locales, and public voice IDs without private paths or
+credentials. The catalog SHALL NOT advertise Fish.
 
 #### Scenario: an enabled engine is selected
 
@@ -85,19 +82,18 @@ public/celebrity clone may be advertised.
 - **THEN** the service returns configured public engine, availability,
   supported-language, and voice metadata without private configuration.
 
-#### Scenario: Fish service is not configured or not qualified
+#### Scenario: Phonon remains disabled without approval
 
-- **WHEN** Fish is disabled, its loopback endpoint or credential is absent, exact
-  artifact terms are not approved, or the complete qualified reference catalog
-  is absent
-- **THEN** Fish reports unavailable and the macOS speech path remains usable.
+- **WHEN** Phonon has no explicitly approved model/voice record or trusted
+  service endpoint
+- **THEN** it remains unavailable without an endpoint request, while the
+  configured native engine remains usable.
 
-#### Scenario: Fish reuses the backend credential
+#### Scenario: a retired Fish selection arrives
 
-- **WHEN** Fish is enabled with a loopback endpoint and only the protected
-  backend credential is configured
-- **THEN** Fish authenticates with that credential and no second
-  user-managed secret is required.
+- **WHEN** an authenticated client explicitly selects `fish-speech`
+- **THEN** the speech route returns a safe 503 before synthesis admission and
+  does not fall back to Phonon or the configured default.
 
 #### Scenario: discovery does not leak runtime configuration
 
@@ -116,21 +112,20 @@ public/celebrity clone may be advertised.
 - **THEN** it receives a safe 503 before synthesis admission, without fallback, while the configured default engine remains available to other requests.
 
 ### Speech requests are validated against the supported contract
-<!-- touches: backend/app/models.py, backend/app/routers.py, backend/tests/test_models.py, backend/tests/test_api.py -->
+<!-- touches: backend/app/models.py, backend/app/routers.py, backend/tests/test_models.py, backend/tests/test_api.py, backend/tests/test_fish_retirement.py -->
 
 The speech route SHALL accept `POST /v1/audio/speech` with trimmed nonempty
-`input` up to 5,000 UTF-16 code units, optional `model` selecting `macos-say`
-`fish-speech`, or the legacy `vibevoice` identifier,
+`input`, optional `model` selecting `macos-say`, `phonon`, or the retired
+`fish-speech`/`vibevoice` identifiers,
 optional language (`de`, `de-DE`, `en`, `en-US`, or `en-GB`), optional bounded
 `voice` hint, `response_format` of `mp3` or `wav`, and finite speed from 0.5
 through 2.0. The backend default is `macos-say` unless an operator explicitly
-configures an enabled `fish-speech` deployment. Legacy `vibevoice` requests
-return a safe 503 under the default strict policy; the explicit headroom-first
-policy may instead use native speech. MP3 and speed 1.0 remain
+configures Phonon with required approval. Retired Fish and legacy `vibevoice`
+requests return a safe 503 without fallback. MP3 and speed 1.0 remain
 the request defaults. Unknown fields and
 invalid values are rejected with a safe 422 response. The backend SHALL enforce
 a 32 KiB encoded request-body limit while streaming, independent of
-`Content-Length`.
+`Content-Length`; there is no fixed text-unit limit.
 
 #### Scenario: a request contains an invalid field or value
 
@@ -163,21 +158,20 @@ Unexpected detector failures remain errors.
 - **THEN** the service selects `en-US` for synthesis.
 
 ### Synthesis uses configured bounded speech engines
-<!-- touches: backend/app/services.py, backend/app/voices.py, backend/app/models.py, backend/app/config.py, backend/app/engines.py, backend/app/fish_speech.py, backend/deployment/fish_worker_launcher.py, backend/tests/test_services.py, backend/tests/test_models.py, backend/tests/test_config.py, backend/tests/test_api.py, backend/tests/test_engines.py, backend/tests/test_fish_speech.py, backend/tests/test_engine_catalog.py, backend/tests/test_voices.py, backend/tests/test_fish_worker_launcher.py -->
+<!-- touches: backend/app/services.py, backend/app/voices.py, backend/app/models.py, backend/app/config.py, backend/app/engines.py, backend/app/phonon.py, backend/tests/test_services.py, backend/tests/test_models.py, backend/tests/test_config.py, backend/tests/test_api.py, backend/tests/test_engines.py, backend/tests/test_engine_catalog.py, backend/tests/test_voices.py, backend/tests/test_phonon.py, backend/tests/test_phonon_api.py, backend/tests/test_phonon_approval.py, backend/tests/test_phonon_availability.py, backend/tests/test_phonon_segmentation.py, backend/tests/test_phonon_streaming.py, backend/tests/test_phonon_response_metadata.py -->
 
 The service SHALL use configured macOS voices and honor an explicitly selected
 installed public voice; an unrecognized legacy voice hint SHALL retain the
 configured default. It SHALL scale the configured base words-per-minute rate
 by request speed and use ffmpeg to produce mono 44.1 kHz
-PCM WAV or 128 kbps MP3. Fish Speech SHALL run as an optional separately
-managed loopback service by default, or an explicitly owned process under the
-headroom-first policy below. Its adapter SHALL use bounded MessagePack requests,
-the configured server-side bearer key, a finite timeout, response-size limits,
-and validated WAV output. Fish WAV output SHALL use the existing bounded
-conversion path for requested MP3/WAV format and speed. Fish SHALL remain
-unavailable until configured and approved; it SHALL NOT download weights or
-voice assets at startup. Fish failures SHALL return a safe unavailable or
-bounded failure response and SHALL NOT silently fall back to another engine.
+PCM WAV or 128 kbps MP3. Phonon SHALL be disabled by default and SHALL require
+an explicitly approved model/voice record and a trusted loopback service
+endpoint before use. Its adapter SHALL use bounded requests, a finite timeout,
+bounded PCM reads, and ordered capacity-aware segmentation. Phonon output SHALL
+use the existing bounded conversion path for requested MP3/WAV format and
+speed. The service SHALL NOT download model or voice assets. Phonon failures
+SHALL return a safe unavailable or bounded failure response and SHALL NOT
+silently fall back to another engine.
 The serving application SHALL NOT construct or start the VibeVoice worker;
 private VibeVoice evaluation tooling remains separate.
 
@@ -190,19 +184,19 @@ identify the engine that generated it and any explicitly configured fallback.
 - **WHEN** a caller selects an installed public macOS voice for the resolved locale
 - **THEN** the service uses that voice, while an unrecognized legacy hint keeps the configured default.
 
-#### Scenario: Fish audio is converted within existing bounds
+#### Scenario: approved Phonon audio is converted within existing bounds
 
-- **WHEN** Fish returns valid bounded WAV audio for an MP3, WAV, or speed-adjusted request
+- **WHEN** Phonon returns valid bounded PCM audio for an MP3, WAV, or speed-adjusted request
 - **THEN** the existing conversion path returns the requested format within configured output, time, and temporary-storage limits.
 
-#### Scenario: a Fish reference is reused
+#### Scenario: Phonon text exceeds one model request's capacity
 
-- **WHEN** the adapter sends a request with a selected reference
-- **THEN** it requests Fish's in-memory reference cache, which lasts only for the worker's lifetime.
+- **WHEN** request text exceeds the selected model's supported per-request size
+- **THEN** the adapter submits bounded segments in order and returns complete audio subject to service request and output limits.
 
-#### Scenario: the Fish service fails
+#### Scenario: Phonon is disabled or fails
 
-- **WHEN** the loopback Fish service is unavailable, times out, is cancelled, exceeds limits, or returns invalid audio
+- **WHEN** Phonon is disabled, unavailable, times out, is cancelled, exceeds limits, or returns invalid audio
 - **THEN** partial audio is discarded and no unconfigured fallback engine is used.
 
 #### Scenario: a legacy VibeVoice request arrives
@@ -225,8 +219,14 @@ identify the engine that generated it and any explicitly configured fallback.
 - **WHEN** a valid request is synthesized with an available configured voice
 - **THEN** the service returns the requested audio format with the configured rate and preserved sentence and paragraph pauses.
 
-### Optional neural synthesis yields to native speech and host headroom
-<!-- touches: backend/app/config.py, backend/app/fish_process.py, backend/app/memory.py, backend/app/fish_speech.py, backend/app/services.py, backend/app/routers.py, backend/app/main.py, backend/deployment/fish_worker_launcher.py, backend/deployment/prototype-operations.md, backend/deployment/prototype-recreation.zsh, backend/deployment/test_prototype_recreation.zsh, backend/tests/test_fish_process.py, backend/tests/test_config.py, backend/tests/test_engines.py, backend/tests/test_api.py, backend/tests/test_fish_deployment_template.py, backend/tests/test_speech_contract.py -->
+### Historical Fish headroom-first policy (retired)
+
+> **Historical only:** This section records the former Fish prototype policy
+> and is not current serving behavior. The Fish adapter, supervisor, and
+> launcher have been removed. The active engine contract above requires
+> explicit availability and never falls back from a retired Fish selection.
+
+<!-- touches: backend/app/config.py, backend/app/memory.py, backend/app/services.py, backend/app/routers.py, backend/app/main.py, backend/deployment/prototype-operations.md, backend/deployment/prototype-recreation.zsh, backend/deployment/test_prototype_recreation.zsh, backend/tests/test_config.py, backend/tests/test_engines.py, backend/tests/test_api.py, backend/tests/test_fish_deployment_template.py, backend/tests/test_speech_contract.py -->
 
 `TTS_FISH_OPPORTUNISTIC=true` SHALL explicitly opt in to language-preserving
 native fallback for valid neural selections, including retired `vibevoice`,
@@ -323,22 +323,26 @@ separate gates.
 - **THEN** the external listener is not adopted or killed, and unverified cleanup disables further neural starts rather than assuming memory was released.
 
 ### Health and readiness report distinct service states
-<!-- touches: backend/app/routers.py, backend/app/voices.py, backend/app/engines.py, backend/tests/test_api.py, backend/tests/test_voices.py, backend/tests/test_vibevoice_startup.py -->
+<!-- touches: backend/app/routers.py, backend/app/voices.py, backend/app/engines.py, backend/tests/test_api.py, backend/tests/test_fish_retirement.py, backend/tests/test_native_speech_preservation.py, backend/tests/test_voices.py, backend/tests/test_vibevoice_startup.py -->
 
 `GET /healthz` SHALL report process liveness without probing executables.
 `GET /readyz` SHALL report readiness only when `say`, ffmpeg's required MP3 and
 WAV encoders, and the configured German and US English voices are available.
-Optional Fish availability SHALL be reported separately and SHALL NOT change
-readiness of the macOS baseline. UK English is optional for baseline readiness.
-`X-Fish-Speech-Status` SHALL report whether the configured Fish service is
-disabled, available, or unavailable without exposing private paths.
-`X-VibeVoice-Status` remains `disabled` for response compatibility; serving
-readiness SHALL NOT construct or probe a VibeVoice worker.
+Readiness SHALL depend only on the macOS baseline and SHALL NOT require or probe
+Fish or Phonon assets or services. UK English is optional for baseline
+readiness. `X-VibeVoice-Status` remains `disabled` for response compatibility;
+serving readiness SHALL NOT construct or probe a VibeVoice worker.
 
 #### Scenario: a readiness prerequisite is unavailable
 
 - **WHEN** `say`, a required ffmpeg encoder, or a configured German or US English voice is unavailable
 - **THEN** `/readyz` returns 503 while `/healthz` remains an independent liveness check.
+
+#### Scenario: Phonon is disabled
+
+- **WHEN** Phonon is disabled or its local approval and service prerequisites
+  are absent while the native prerequisites are available
+- **THEN** `/readyz` succeeds without probing Phonon.
 
 ### Errors and logs avoid speech text and credentials
 <!-- touches: backend/app/main.py, backend/app/routers.py, backend/tests/test_api.py, backend/tests/test_speech_contract.py -->
@@ -356,7 +360,11 @@ output, query strings, and private machine paths.
 - **WHEN** validation or synthesis fails for a request containing speech text, credentials, or a query string
 - **THEN** the response and correlated logs contain a request ID and safe diagnostics without those values, raw subprocess output, or private paths.
 
-### Current private prototype evidence
+### Historical Fish prototype evidence (retained)
+
+> **Historical only:** The following deployment and qualification records
+> describe earlier Fish prototype work; they do not describe the current
+> runtime or authorize target access, asset use, or service changes.
 
 The operator-authorized private prototype now has a hash-bound clean patched
 Fish source, exact approved checkpoints/runtime binding and four converted,
@@ -372,7 +380,7 @@ See feature 007's
 [current deployment evidence](../../specs/007-fish-backend-enablement/quickstart.md).
 External-output sharing remains separately gated.
 
-### Iteration 5 private prototype evidence (historical)
+### Iteration 5 Fish prototype evidence (historical)
 
 The designated Apple Silicon prototype has been deployed on a separate backend
 port using the existing backend bearer mechanism and a loopback Fish service.
@@ -384,7 +392,7 @@ native fallback, or hard unified-memory isolation. The exact artifact, public
 reference-consent, and managed-lifecycle gates remain tracked in feature 007's
 research and quickstart.
 
-### Iteration 9 prototype-only deployment evidence
+### Iteration 9 prototype-only deployment evidence (historical)
 
 The authorized native target was inspected with strict SSH and the exact stale
 prototype launch definition was disabled, booted out with a bounded unload
@@ -397,7 +405,7 @@ it does not qualify Fish artifacts, references, neural output, or managed
 neural lifecycle behavior. The checked-in template therefore remains
 fail-closed.
 
-### Iteration 10 deployment-safety hardening
+### Iteration 10 Fish launcher deployment-safety record (historical)
 
 The managed Fish launcher now fails closed for dirty or ignored source trees,
 requires a protected approval-manifest file on POSIX, and binds the exact

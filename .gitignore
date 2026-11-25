@@ -76,6 +76,16 @@ selection-summary.json
 !/.specify/companion/nodes/code-pins.md
 !/.specify/companion/nodes/states.md
 !/.specify/companion/nodes/screens.md
+!/.specify/extensions/
+/.specify/extensions/*
+!/.specify/extensions/git/
+/.specify/extensions/git/*
+!/.specify/extensions/git/scripts/
+/.specify/extensions/git/scripts/*
+!/.specify/extensions/git/scripts/bash/
+/.specify/extensions/git/scripts/bash/*
+!/.specify/extensions/git/scripts/bash/create-new-feature-branch.sh
+!/.specify/extensions/git/scripts/bash/git-common.sh
 !/.specify/assessments/
 /.specify/assessments/*
 !/.specify/assessments/fish-speech/

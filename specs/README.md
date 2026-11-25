@@ -43,26 +43,19 @@ synthesis, service integration, production use, or redistribution.
 
 The [selectable speech engines prototype](005-selectable-speech-engines/spec.md)
 adds an engine registry and authenticated discovery contract while preserving
-the existing speech API. Fish remains disabled pending exact artifact and voice
-review. Its remote deployment is planned in parallel and remains gated on host
-runtime prerequisites, a separately approved port, and service approval; the
-existing healthy service is not replaced.
+the existing speech API. Its Fish prototype behavior is historical; the
+current replacement direction and safe retirement contract are recorded in
+[feature 007 — replace Fish with Phonon](007-replace-phonon/spec.md).
 
 The [gated Fish backend enablement feature](007-fish-backend-enablement/spec.md)
-continues that work for private, noncommercial use with four language-specific
-Common Voice references: one female and one male per German/English language.
-The backend has an opt-in managed-worker/native-fallback policy with a 12 GiB
-reserve and 16 GiB monitored worker budget. The separately authorized private
-prototype uses a 4 GiB startup allowance instead of reserving the full worker
-budget at cold start; the running reserve and RSS ceiling are unchanged.
-All four short managed Fish requests succeeded privately after exact
-artifact/reference approval. This is not broad native lifecycle, subjective
-quality or redistribution qualification; remaining gates and sampled results
-are recorded in the feature's [quickstart](007-fish-backend-enablement/quickstart.md).
-The checked-in generic prototype template still fails closed pending each
-installation's own artifact and four-way reference approval.
+and its [quickstart](007-fish-backend-enablement/quickstart.md) are retained as
+historical records of an earlier private prototype and its gates. They do not
+describe the current serving runtime: the Fish adapter, managed process, and
+launcher have been removed, while the generic prototype recreation/runbook
+safeguards remain. Historical results are not Phonon asset approval or current
+deployment authorization.
 
-The [local Fish voice-preparation guide](../backend/voice-preparation.md)
+The [historical Fish voice-preparation guide](../backend/voice-preparation.md)
 documents authorized acquisition and WAV/transcript preparation without
 distributing assets. An optional private companion repository holds sanitized
 documentation, public source metadata and explicitly authorized non-sensitive

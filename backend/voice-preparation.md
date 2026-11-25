@@ -1,9 +1,15 @@
-# Prepare private Fish voice references
+# Historical: prepare private Fish voice references
 
-This guide describes local preparation, not permission to clone a voice or
-enable Fish. No recordings, transcripts, model weights, speaker identifiers,
-or real approval manifests are distributed with this project. The optional
-Fish path remains gated; native macOS `say` does not need these assets.
+> **Historical only:** This guide records the retired Fish prototype's
+> voice-preparation process for audit history. Fish runtime modules have been
+> removed. These instructions do not approve any Phonon model or voice, and
+> they are not current setup steps. No assets, identifiers, or approvals are
+> supplied or authorized by this repository.
+
+This historical guide describes local preparation, not permission to clone a
+voice or enable a speech engine. No recordings, transcripts, model weights,
+speaker identifiers, or real approval manifests are distributed with this
+project. Native macOS `say` does not need these assets.
 
 ## Separate documentation from assets
 

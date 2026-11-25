@@ -10,9 +10,10 @@ case "${OSTYPE:-}" in
       tests/test_services.py \
       tests/test_speech_contract.py \
       tests/test_engines.py \
-      tests/test_fish_speech.py \
-      tests/test_fish_worker_launcher.py \
+      tests/test_fish_retirement.py \
       tests/test_fish_deployment_template.py \
+      tests/test_native_speech_preservation.py \
+      tests/test_phonon*.py \
       tests/test_engine_catalog.py \
       tests/test_voices.py \
       tests/test_vibevoice_startup.py \

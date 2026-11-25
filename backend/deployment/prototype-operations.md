@@ -1,4 +1,10 @@
-# Prototype-only macOS operations
+# Historical prototype-only macOS operations
+
+> **Historical deployment record:** This Fish-era runbook is retained for its
+> exact-label, bounded-wait, protected-copy, and rollback safeguards. Its
+> project-specific prototype procedure is not a current deployment guide and
+> does not configure or authorize Phonon. Do not inspect or change a target
+> service based on this document.
 
 This runbook is intentionally sanitized. Replace angle-bracketed values only
 on the authorized native target; never commit the replacements. The commands
@@ -190,10 +196,10 @@ launchd or production. Run it with
 `zsh backend/deployment/test_prototype_recreation.zsh` on a host with zsh
 before using the operational helper.
 
-Do not replace the native-only template with Fish settings unless the exact
-artifact terms and four-way consented references have independently been
-accepted. This sequence does not qualify a model, codec, reference, or Fish
-output.
+Keep the deployment template native-only. Phonon remains disabled by default;
+no endpoint, model, voice asset, or approval is supplied here. This historical
+sequence does not qualify any model, codec, reference, generated output, or
+current Phonon deployment.
 
 ## Rollback
 

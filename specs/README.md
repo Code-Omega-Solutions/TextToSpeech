@@ -109,10 +109,11 @@ external runtime tools.
 
 ## Local tooling
 
-This checkout was initialized with Spec Kit `1.2.2.dev0` and the Copilot
-integration. Generated scripts, templates, and integration metadata under
-`.specify` are ignored; the constitution is explicitly tracked. The Copilot
-skills generated under `.github/skills` are versionable.
+The Copilot skills, project constitution, Companion configuration, and
+`.specify/extensions.yml` lifecycle-hook configuration are tracked. Selected
+Bash helpers are also tracked to preserve repository fixes. Other generated
+scripts, templates, extension packages, and per-checkout integration metadata
+under `.specify` remain local and must be installed separately.
 
 For a fresh checkout, install Spec Kit using its
 [official instructions](https://github.com/github/spec-kit), then initialize
@@ -127,6 +128,9 @@ files into a nonempty checkout and may overwrite conflicts; inspect existing
 `.specify` and `.github/skills` files first, and do not force over customized
 tooling. Keep the constitution tracked when updating the generated scaffold.
 Spec Kit initialization does not install or restart application services.
+The tracked extension configuration names the project's hooks; install the
+named extensions locally before running them. Inspect installation changes
+before accepting updates to the tracked configuration or customized helpers.
 
 ### Repairing a partial scaffold
 
@@ -144,11 +148,11 @@ bash .specify/scripts/bash/resolve-template.sh spec-template --json
 ```
 
 Use an active feature with a nonempty spec, plan, and task list for the first
-check. The scaffold remains ignored local tooling and must be installed on
-each machine. Optional `jq` must work if selected by the Bash helpers; a stale
-launcher can exist on PATH while its executable is missing. Check `jq --version`
-when diagnosing JSON errors. The repaired local helper falls back when that
-probe fails.
+check. Untracked scaffold files remain local tooling and must be installed on
+each machine; do not overwrite the tracked helper fixes. Optional `jq` must work
+if selected by the Bash helpers; a stale launcher can exist on PATH while its
+executable is missing. Check `jq --version` when diagnosing JSON errors. The
+repaired local helper falls back when that probe fails.
 
 Copilot skill discovery also requires `chat.useAgentSkills` to be enabled in
 the workspace settings. Reload the VS Code window after enabling it if existing
@@ -178,12 +182,13 @@ python3 checks/check_speckit_setup.py
 Use `python` instead on Windows when running outside Git Bash. A successful
 setup check confirms tooling availability, not model or platform qualification.
 
-The optional Companion VS Code extension and the Spec Kit extension are separate.
-For the installed Companion VS Code extension 0.37.0 and Spec Kit CLI 1.2.2.dev0,
-install the matching Spec Kit extension from its pinned official release:
+The Companion VS Code extension and the Spec Kit extension are separate.
+The checked-in Companion skills correspond to Spec Kit Companion 0.28.0,
+which requires Spec Kit 1.2.5.dev0 or newer. Install that extension from its
+official release:
 
 ```sh
-specify extension add companion --from https://github.com/alfredoperez/speckit-companion/releases/download/speckit-ext-v0.25.0/companion-0.25.0.zip
+specify extension add companion --from https://github.com/alfredoperez/speckit-companion/releases/download/speckit-ext-v0.28.0/companion-0.28.0.zip
 specify extension list
 python3 .specify/extensions/companion/scripts/write-context.py --help
 ```

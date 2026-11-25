@@ -28,6 +28,7 @@ class SpecKitSetupTests(unittest.TestCase):
         )
         self.which = patch.object(checker.shutil, "which", return_value="specify").start()
         self.addCleanup(patch.stopall)
+        self.real_run = subprocess.run
         self.run = patch.object(
             checker.subprocess,
             "run",
@@ -100,6 +101,23 @@ class SpecKitSetupTests(unittest.TestCase):
         self.assertEqual(task["args"], ["${workspaceFolder}/checks/check_speckit_setup.py"])
         settings = json.loads((root / ".vscode/settings.json").read_text(encoding="utf-8"))
         self.assertNotIn("task.allowAutomaticTasks", settings)
+
+    def test_project_hooks_are_shareable_but_local_speckit_state_is_ignored(self):
+        root = Path(__file__).resolve().parents[2]
+        for path, ignored in (
+            (".specify/extensions.yml", False),
+            (".github/skills/speckit-git-commit/SKILL.md", False),
+            (".specify/feature.json", True),
+            (".specify/extensions/companion/scripts/write-context.py", True),
+            (".specify/assessments/private-assessment/intake.md", True),
+        ):
+            with self.subTest(path=path):
+                result = self.real_run(
+                    ["git", "check-ignore", "--no-index", "-q", path],
+                    cwd=root,
+                    check=False,
+                )
+                self.assertEqual(result.returncode, 0 if ignored else 1)
 
 
 if __name__ == "__main__":

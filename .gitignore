@@ -67,6 +67,7 @@ selection-summary.json
 # Share selected Spec Kit policy/design files, not generated local scaffolding.
 /.specify/*
 !/.specify/companion.yml
+!/.specify/extensions.yml
 !/.specify/scripts/
 /.specify/scripts/*
 !/.specify/scripts/bash/

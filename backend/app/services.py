@@ -210,7 +210,7 @@ class SpeechService:
         return None
 
     def _phonon_engine_ready(self) -> bool:
-        return self.phonon_engine.is_available()
+        return self.phonon_engine.is_configured()
 
     def _phonon_voice_catalog(self):
         return self.phonon_engine.voice_catalog()
@@ -225,8 +225,6 @@ class SpeechService:
         voice: str | None = None,
         deadline: float | None = None,
     ) -> SynthesisResult:
-        if not self.phonon_engine.is_available():
-            raise SynthesisUnavailable
         deadline = deadline or time.monotonic() + self.settings.request_timeout_seconds
         try:
             pcm = self.phonon_engine.synthesize_pcm(
@@ -300,8 +298,6 @@ class SpeechService:
             raise SynthesisUnavailable
         engine = self.engine_registry.resolve(selected_backend)
         if engine is None or not engine.enabled():
-            raise SynthesisUnavailable
-        if selected_backend == "phonon" and not self.phonon_engine.is_available():
             raise SynthesisUnavailable
         if selected_backend == "phonon":
             return self._synthesize_phonon(

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import stat
 from dataclasses import dataclass, field
 from ipaddress import ip_address
@@ -220,12 +221,17 @@ class Settings:
 @dataclass(frozen=True)
 class PhononApproval:
     models_by_language: dict[str, str]
+    model_digests_by_language: dict[str, str]
     voices_by_language: dict[str, tuple[str, ...]]
     default_voices_by_language: dict[str, str]
 
     def __post_init__(self) -> None:
         object.__setattr__(
             self, "models_by_language", MappingProxyType(dict(self.models_by_language))
+        )
+        object.__setattr__(
+            self, "model_digests_by_language",
+            MappingProxyType(dict(self.model_digests_by_language)),
         )
         object.__setattr__(
             self,
@@ -286,6 +292,7 @@ def load_phonon_approval(path: str | None) -> PhononApproval | None:
             return None
 
         models: dict[str, str] = {}
+        digests: dict[str, str] = {}
         voices: dict[str, tuple[str, ...]] = {}
         defaults: dict[str, str] = {}
         for language in _PHONON_LANGUAGES:
@@ -297,6 +304,8 @@ def load_phonon_approval(path: str | None) -> PhononApproval | None:
                 or not model_record["tag"].strip()
                 or len(model_record["tag"]) > 128
                 or any(character.isspace() or ord(character) < 32 for character in model_record["tag"])
+                or not isinstance(model_record.get("digest"), str)
+                or re.fullmatch(r"sha256:[0-9a-f]{64}", model_record["digest"]) is None
                 or not _approved_provenance(model_record)
                 or not isinstance(model_record.get("license"), str)
                 or not model_record["license"].strip()
@@ -322,9 +331,10 @@ def load_phonon_approval(path: str | None) -> PhononApproval | None:
             ):
                 return None
             models[language] = model_record["tag"]
+            digests[language] = model_record["digest"]
             voices[language] = tuple(voice_ids)
             defaults[language] = default_voice
-        return PhononApproval(models, voices, defaults)
+        return PhononApproval(models, digests, voices, defaults)
     except (OSError, UnicodeError, TypeError, ValueError, json.JSONDecodeError):
         return None
 

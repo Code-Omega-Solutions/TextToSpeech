@@ -60,7 +60,7 @@ living-specs.yml                    # Register new Phonon implementation and tes
 +   create_speech @ backend/app/routers.py:94
 +     SpeechService.synthesize_reserved @ backend/app/services.py:282
 +       SpeechService._synthesize_phonon @ backend/app/services.py:246
-+         PhononSpeechEngine.synthesize_pcm **new** @ backend/app/phonon.py
++         PhononSpeechEngine.synthesize_pcm @ backend/app/phonon.py:188
 +         SpeechService._transcode_wav @ backend/app/services.py:469
 ```
 

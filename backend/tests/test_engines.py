@@ -2,7 +2,7 @@ import pytest
 
 from app.engines import EngineDescriptor, EngineRegistration, EngineRegistry
 from app.services import SpeechService, SynthesisUnavailable
-from phonon_test_support import phonon_settings
+from phonon_test_support import FakeOpener, phonon_settings
 
 
 def registration(identifier, *, enabled=True, ready=True, languages=("en-US",), voices=None):
@@ -111,6 +111,7 @@ def test_phonon_is_disabled_without_explicit_approval(settings_factory):
 
 def test_phonon_catalog_uses_only_explicitly_approved_fixture_voices(settings_factory):
     service = SpeechService(phonon_settings(settings_factory))
+    service.phonon_engine._opener = FakeOpener()
 
     phonon_info = next(
         info for info in service.engine_registry.catalog() if info["id"] == "phonon"

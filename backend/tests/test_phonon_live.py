@@ -21,10 +21,8 @@ def test_live_english_and_german_use_only_preapproved_installed_models(monkeypat
     if not settings.phonon_server_url:
         pytest.skip("No explicitly configured local endpoint")
     engine = PhononEngine(settings)
-    installed = engine.installed_models()
-    required = set(settings.phonon_approval.models_by_language.values())
-    assert required.issubset(installed), (
-        "approved models must already be installed; this test never pulls assets"
+    assert engine.is_available(), (
+        "approved model identities must match installed metadata; this test never pulls assets"
     )
     for language in ("en-US", "de-DE"):
         voice = settings.phonon_approval.default_voices_by_language[language]

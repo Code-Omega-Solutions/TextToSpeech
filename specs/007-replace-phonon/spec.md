@@ -4,7 +4,7 @@
 
 **Created**: 2026-11-24
 
-**Status**: Draft — ready for planning
+**Status**: Completed — live qualification and convergence completed
 
 **Input**: User-requested specification based on the selected assessment direction: remove Fish Speech completely, replace it with Ollama Phonon for English and German, retain native macOS `say`, preserve established speech behavior while removing the fixed text-character limit, split text when a model's capacity is exceeded, prefer MP3 streaming if feasible, and create a follow-up if expectations are not met after productive use.
 
@@ -125,7 +125,7 @@ As a browser user, I want to select an available speech engine and use longer te
 ## Assumptions
 
 - The requester states that intended use is private and non-commercial. This statement does not itself clear model or voice terms.
-- The requester reports a recent Apple Silicon Mac with Ollama on the same machine and expects the unauthenticated service to be reachable locally. This is unverified; exact operating-system and Ollama versions and the backend's network placement remain unknown.
+- At specification time, the requester reported a recent Apple Silicon Mac with Ollama on the same machine and expected the unauthenticated service to be reachable locally. Target compatibility and the local service path were subsequently verified for the authorized deployment.
 - Exact English and German model tags and voice identifiers will be selected only after their terms and provenance are reviewed.
 - The fixed 5,000-unit text limit is removed, but the existing encoded-request size safeguard and other bounded time/output protections remain.
 - When a request exceeds a model's per-input capacity, the service divides it into supported segments and preserves all text in the result.

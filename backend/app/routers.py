@@ -67,7 +67,7 @@ def build_router(settings: Settings, speech_service: SpeechService) -> APIRouter
         authorization: str | None = Header(default=None, alias="Authorization"),
     ) -> dict[str, object]:
         _authenticate(authorization, settings)
-        return {"engines": speech_service.engine_registry.catalog()}
+        return {"engines": await run_in_threadpool(speech_service.engine_registry.catalog)}
 
     @api.post("/v1/audio/speech")
     async def create_speech(

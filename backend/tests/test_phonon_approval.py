@@ -7,12 +7,14 @@ from pydantic import ValidationError
 
 from app.config import Settings, load_phonon_approval
 from app.services import SpeechService, SynthesisUnavailable
+from phonon_test_support import MODEL_DIGESTS
 
 
 def valid_approval_document():
     def model(tag):
         return {
             "tag": tag,
+            "digest": MODEL_DIGESTS[tag],
             "source_url": "https://models.invalid/source",
             "source_revision": "fixture-revision",
             "terms_url": "https://models.invalid/terms",
@@ -64,6 +66,8 @@ def test_approval_loader_accepts_only_complete_operator_reviewed_fixture(tmp_pat
         lambda document: document.update(status="draft"),
         lambda document: document.pop("models"),
         lambda document: document["models"]["de-DE"].update(terms_status="unreviewed"),
+        lambda document: document["models"]["en-US"].pop("digest"),
+        lambda document: document["models"]["de-DE"].update(digest="sha256:invalid"),
         lambda document: document["voices"]["en-US"].update(ids=[]),
         lambda document: document["voices"]["de-DE"].update(default="not-listed"),
     ],

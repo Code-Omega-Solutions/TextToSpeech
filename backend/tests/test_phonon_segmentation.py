@@ -17,7 +17,7 @@ def test_long_request_is_segmented_without_omission_in_order(settings_factory, m
         return SynthesisResult(b"complete", "audio/wav", "speech.wav", actual_backend=actual_backend)
 
     monkeypatch.setattr(app.state.speech_service, "_transcode_wav", transcode)
-    text = "ordered segment " * 299 + "ordered segment"
+    text = "  \n" + "ordered segment " * 299 + "ordered segment \t"
     response = TestClient(app).post(
         "/v1/audio/speech",
         json={"input": text, "model": "phonon", "language": "en-US"},

@@ -13,7 +13,7 @@ An operator-controlled record describes the exact Phonon deployment. It is not c
 | Field | Rule |
 |---|---|
 | Status | Must be explicitly approved before the engine can become available. |
-| Model tags | Must name a configured English and German candidate. Runtime identity must match the installed model metadata. |
+| Model tags and digests | Must name a configured English and German candidate and record each reviewed digest as lowercase `sha256:` followed by 64 hexadecimal digits. Runtime identity must match the installed model metadata and synthesis uses a digest-addressed manifest on Ollama 0.40.18 or later. Older records without digests are unavailable until independently reviewed and updated. |
 | Model source and terms | Must record the exact upstream source/revision, license or terms URL, reviewed terms revision, and intended-use basis. |
 | Voices | Must list only reviewed voice IDs compatible with their configured language and model. |
 | Voice provenance | Must identify the voice source and applicable terms. If a separate voice asset is used, record its immutable identity. |
@@ -28,7 +28,7 @@ The existing engine registry continues to expose only public engine metadata.
 | Engine | Availability |
 |---|---|
 | `macos-say` | Determined by existing executable, codec, and voice checks. |
-| `phonon` | Enabled only when its approval record is valid, configured models and approved voices are present, and the trusted endpoint is reachable. |
+| `phonon` | Enabled only when its approval record is valid, at least one configured model and its approved voices are present, and a compatible trusted endpoint is reachable. Discovery lists only languages with matching model identities. |
 | `fish-speech` | Retired. Requests receive an unavailable response; it is absent from the registry and catalog. |
 
 Catalog entries contain only engine ID, availability, supported languages, and approved public voice IDs. They exclude endpoint URLs, asset paths, digests, credentials, and host details.

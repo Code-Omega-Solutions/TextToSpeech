@@ -4,12 +4,21 @@ import json
 
 from app.config import PhononApproval
 
+MODEL_DIGESTS = {
+    "fixture-model-en": "sha256:" + "a" * 64,
+    "fixture-model-de": "sha256:" + "b" * 64,
+}
+
 
 def approved_phonon_profile() -> PhononApproval:
     return PhononApproval(
         models_by_language={
             "en-US": "fixture-model-en",
             "de-DE": "fixture-model-de",
+        },
+        model_digests_by_language={
+            "en-US": MODEL_DIGESTS["fixture-model-en"],
+            "de-DE": MODEL_DIGESTS["fixture-model-de"],
         },
         voices_by_language={
             "en-US": ("fixture-en-voice",),
@@ -69,11 +78,37 @@ class FakeResponse:
 
 
 class FakeOpener:
-    def __init__(self, responses=()):
+    def __init__(self, responses=(), *, tags=None):
         self.responses = list(responses)
         self.calls = []
+        self.tag_calls = []
+        self.show_calls = []
+        self.tags = tags
 
     def __call__(self, request, *, timeout):
+        if request.full_url.endswith("/api/show"):
+            self.show_calls.append((request, timeout))
+            return FakeResponse(b'{"capabilities":["speech"]}', content_type="application/json")
+        if request.get_method() == "GET":
+            if request.full_url.endswith("/api/version"):
+                return FakeResponse(b'{"version":"0.40.18"}', content_type="application/json")
+            self.tag_calls.append((request, timeout))
+            if isinstance(self.tags, BaseException):
+                raise self.tags
+            if self.tags is not None:
+                return FakeResponse(
+                    self.tags.body,
+                    content_type=self.tags.headers["Content-Type"],
+                    status=self.tags.status,
+                    on_read=self.tags.on_read,
+                )
+            body = json.dumps({
+                "models": [
+                    {"name": name, "digest": digest.removeprefix("sha256:")}
+                    for name, digest in MODEL_DIGESTS.items()
+                ]
+            }).encode()
+            return FakeResponse(body, content_type="application/json")
         self.calls.append((request, timeout))
         response = self.responses.pop(0)
         if isinstance(response, BaseException):

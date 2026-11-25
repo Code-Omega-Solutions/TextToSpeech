@@ -144,3 +144,13 @@ FR-012 does not add a pre-use quality threshold. If the requester reports after 
 Setup review precedes foundational request changes; Foundational precedes User Story 1; User Story 1 precedes the native-preservation and Fish-retirement stories; Polish follows all three stories. Within User Story 1, all test files in Wave 1 are independent. Configuration precedes the adapter, the adapter precedes service integration, and service integration precedes the public router contract. User Stories 2 and 3 depend on the completed User Story 1 integration but not on each other. Live qualification remains blocked by reviewed assets, target compatibility, a trusted endpoint, and separate operational consent.
 
 **Wave summary**: T002 → T003; T004–T014 → T015 → T016 → T017 → T018; T019; T020 → T021/T022; T023 → T024 after release prerequisites.
+
+## Phase 7: Convergence
+
+- [x] T028 Make Phonon discovery report unavailable when the configured service or required model is unavailable, with bounded, privacy-safe checks and regression tests per FR-011 and FR-015 (partial) · `backend/app/phonon.py`, `backend/app/services.py`, `backend/tests/test_phonon_availability.py`
+- [x] T029 Preserve every nonempty input character through request validation and ordered Phonon segmentation, including leading and trailing whitespace, with public API regression tests per FR-005 and US1/AC2 (partial) · `backend/app/models.py`, `backend/tests/test_phonon_segmentation.py`
+- [x] T030 Pin approved Phonon model identities and fail closed when installed model digests differ from the approved identities, with approval, discovery, and synthesis regression tests per FR-010 and the plan's asset-approval decision (partial) · `backend/app/config.py`, `backend/app/phonon.py`, `backend/tests/test_phonon_approval.py`, `backend/tests/test_phonon_availability.py`
+
+## Phase 8: Convergence
+
+- [x] T031 Requalify the revised digest-addressed Phonon backend for approved English and German models on the authorized target after independently reviewing approval-record migration, Ollama compatibility, digest-addressed manifests, and separate operational consent; verify complete speech and discovery without downloading assets per SC-002, US1/AC1, and Constitution 4–5 (partial) · `backend/tests/test_phonon_live.py`, `backend/README.md`

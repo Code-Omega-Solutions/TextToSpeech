@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import socket
 import time
 from threading import Event
@@ -77,7 +78,7 @@ class PhononEngine:
         self.settings = settings
         self._opener = opener or build_opener(ProxyHandler({}), _NoRedirect()).open
 
-    def is_available(self) -> bool:
+    def is_configured(self) -> bool:
         approval = self.settings.phonon_approval
         return bool(
             self.settings.phonon_enabled
@@ -85,6 +86,7 @@ class PhononEngine:
             and approval is not None
             and all(
                 approval.models_by_language.get(language)
+                and approval.model_digests_by_language.get(language)
                 and approval.voices_by_language.get(language)
                 and approval.default_voices_by_language.get(language)
                 in approval.voices_by_language.get(language, ())
@@ -92,23 +94,79 @@ class PhononEngine:
             )
         )
 
-    def voice_catalog(self) -> dict[str, tuple[str, ...]]:
-        if not self.is_available():
-            return {}
-        return dict(self.settings.phonon_approval.voices_by_language)
+    def is_available(self, language: str | None = None, deadline: float | None = None) -> bool:
+        catalog = self.voice_catalog(deadline, language)
+        return bool(catalog) if language is None else language in catalog
 
-    def installed_models(self) -> set[str]:
+    def voice_catalog(
+        self, deadline: float | None = None, language: str | None = None
+    ) -> dict[str, tuple[str, ...]]:
+        if not self.is_configured():
+            return {}
+        try:
+            installed = self.installed_model_digests(deadline)
+        except PhononUnavailable:
+            return {}
+        approval = self.settings.phonon_approval
+        voices = {}
+        for locale, tag in approval.models_by_language.items():
+            if language is not None and locale != language:
+                continue
+            digest = approval.model_digests_by_language[locale]
+            if installed.get(tag) != digest:
+                continue
+            try:
+                manifest = self._read_json(
+                    "/api/show", deadline,
+                    {"model": digest.replace("sha256:", "sha256-", 1)},
+                )
+            except PhononUnavailable:
+                continue
+            capabilities = manifest.get("capabilities") if isinstance(manifest, dict) else None
+            if isinstance(capabilities, list) and "speech" in capabilities:
+                voices[locale] = approval.voices_by_language[locale]
+        return voices
+
+    def installed_model_digests(self, deadline: float | None = None) -> dict[str, str]:
+        version = self._read_json("/api/version", deadline)
+        version_string = version.get("version") if isinstance(version, dict) else None
+        if not isinstance(version_string, str) or not re.fullmatch(r"\d+\.\d+\.\d+", version_string):
+            raise PhononUnavailable
+        if tuple(int(part) for part in version_string.split(".")) < (0, 40, 18):
+            raise PhononUnavailable
+        document = self._read_json("/api/tags", deadline)
+        if not isinstance(document, dict) or not isinstance(document.get("models"), list):
+            raise PhononUnavailable
+        identities: dict[str, str] = {}
+        for item in document["models"]:
+            if not isinstance(item, dict):
+                raise PhononUnavailable
+            name, digest = item.get("name"), item.get("digest")
+            if not isinstance(name, str) or not name.strip() or not isinstance(digest, str):
+                raise PhononUnavailable
+            if name in identities:
+                raise PhononUnavailable
+            identities[name] = "sha256:" + digest.removeprefix("sha256:")
+        return identities
+
+    def _read_json(
+        self, path: str, deadline: float | None, payload: dict[str, str] | None = None
+    ) -> object:
         if not self.settings.phonon_server_url:
             raise PhononUnavailable
         request = Request(
-            f"{self.settings.phonon_server_url}/api/tags",
-            headers={"Accept": "application/json"},
-            method="GET",
+            f"{self.settings.phonon_server_url}{path}",
+            data=json.dumps(payload).encode("utf-8") if payload is not None else None,
+            headers={"Accept": "application/json", "Content-Type": "application/json"},
+            method="POST" if payload is not None else "GET",
         )
+        timeout = min(3, self.settings.phonon_request_timeout_seconds)
+        if deadline is not None:
+            timeout = min(timeout, self._remaining(deadline))
         try:
             with self._opener(
                 request,
-                timeout=min(3, self.settings.phonon_request_timeout_seconds),
+                timeout=timeout,
             ) as response:
                 if response.status != 200:
                     raise PhononUnavailable
@@ -123,20 +181,9 @@ class PhononEngine:
         if len(body) > _INSTALLED_MODELS_MAX_BYTES:
             raise PhononUnavailable
         try:
-            document = json.loads(body)
-            models = document["models"]
-            names = {
-                item["name"]
-                for item in models
-                if isinstance(item, dict)
-                and isinstance(item.get("name"), str)
-                and item["name"].strip()
-            }
-        except (KeyError, TypeError, ValueError):
+            return json.loads(body)
+        except (TypeError, ValueError):
             raise PhononUnavailable from None
-        if not isinstance(document, dict) or not isinstance(models, list):
-            raise PhononUnavailable
-        return names
 
     def synthesize_pcm(
         self,
@@ -146,22 +193,21 @@ class PhononEngine:
         cancel_event: Event | None = None,
         deadline: float | None = None,
     ) -> bytes:
-        if not self.is_available():
-            raise PhononUnavailable
-        approval = self.settings.phonon_approval
-        model = approval.models_by_language.get(language)
-        voices = approval.voices_by_language.get(language, ())
-        selected_voice = voice or approval.default_voices_by_language.get(language)
-        if not model or selected_voice not in voices:
-            raise PhononUnavailable
         if cancel_event is not None and cancel_event.is_set():
             raise PhononFailure
-
         started = time.monotonic()
         operation_deadline = min(
             deadline or started + self.settings.request_timeout_seconds,
             started + self.settings.phonon_request_timeout_seconds,
         )
+        if not self.is_available(language, operation_deadline):
+            raise PhononUnavailable
+        approval = self.settings.phonon_approval
+        digest = approval.model_digests_by_language.get(language)
+        voices = approval.voices_by_language.get(language, ())
+        selected_voice = voice or approval.default_voices_by_language.get(language)
+        if not digest or selected_voice not in voices:
+            raise PhononUnavailable
         maximum_pcm_bytes = max(0, self.settings.max_temp_bytes - _WAV_HEADER_BYTES)
         pcm_parts: list[bytes] = []
         total_bytes = 0
@@ -170,7 +216,7 @@ class PhononEngine:
             if remaining <= 0:
                 raise PhononAudioTooLarge
             pcm = self._request_pcm(
-                model,
+                digest.replace("sha256:", "sha256-", 1),
                 segment,
                 selected_voice,
                 remaining,

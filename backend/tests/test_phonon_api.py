@@ -8,7 +8,7 @@ from fastapi.testclient import TestClient
 
 from app.main import create_app
 from app.services import SynthesisResult, SynthesisUnavailable
-from phonon_test_support import FakeOpener, FakeResponse, phonon_settings, request_payload
+from phonon_test_support import FakeOpener, FakeResponse, MODEL_DIGESTS, phonon_settings, request_payload
 
 
 def tiny_pcm_wav(pcm=b"\x00\x00\x01\x00"):
@@ -67,7 +67,7 @@ def test_public_api_uses_only_approved_language_voice_and_model(
     assert response.headers["x-speech-backend"] == "phonon"
     assert response.headers["x-speech-fallback"] == "false"
     payload = request_payload(opener.calls[0][0])
-    assert payload["model"] == model
+    assert payload["model"] == MODEL_DIGESTS[model].replace("sha256:", "sha256-", 1)
     assert payload["voice"] == voice
 
 
@@ -90,3 +90,38 @@ def test_unapproved_voice_is_unavailable_without_endpoint_call(settings_factory)
 
     assert response.status_code == 503
     assert opener.calls == []
+
+
+def test_speech_uses_approved_digest_if_tag_changes_after_discovery(
+    settings_factory, monkeypatch
+):
+    settings = phonon_settings(settings_factory)
+    app = create_app(settings)
+    opener = FakeOpener([FakeResponse(b"\x00\x00")])
+    tag_digest = "a" * 64
+
+    def changing_service(request, *, timeout):
+        nonlocal tag_digest
+        response = opener(request, timeout=timeout)
+        if request.full_url.endswith("/api/tags"):
+            tag_digest = "c" * 64
+        if request.full_url.endswith("/v1/audio/speech"):
+            model = request_payload(request)["model"]
+            used_digest = tag_digest if model == "fixture-model-en" else model.removeprefix("sha256-")
+            assert used_digest == "a" * 64
+        return response
+
+    app.state.speech_service.phonon_engine._opener = changing_service
+    monkeypatch.setattr(
+        app.state.speech_service,
+        "_transcode_wav",
+        lambda *_args, **_kwargs: SynthesisResult(
+            b"audio", "audio/wav", "speech.wav", actual_backend="phonon"
+        ),
+    )
+    response = TestClient(app).post(
+        "/v1/audio/speech",
+        json={"input": "hello", "model": "phonon", "language": "en-US"},
+        headers={"Authorization": f"Bearer {settings.api_key}"},
+    )
+    assert response.status_code == 200

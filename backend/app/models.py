@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing import Literal
+from typing import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints, field_validator, model_validator
 
 
 _LANGUAGE_ALIASES = {"de": "de-DE", "en": "en-US"}
@@ -17,7 +17,7 @@ _VIBEVOICE_VOICES = {
 class SpeechRequest(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True, extra="forbid")
 
-    input: str = Field(min_length=1)
+    input: Annotated[str, StringConstraints(strip_whitespace=False, min_length=1)]
     model: Literal["macos-say", "phonon", "fish-speech", "vibevoice"] | None = None
     language: str | None = None
     voice: str | None = Field(default=None, max_length=128)
@@ -34,6 +34,8 @@ class SpeechRequest(BaseModel):
     @field_validator("input")
     @classmethod
     def reject_unpaired_surrogates(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("input must not be blank")
         try:
             value.encode("utf-16-le")
         except UnicodeEncodeError:

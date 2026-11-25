@@ -4,8 +4,8 @@ from pydantic import ValidationError
 from app.models import SpeechRequest
 
 
-def test_input_is_trimmed_and_required():
-    assert SpeechRequest(input="  hello  ").input == "hello"
+def test_input_is_preserved_and_required():
+    assert SpeechRequest(input="  hello  ").input == "  hello  "
     with pytest.raises(ValidationError):
         SpeechRequest()
     with pytest.raises(ValidationError):

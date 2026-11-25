@@ -53,7 +53,10 @@ The serving application SHALL use a fixed registry of configured speech
 engines. The `model` field SHALL select an enabled engine; omitting it SHALL
 select the configured default. Phonon SHALL be disabled unless explicitly
 configured with reviewed model/voice approval and a trusted loopback service
-endpoint. A request using retired `fish-speech` or legacy `vibevoice` SHALL
+endpoint. Each approved model SHALL have an immutable SHA-256 digest that
+matches installed service metadata before discovery or synthesis; synthesis
+SHALL address the immutable model manifest on a compatible Ollama service. A request
+using retired `fish-speech` or legacy `vibevoice` SHALL
 return a safe 503 before synthesis admission, without fallback. Unknown,
 disabled, or unavailable engines SHALL return a safe unavailable response and
 SHALL NOT silently select another engine. Authenticated
@@ -89,6 +92,16 @@ credentials. The catalog SHALL NOT advertise Fish.
 - **THEN** it remains unavailable without an endpoint request, while the
   configured native engine remains usable.
 
+#### Scenario: Phonon service or model identity is unavailable
+
+- **WHEN** the service is unreachable or incompatible
+- **THEN** discovery reports Phonon unavailable with no voices and speech
+  requests return 503 without calling the speech endpoint or falling back.
+- **WHEN** an approved model is missing or its installed digest does not match
+- **THEN** its language and voices are absent from discovery and speech
+  requests for that language return 503 without falling back; another
+  independently available language remains usable.
+
 #### Scenario: a retired Fish selection arrives
 
 - **WHEN** an authenticated client explicitly selects `fish-speech`
@@ -114,8 +127,8 @@ credentials. The catalog SHALL NOT advertise Fish.
 ### Speech requests are validated against the supported contract
 <!-- touches: backend/app/models.py, backend/app/routers.py, backend/tests/test_models.py, backend/tests/test_api.py, backend/tests/test_fish_retirement.py -->
 
-The speech route SHALL accept `POST /v1/audio/speech` with trimmed nonempty
-`input`, optional `model` selecting `macos-say`, `phonon`, or the retired
+The speech route SHALL accept `POST /v1/audio/speech` with nonblank `input`
+preserved exactly, optional `model` selecting `macos-say`, `phonon`, or the retired
 `fish-speech`/`vibevoice` identifiers,
 optional language (`de`, `de-DE`, `en`, `en-US`, or `en-GB`), optional bounded
 `voice` hint, `response_format` of `mp3` or `wav`, and finite speed from 0.5
@@ -192,7 +205,9 @@ identify the engine that generated it and any explicitly configured fallback.
 #### Scenario: Phonon text exceeds one model request's capacity
 
 - **WHEN** request text exceeds the selected model's supported per-request size
-- **THEN** the adapter submits bounded segments in order and returns complete audio subject to service request and output limits.
+- **THEN** the adapter submits bounded segments in order, preserving every
+  input character including whitespace, and returns complete audio subject to
+  service request and output limits.
 
 #### Scenario: Phonon is disabled or fails
 

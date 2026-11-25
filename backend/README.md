@@ -155,6 +155,17 @@ and trusted service path have been reviewed.
 
 When explicitly enabled with reviewed local configuration, Phonon uses a
 configured loopback Ollama speech endpoint and approved model/voice record.
+Each English and German model record must include a `digest` field containing
+the reviewed model's lowercase `sha256:`-prefixed 64-digit digest. The service
+compares it with installed Ollama model metadata before discovery or synthesis.
+The adapter requires Ollama 0.40.18 or newer and submits speech using the
+digest-addressed local manifest rather than a mutable tag. An older or
+incompatible service is unavailable; digest-addressed model manifests must
+already be present in its local store.
+Existing approval records without these digests become unavailable after an
+upgrade. An operator must independently verify each installed identity against
+the reviewed asset, then update the private approval record before enabling
+Phonon again. A digest alone does not establish permission to use an asset.
 Requests remain authenticated at the backend. Input segmentation, response
 bytes, and time are bounded; complete PCM output is converted through the
 existing WAV/FFmpeg path for the requested format and speed. Missing or

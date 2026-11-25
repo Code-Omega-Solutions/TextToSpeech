@@ -2,8 +2,8 @@
   "workflow": "companion",
   "specName": "Replace Fish Speech with Ollama Phonon",
   "branch": "007-replace-phonon",
-  "currentStep": "implement",
-  "status": "implemented",
+  "currentStep": "converge",
+  "status": "completed",
   "history": [
     {
       "step": "specify",
@@ -262,6 +262,52 @@
       "kind": "complete",
       "by": "ai",
       "at": "2026-11-24T23:58:38.628Z"
+    },
+    {
+      "step": "converge",
+      "substep": null,
+      "kind": "start",
+      "by": "extension",
+      "at": "2026-11-25T00:17:37.706Z"
+    },
+    {
+      "step": "converge",
+      "substep": null,
+      "kind": "complete",
+      "by": "extension",
+      "at": "2026-11-25T00:22:12.298Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T028",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-25T00:25:33.139Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T029",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-25T00:25:33.140Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T030",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-25T00:25:33.142Z"
+    },
+    {
+      "step": "implement",
+      "substep": null,
+      "task": "T031",
+      "kind": "complete",
+      "by": "ai",
+      "at": "2026-11-25T00:48:29.660Z"
     }
   ],
   "telemetryInstanceId": "addb31c1-ab43-4647-9c49-d84821dbca04",
@@ -310,10 +356,10 @@
       "command": "bash checks/run_companion_validation.sh",
       "source": "derived",
       "exitCode": 0,
-      "durationSeconds": 51.6,
-      "result": "Ran 15 tests in 0.605s · OK (skipped=1) · native zsh recreation tests unavailable in this environment; run them on the authorized macOS target",
-      "commit": "e5b36c3",
-      "tree": "91af6a5b10c850e870d38c5f6e534c7b9abbf911"
+      "durationSeconds": 70.4,
+      "result": "Ran 17 tests in 1.105s · OK (skipped=1) · native zsh recreation tests unavailable in this environment; run them on the authorized macOS target",
+      "commit": "dfe94f7",
+      "tree": "d720cd82c7501a286b3043f70cee7efbe2f68ce9"
     },
     {
       "what": "Final project validation",
@@ -324,6 +370,64 @@
       "result": "Ran 15 tests in 0.571s · OK (skipped=1) · native zsh recreation tests unavailable in this environment; run them on the authorized macOS target",
       "commit": "e5b36c3",
       "tree": "17b56ef9cacfc1b193137b270935c9285879119e"
+    },
+    {
+      "what": "Post-review project validation",
+      "command": "bash checks/run_companion_validation.sh",
+      "source": "derived",
+      "exitCode": 0,
+      "durationSeconds": 66.0,
+      "result": "Ran 17 tests in 1.145s · OK (skipped=1) · native zsh recreation tests unavailable in this environment; run them on the authorized macOS target",
+      "commit": "dfe94f7",
+      "tree": "565efe3fbddf818981050e09ac679de1b0436caa"
+    },
+    {
+      "what": "Final post-review validation",
+      "command": "bash checks/run_companion_validation.sh",
+      "source": "derived",
+      "exitCode": 0,
+      "durationSeconds": 51.4,
+      "result": "Ran 17 tests in 0.861s · OK (skipped=1) · native zsh recreation tests unavailable in this environment; run them on the authorized macOS target",
+      "commit": "dfe94f7",
+      "tree": "394b101d41711c5de32adc80bd9d0d2db949f4d2"
+    },
+    {
+      "what": "Post-qualification project validation",
+      "command": "bash checks/run_companion_validation.sh",
+      "source": "derived",
+      "exitCode": 0,
+      "durationSeconds": 53.9,
+      "result": "Ran 17 tests in 1.046s · OK (skipped=1) · native zsh recreation tests unavailable in this environment; run them on the authorized macOS target",
+      "commit": "019bd64",
+      "tree": "15af616b2954c5b777dd898382d0b282e00f0177"
+    },
+    {
+      "what": "Isolated live qualification with migrated approved model digests and updated Ollama",
+      "result": "English and German Phonon WAV and MP3, native speech, auth rejection, unapproved voice rejection, long input, and GPU runner observation passed"
+    },
+    {
+      "what": "Production post-promotion smoke qualification",
+      "result": "English Phonon MP3, German Phonon WAV, native English WAV and unauthenticated rejection passed"
+    },
+    {
+      "what": "Plan consistency",
+      "command": "python3 .specify/extensions/companion/scripts/check_plan.py --feature-dir specs/007-replace-phonon --strict",
+      "source": "derived",
+      "exitCode": 0,
+      "durationSeconds": 0.4,
+      "result": "[plan-check] plan.md: 1 call path, 6 lines, 1 state block (6 states). Every cited file and line checks out.",
+      "commit": "019bd64",
+      "tree": "46bd1b8e36c9b69ac7b69afe7339912bd0eda5d6"
+    },
+    {
+      "what": "Final qualification validation",
+      "command": "bash checks/run_companion_validation.sh",
+      "source": "derived",
+      "exitCode": 0,
+      "durationSeconds": 51.4,
+      "result": "Ran 17 tests in 0.868s · OK (skipped=1) · native zsh recreation tests unavailable in this environment; run them on the authorized macOS target",
+      "commit": "019bd64",
+      "tree": "08b2ccdbdf7a766b0114251f0a75f3d47fbafbc0"
     }
   ],
   "decisions": [
@@ -354,6 +458,27 @@
       "rejected": "Relying on API truncation or sending oversized requests.",
       "by": "agent",
       "at": "2026-11-24T18:42:39.401Z"
+    },
+    {
+      "decision": "Require reviewed SHA-256 model identities and verify installed metadata before discovery and synthesis",
+      "why": "Mutable model tags do not establish approved identity",
+      "rejected": "Trust tags alone",
+      "by": "agent",
+      "at": "2026-11-25T00:27:46.848Z"
+    },
+    {
+      "decision": "Preserve nonblank speech input verbatim",
+      "why": "Ordered segmentation must retain every input character",
+      "rejected": "Strip leading and trailing whitespace",
+      "by": "agent",
+      "at": "2026-11-25T00:27:46.848Z"
+    },
+    {
+      "decision": "Use digest-addressed speech models on Ollama 0.40.18 or newer and check speech capabilities before advertising each language",
+      "why": "Prevent mutable tag changes from selecting unapproved model identities",
+      "rejected": "Verify the digest but synthesize by mutable tag",
+      "by": "agent",
+      "at": "2026-11-25T00:35:28.932Z"
     }
   ],
   "concerns": [
@@ -384,6 +509,26 @@
     {
       "note": "PowerShell branch-hook parity could not run because pwsh is unavailable on this Linux host; native zsh tests also remain unrun here. The production UI was not deployed.",
       "step": "implement"
+    },
+    {
+      "note": "Implement start was refused by the no-regress guard after converge; the feature remains implemented with open convergence tasks.",
+      "step": "implement"
+    },
+    {
+      "note": "Existing Phonon approval records require reviewed digest migration; the revised backend has not been deployed or live-qualified.",
+      "step": "implement"
+    },
+    {
+      "note": "PowerShell branch-hook parity and native macOS zsh recreation tests were unavailable on this Linux host.",
+      "step": "implement"
+    },
+    {
+      "note": "Deployment requires independently reviewed approval digests, a compatible Ollama service and digest-addressed model manifests; the revised backend has not been live-qualified.",
+      "step": "implement"
+    },
+    {
+      "note": "PowerShell and native macOS zsh prerequisite-script regression tests were unavailable locally; launchd restart required bounded retries and recovered successfully.",
+      "step": "implement"
     }
   ],
   "step_summaries": {
@@ -395,7 +540,7 @@
       "summary": "Generated 24 dependency-ordered tasks across Setup, Foundational, three user stories, and Polish, with a separate approved live-qualification gate."
     },
     "implement": {
-      "summary": "Aligned the UI with Phonon and the existing request-size boundary."
+      "summary": "Completed digest-bound Phonon remediation and live macOS qualification"
     }
   },
   "approach": "Use a small standard-library adapter behind the existing engine registry. Keep model and voice assets unavailable until an approved record and trusted local endpoint are configured; preserve the existing complete-response conversion path.",
@@ -438,6 +583,9 @@
         "T007",
         "T016",
         "T017"
+      ],
+      "tests": [
+        "backend/tests/test_phonon_segmentation.py::test_long_request_is_segmented_without_omission_in_order"
       ]
     },
     "FR-006": {
@@ -475,6 +623,9 @@
         "T012",
         "T015",
         "T024"
+      ],
+      "tests": [
+        "backend/tests/test_phonon_approval.py and backend/tests/test_phonon_availability.py"
       ]
     },
     "FR-011": {
@@ -483,6 +634,9 @@
         "T013",
         "T017",
         "T018"
+      ],
+      "tests": [
+        "backend/tests/test_phonon_availability.py"
       ]
     },
     "FR-012": {
@@ -505,7 +659,7 @@
       ]
     }
   },
-  "currentTask": "T027",
+  "currentTask": null,
   "task_summaries": {
     "T001": {
       "status": "DONE",
@@ -702,14 +856,73 @@
         "capabilities/speech-generation/speech-generation.coverage.md"
       ],
       "wave": "T025-T027"
+    },
+    "T028": {
+      "status": "DONE",
+      "did": "Verify service and approved model identities, preserve input whitespace, and fail closed",
+      "files": [
+        "backend/app/config.py",
+        "backend/app/phonon.py",
+        "backend/app/engines.py",
+        "backend/app/routers.py",
+        "backend/app/services.py",
+        "backend/app/models.py",
+        "backend/tests",
+        "backend/README.md",
+        "capabilities/backend-synthesis",
+        "specs/007-replace-phonon/data-model.md"
+      ],
+      "wave": "T028-T030"
+    },
+    "T029": {
+      "status": "DONE",
+      "did": "Verify service and approved model identities, preserve input whitespace, and fail closed",
+      "files": [
+        "backend/app/config.py",
+        "backend/app/phonon.py",
+        "backend/app/engines.py",
+        "backend/app/routers.py",
+        "backend/app/services.py",
+        "backend/app/models.py",
+        "backend/tests",
+        "backend/README.md",
+        "capabilities/backend-synthesis",
+        "specs/007-replace-phonon/data-model.md"
+      ],
+      "wave": "T028-T030"
+    },
+    "T030": {
+      "status": "DONE",
+      "did": "Verify service and approved model identities, preserve input whitespace, and fail closed",
+      "files": [
+        "backend/app/config.py",
+        "backend/app/phonon.py",
+        "backend/app/engines.py",
+        "backend/app/routers.py",
+        "backend/app/services.py",
+        "backend/app/models.py",
+        "backend/tests",
+        "backend/README.md",
+        "capabilities/backend-synthesis",
+        "specs/007-replace-phonon/data-model.md"
+      ],
+      "wave": "T028-T030"
+    },
+    "T031": {
+      "status": "DONE",
+      "did": "Qualified migrated digest approvals and revised backend on isolated and production macOS services",
+      "files": [
+        "backend/tests/test_phonon_live.py",
+        "backend/README.md"
+      ]
     }
   },
-  "last_action": "Completed T024 after explicit operator approval and trusted loopback service verification.",
+  "last_action": "Qualified revised production backend and migrated private approval record",
   "risk": {
     "tier": "high",
     "computed": "high",
     "reasons": [
-      "49 files changed"
+      "26 files changed"
     ]
   }
 }

@@ -43,17 +43,17 @@ class EngineRegistration:
         return bool(self.enabled() and self.ready())
 
     def public_info(self) -> dict[str, object]:
+        available = self.is_available()
         if self.voice_catalog is None:
             voices_by_language = self.descriptor.voices_by_language
             languages = self.descriptor.languages
         else:
-            voices_by_language = self.voice_catalog()
+            voices_by_language = self.voice_catalog() if available else {}
             languages = tuple(
                 language
                 for language in self.descriptor.languages
                 if language in voices_by_language
             )
-        available = self.is_available()
         if self.voice_catalog is not None and not languages:
             # A dynamically qualified engine must not advertise availability
             # before its approved voice catalog has been loaded.

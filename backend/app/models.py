@@ -17,8 +17,8 @@ _VIBEVOICE_VOICES = {
 class SpeechRequest(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True, extra="forbid")
 
-    input: str = Field(min_length=1, max_length=5000)
-    model: Literal["macos-say", "fish-speech", "vibevoice"] | None = None
+    input: str = Field(min_length=1)
+    model: Literal["macos-say", "phonon", "fish-speech", "vibevoice"] | None = None
     language: str | None = None
     voice: str | None = Field(default=None, max_length=128)
     response_format: Literal["mp3", "wav"] = "mp3"
@@ -33,13 +33,11 @@ class SpeechRequest(BaseModel):
 
     @field_validator("input")
     @classmethod
-    def limit_utf16_units(cls, value: str) -> str:
+    def reject_unpaired_surrogates(cls, value: str) -> str:
         try:
-            units = len(value.encode("utf-16-le")) // 2
+            value.encode("utf-16-le")
         except UnicodeEncodeError:
             raise ValueError("input must not contain unpaired surrogates") from None
-        if units > 5000:
-            raise ValueError("input must not exceed 5000 UTF-16 code units")
         return value
 
     @field_validator("language")

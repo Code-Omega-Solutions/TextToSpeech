@@ -104,8 +104,8 @@ encrypt HTTP traffic; restrict access with a trusted private network or
 firewall, and do not expose this listener to untrusted networks. Health
 (`/healthz`) is distinct from readiness (`/readyz`), which verifies runtime
 dependencies and required voices. The speech endpoint is
-`POST /v1/audio/speech`. The existing
-request limit is 5,000 UTF-16 code units; the service applies bounded request,
+`POST /v1/audio/speech`. The API enforces a 32 KiB encoded-request limit while
+reading the body and has no fixed 5,000-unit text limit. It also applies bounded
 concurrency, timeout, output, and per-request temporary-storage limits.
 
 When no language is specified, short inputs use `TTS_DEFAULT_LANGUAGE`; longer
@@ -114,8 +114,8 @@ Explicit supported languages bypass detection; unsupported explicit languages
 remain invalid.
 
 For Open WebUI's OpenAI-compatible TTS engine, select `macos-say` or an enabled
-`fish-speech` engine in the existing model field. Open WebUI does not send a
-language field. Detection runs when text has at least
+`phonon` engine in the existing model field. Open WebUI does not send a language
+field. Detection runs when text has at least
 `TTS_MIN_DETECTION_CHARS` alphabetic characters (default `20`); shorter text
 uses `TTS_DEFAULT_LANGUAGE` (default `en-US`). An authenticated
 `GET /v1/audio/engines` response lists configured engines, supported languages,
@@ -144,7 +144,37 @@ instance. Preserve shared environments, source files, credentials that are
 still in use, system packages, and unrelated services. Setup does not remove
 those resources.
 
-## Selectable speech engines prototype
+## Phonon speech option
+
+The serving application defaults to native `macos-say`. Phonon is optional and
+disabled by default. No model or voice assets or identifiers are approved by
+this repository, and the checked-in deployment template does not configure a
+Phonon endpoint. Do not enable Phonon or use assets until their exact identity,
+provenance, applicable terms, intended-use permission, target compatibility,
+and trusted service path have been reviewed.
+
+When explicitly enabled with reviewed local configuration, Phonon uses a
+configured loopback Ollama speech endpoint and approved model/voice record.
+Requests remain authenticated at the backend. Input segmentation, response
+bytes, and time are bounded; complete PCM output is converted through the
+existing WAV/FFmpeg path for the requested format and speed. Missing or
+unavailable Phonon prerequisites return a safe 503 without fallback. A retired
+`fish-speech` selection also returns 503 without falling back to Phonon or the
+configured default.
+
+Authenticated `GET /v1/audio/engines` reports configured public engine
+identifiers, availability, supported locales, and public voice identifiers
+without exposing credentials or private runtime paths. `/readyz` checks only
+the native macOS baseline; it does not require Fish or Phonon assets or
+services. The Fish runtime, managed process, and launcher have been removed.
+
+## Historical Fish engine and fallback notes
+
+> **Historical only:** The following Fish settings and behavior describe the
+> retired prototype. Fish is not a supported runtime option; do not use these
+> instructions to configure or operate this checkout. The record is retained
+> for audit history. See the Phonon boundary above and the historical Fish
+> feature materials for context.
 
 The serving prototype defaults to `macos-say`. `fish-speech` is an optional
 separately managed engine and remains disabled unless an operator configures

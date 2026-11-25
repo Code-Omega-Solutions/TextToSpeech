@@ -8,19 +8,19 @@ from pathlib import Path
 
 import pytest
 
-from app.fish_speech import FishSpeechError
 from app.services import (
     AudioTooLarge,
     SpeechService,
     SpeechSegmentLimitExceeded,
     SynthesisCapacityExceeded,
     SynthesisFailure,
-    SynthesisResult,
     SynthesisTimeout,
     SynthesisUnavailable,
     _speech_segments,
     available_codecs,
 )
+from app.phonon import PhononFailure
+from phonon_test_support import phonon_settings
 
 
 _wav_buffer = io.BytesIO()
@@ -402,54 +402,46 @@ def test_synthesis_permit_is_nonblocking(monkeypatch, settings_factory):
         assert future.result(timeout=2).audio == b"ok"
 
 
-def test_fish_wav_is_returned_with_actual_backend(settings_factory, monkeypatch):
-    settings = settings_factory(
-        fish_enabled=True,
-        fish_server_url="http://127.0.0.1:8080",
-        fish_api_key="unit-test-fish-key",
-    )
+def test_phonon_wav_is_returned_with_actual_backend(settings_factory, monkeypatch):
+    settings = phonon_settings(settings_factory)
     service = SpeechService(settings)
-    monkeypatch.setattr(service.fish_speech, "synthesize_wav", lambda *_args, **_kwargs: _TEST_WAV)
+    monkeypatch.setattr(service.phonon_engine, "synthesize_pcm", lambda *_args, **_kwargs: b"\x00\x00")
     result = service.synthesize_reserved(
-        "hello", "en-US", 1, "wav", backend="fish-speech"
+        "hello", "en-US", 1, "wav", backend="phonon"
     )
-    assert result.audio == _TEST_WAV
+    assert result.audio.startswith(b"RIFF")
     assert result.media_type == "audio/wav"
-    assert result.actual_backend == "fish-speech"
+    assert result.actual_backend == "phonon"
 
 
-def test_fish_mp3_uses_existing_encoder_path(monkeypatch, settings_factory):
-    settings = settings_factory(
-        fish_enabled=True,
-        fish_server_url="http://127.0.0.1:8080",
-        fish_api_key="unit-test-fish-key",
-    )
+def test_phonon_mp3_uses_existing_encoder_path(monkeypatch, settings_factory, tmp_path):
+    settings = phonon_settings(settings_factory)
     service = SpeechService(settings)
-    monkeypatch.setattr(service.fish_speech, "synthesize_wav", lambda *_args, **_kwargs: _TEST_WAV)
+    monkeypatch.setattr("app.services.tempfile.tempdir", str(tmp_path))
+    monkeypatch.setattr(service.phonon_engine, "synthesize_pcm", lambda *_args, **_kwargs: b"\x00\x00")
     monkeypatch.setattr("app.services.shutil.which", lambda _path: "/fake/ffmpeg")
 
     def encode(arguments, *_args, **_kwargs):
         assert "-i" in arguments
-        assert Path(arguments[arguments.index("-i") + 1]).read_bytes() == _TEST_WAV
+        assert Path(arguments[arguments.index("-i") + 1]).read_bytes().startswith(b"RIFF")
         Path(arguments[-1]).write_bytes(b"encoded mp3")
 
     monkeypatch.setattr(service, "_run", encode)
     result = service.synthesize_reserved(
-        "hello", "en-US", 1, "mp3", backend="fish-speech"
+        "hello", "en-US", 1, "mp3", backend="phonon"
     )
     assert result.audio == b"encoded mp3"
     assert result.media_type == "audio/mpeg"
-    assert result.actual_backend == "fish-speech"
+    assert result.actual_backend == "phonon"
 
 
-def test_fish_speed_uses_existing_ffmpeg_tempo_control(monkeypatch, settings_factory):
-    settings = settings_factory(
-        fish_enabled=True,
-        fish_server_url="http://127.0.0.1:8080",
-        fish_api_key="unit-test-fish-key",
-    )
+def test_phonon_speed_uses_existing_ffmpeg_tempo_control(
+    monkeypatch, settings_factory, tmp_path
+):
+    settings = phonon_settings(settings_factory)
     service = SpeechService(settings)
-    monkeypatch.setattr(service.fish_speech, "synthesize_wav", lambda *_args, **_kwargs: _TEST_WAV)
+    monkeypatch.setattr("app.services.tempfile.tempdir", str(tmp_path))
+    monkeypatch.setattr(service.phonon_engine, "synthesize_pcm", lambda *_args, **_kwargs: b"\x00\x00")
     monkeypatch.setattr("app.services.shutil.which", lambda _path: "/fake/ffmpeg")
 
     def encode(arguments, *_args, **_kwargs):
@@ -458,50 +450,35 @@ def test_fish_speed_uses_existing_ffmpeg_tempo_control(monkeypatch, settings_fac
 
     monkeypatch.setattr(service, "_run", encode)
     result = service.synthesize_reserved(
-        "hello", "en-US", 1.5, "mp3", backend="fish-speech"
+        "hello", "en-US", 1.5, "mp3", backend="phonon"
     )
     assert result.audio == b"encoded mp3"
 
 
-def test_fish_failure_does_not_silently_fall_back(settings_factory, monkeypatch):
-    settings = settings_factory(
-        fish_enabled=True,
-        fish_server_url="http://127.0.0.1:8080",
-        fish_api_key="unit-test-fish-key",
-    )
+def test_phonon_failure_does_not_silently_fall_back(settings_factory, monkeypatch):
+    settings = phonon_settings(settings_factory)
     service = SpeechService(settings)
     monkeypatch.setattr(
-        service.fish_speech,
-        "synthesize_wav",
-        lambda *_args, **_kwargs: (_ for _ in ()).throw(FishSpeechError("fixture failure")),
+        service.phonon_engine,
+        "synthesize_pcm",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(PhononFailure()),
     )
     monkeypatch.setattr(
         service,
-        "_synthesize_macos",
-        lambda *_args, **_kwargs: pytest.fail("Fish failure silently fell back to macOS"),
+        "_synthesize_macos_engine",
+        lambda *_args, **_kwargs: pytest.fail("Phonon failure silently fell back to macOS"),
+    )
+    with pytest.raises(SynthesisFailure):
+        service.synthesize_reserved("hello", "en-US", 1, "wav", backend="phonon")
+
+
+def test_disabled_phonon_is_unavailable_without_fallback(settings_factory, monkeypatch):
+    settings = settings_factory()
+    service = SpeechService(settings)
+    monkeypatch.setattr(
+        service,
+        "_synthesize_macos_engine",
+        lambda *_args, **_kwargs: pytest.fail("Disabled Phonon fell back to macOS"),
     )
     with pytest.raises(SynthesisUnavailable):
-        service.synthesize_reserved("hello", "en-US", 1, "wav", backend="fish-speech")
-
-
-def test_fish_german_reference_is_passed_to_upstream(settings_factory, monkeypatch):
-    settings = settings_factory(
-        fish_enabled=True,
-        fish_server_url="http://127.0.0.1:8080",
-        fish_api_key="unit-test-fish-key",
-    )
-    service = SpeechService(settings)
-    calls = []
-
-    def synthesize(text, voice, _cancel_event=None, **_kwargs):
-        calls.append((text, voice))
-        return _TEST_WAV
-
-    monkeypatch.setattr(service.fish_speech, "synthesize_wav", synthesize)
-    result = service.synthesize_reserved(
-        "hallo", "de-DE", 1, "wav", backend="fish-speech", voice="de-speaker"
-    )
-    assert result.audio == _TEST_WAV
-    assert result.actual_backend == "fish-speech"
-    assert result.fallback is False
-    assert calls == [("hallo", "de-speaker")]
+        service.synthesize_reserved("hello", "en-US", 1, "wav", backend="phonon")

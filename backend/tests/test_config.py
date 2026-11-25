@@ -23,24 +23,6 @@ def test_auth_is_enabled_by_default(settings):
     assert settings.auth_enabled is True
 
 
-@pytest.mark.parametrize("value", ["0", "-1", "invalid", str(16 * 1024**3 + 1)])
-def test_fish_startup_allowance_must_be_positive_and_within_worker_budget(monkeypatch, value):
-    monkeypatch.setenv("TTS_API_KEY", "unit-test-api-key")
-    monkeypatch.setenv("TTS_FISH_STARTUP_MEMORY_BYTES", value)
-    with pytest.raises(ValidationError):
-        Settings.from_env()
-
-
-def test_fish_startup_allowance_is_opt_in_and_independent_of_runtime_budget(monkeypatch):
-    monkeypatch.setenv("TTS_API_KEY", "unit-test-api-key")
-    assert Settings.from_env().fish_startup_memory_bytes is None
-    monkeypatch.setenv("TTS_FISH_STARTUP_MEMORY_BYTES", str(4 * 1024**3))
-    settings = Settings.from_env()
-    assert settings.fish_startup_memory_bytes == 4 * 1024**3
-    assert settings.fish_worker_peak_memory_bytes == 16 * 1024**3
-    assert settings.fish_memory_reserve_bytes == 12 * 1024**3
-
-
 @pytest.mark.parametrize(
     ("name", "value"),
     [
@@ -70,14 +52,35 @@ def test_defaults_and_environment_values(settings):
     assert settings.voice_en_gb == "Daniel"
     assert settings.max_output_bytes == 26_214_400
     assert settings.default_backend == "macos-say"
-    assert settings.fish_enabled is False
-    assert settings.fish_server_url is None
-    assert settings.fish_api_key is None
     assert settings.vibevoice_enabled is False
     assert settings.vibevoice_qualified is False
     assert settings.vibevoice_research_only is False
     assert settings.vibevoice_worker_peak_memory_bytes is None
     assert settings.higher_priority_memory_reserve_bytes is None
+    assert settings.phonon_enabled is False
+    assert settings.phonon_server_url is None
+    assert settings.phonon_approval is None
+
+
+def test_phonon_can_be_enabled_without_implicit_model_or_voice_approval(monkeypatch):
+    monkeypatch.setenv("TTS_API_KEY", "unit-test-api-key")
+    monkeypatch.setenv("TTS_PHONON_ENABLED", "true")
+    monkeypatch.setenv("TTS_PHONON_SERVER_URL", "http://127.0.0.1:11434")
+    monkeypatch.delenv("TTS_PHONON_APPROVAL_FILE", raising=False)
+
+    settings = Settings.from_env()
+
+    assert settings.phonon_enabled is True
+    assert settings.phonon_approval is None
+
+
+def test_phonon_cannot_be_selected_as_default_without_explicit_enable(monkeypatch):
+    monkeypatch.setenv("TTS_API_KEY", "unit-test-api-key")
+    monkeypatch.setenv("TTS_DEFAULT_BACKEND", "phonon")
+    monkeypatch.setenv("TTS_PHONON_ENABLED", "false")
+
+    with pytest.raises(ValidationError):
+        Settings.from_env()
 
 
 def test_all_interface_host_binding_is_configurable(monkeypatch):
@@ -133,68 +136,6 @@ def test_vibevoice_cannot_be_selected_as_serving_default(monkeypatch):
     monkeypatch.setenv("TTS_VIBEVOICE_QUALIFIED", "true")
     monkeypatch.setenv("TTS_VIBEVOICE_WORKER_PEAK_MEMORY_BYTES", "8589934592")
     monkeypatch.setenv("TTS_HIGHER_PRIORITY_MEMORY_RESERVE_BYTES", "4294967296")
-    with pytest.raises(ValidationError):
-        Settings.from_env()
-
-
-def test_fish_engine_requires_loopback_service_and_credential(monkeypatch):
-    monkeypatch.setenv("TTS_FISH_ENABLED", "true")
-    monkeypatch.setenv("TTS_FISH_SERVER_URL", "http://127.0.0.1:8080")
-    monkeypatch.setenv("TTS_FISH_API_KEY", "fish-test-key")
-    monkeypatch.setenv("TTS_FISH_ARTIFACT_MANIFEST", "/approved/fish-artifacts.json")
-    monkeypatch.setenv("TTS_FISH_REFERENCE_MANIFEST", "/approved/fish-references.json")
-    monkeypatch.setenv("TTS_FISH_REFERENCE_ROOT", "/approved/fish-source")
-    monkeypatch.setenv("TTS_FISH_ARTIFACTS_APPROVED", "true")
-    monkeypatch.setenv("TTS_FISH_REFERENCES_APPROVED", "true")
-    settings = Settings.from_env()
-    assert settings.fish_enabled is True
-    assert settings.fish_server_url == "http://127.0.0.1:8080"
-    assert settings.fish_api_key == "fish-test-key"
-
-
-def test_fish_engine_reuses_backend_credential_when_no_second_secret_is_set(monkeypatch):
-    monkeypatch.setenv("TTS_API_KEY", "shared-backend-key")
-    monkeypatch.setenv("TTS_FISH_ENABLED", "true")
-    monkeypatch.setenv("TTS_FISH_SERVER_URL", "http://127.0.0.1:8080")
-    monkeypatch.setenv("TTS_FISH_ARTIFACT_MANIFEST", "/approved/fish-artifacts.json")
-    monkeypatch.setenv("TTS_FISH_REFERENCE_MANIFEST", "/approved/fish-references.json")
-    monkeypatch.setenv("TTS_FISH_REFERENCE_ROOT", "/approved/fish-source")
-    monkeypatch.setenv("TTS_FISH_ARTIFACTS_APPROVED", "true")
-    monkeypatch.setenv("TTS_FISH_REFERENCES_APPROVED", "true")
-    settings = Settings.from_env()
-    assert settings.fish_api_key == "shared-backend-key"
-
-
-def test_fish_engine_is_disabled_without_exact_approval_gates(monkeypatch):
-    monkeypatch.setenv("TTS_FISH_ENABLED", "true")
-    monkeypatch.setenv("TTS_FISH_SERVER_URL", "http://127.0.0.1:8080")
-    monkeypatch.setenv("TTS_FISH_API_KEY", "fish-test-key")
-    with pytest.raises(ValidationError, match="artifact metadata"):
-        Settings.from_env()
-
-
-def test_fish_engine_requires_manifest_paths_when_approved(monkeypatch):
-    monkeypatch.setenv("TTS_FISH_ENABLED", "true")
-    monkeypatch.setenv("TTS_FISH_SERVER_URL", "http://127.0.0.1:8080")
-    monkeypatch.setenv("TTS_FISH_API_KEY", "fish-test-key")
-    monkeypatch.setenv("TTS_FISH_ARTIFACTS_APPROVED", "true")
-    monkeypatch.setenv("TTS_FISH_REFERENCES_APPROVED", "true")
-    with pytest.raises(ValidationError, match="approval manifest"):
-        Settings.from_env()
-
-
-@pytest.mark.parametrize("url", ["http://192.168.1.20:8080", "https://example.com", "http://127.0.0.1:8080/path"])
-def test_fish_engine_rejects_non_loopback_or_non_origin_url(monkeypatch, url):
-    monkeypatch.setenv("TTS_FISH_ENABLED", "true")
-    monkeypatch.setenv("TTS_FISH_SERVER_URL", url)
-    monkeypatch.setenv("TTS_FISH_API_KEY", "fish-test-key")
-    with pytest.raises(ValidationError):
-        Settings.from_env()
-
-
-def test_fish_default_requires_enabled_engine(monkeypatch):
-    monkeypatch.setenv("TTS_DEFAULT_BACKEND", "fish-speech")
-    monkeypatch.setenv("TTS_FISH_ENABLED", "false")
     with pytest.raises(ValidationError):
         Settings.from_env()
 
@@ -304,38 +245,3 @@ def test_temporary_disk_budget_must_be_positive(monkeypatch, value):
 
 def test_default_temporary_disk_budget(settings):
     assert settings.max_temp_bytes == 256 * 1024 * 1024
-
-
-@pytest.mark.parametrize(
-    "command",
-    ['"python"', '[]', '["python"]', '["/runtime/python", ""]', '["/runtime/python", 3]'],
-)
-def test_managed_fish_requires_absolute_nonempty_argv(monkeypatch, command):
-    monkeypatch.setenv("TTS_FISH_WORKER_COMMAND", command)
-    with pytest.raises(ValidationError):
-        Settings.from_env()
-
-
-def test_opportunistic_fish_requires_managed_worker_and_native_capacity(monkeypatch):
-    monkeypatch.setenv("TTS_FISH_OPPORTUNISTIC", "true")
-    monkeypatch.setenv("TTS_FISH_ENABLED", "true")
-    monkeypatch.setenv("TTS_FISH_SERVER_URL", "http://127.0.0.1:8080")
-    monkeypatch.setenv("TTS_FISH_API_KEY", "synthetic-fish-key")
-    monkeypatch.setenv("TTS_FISH_ARTIFACT_MANIFEST", "/approved/fish-artifacts.json")
-    monkeypatch.setenv("TTS_FISH_REFERENCE_MANIFEST", "/approved/fish-references.json")
-    monkeypatch.setenv("TTS_FISH_REFERENCE_ROOT", "/approved/fish-source")
-    monkeypatch.setenv("TTS_FISH_ARTIFACTS_APPROVED", "true")
-    monkeypatch.setenv("TTS_FISH_REFERENCES_APPROVED", "true")
-    with pytest.raises(ValidationError, match="managed worker"):
-        Settings.from_env()
-    monkeypatch.setenv("TTS_FISH_WORKER_COMMAND", '["/runtime/launcher"]')
-    monkeypatch.setenv("TTS_MAX_CONCURRENT_SYNTHESIS", "1")
-    with pytest.raises(ValidationError, match="native capacity"):
-        Settings.from_env()
-
-
-def test_opportunistic_policy_allows_native_only_default_fallback(monkeypatch):
-    monkeypatch.setenv("TTS_FISH_OPPORTUNISTIC", "true")
-    monkeypatch.setenv("TTS_DEFAULT_BACKEND", "fish-speech")
-    monkeypatch.setenv("TTS_FISH_ENABLED", "false")
-    assert Settings.from_env().fish_opportunistic is True

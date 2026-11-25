@@ -107,7 +107,7 @@ test("preserves defaults, accessible controls, required input and responsive lay
   );
   await expect(
     page.getByRole("textbox", { name: "YOUR TEXT" }),
-  ).toHaveAttribute("maxlength", "5000");
+  ).not.toHaveAttribute("maxlength");
   await expect(
     page.getByRole("textbox", { name: "YOUR TEXT" }),
   ).toHaveAttribute("required", "");
@@ -143,20 +143,20 @@ test("preserves defaults, accessible controls, required input and responsive lay
   ).toBe(true);
   await page.getByRole("textbox", { name: "YOUR TEXT" }).focus();
   await page.keyboard.type("Keyboard input");
-  await expect(page.locator("#character-count")).toHaveText("14 / 5,000");
+  await expect(page.locator("#character-count")).toHaveText("14 characters");
 });
 
-test("enforces the exact text limit and clear restores focus and counter", async ({
+test("retains long text and clear restores focus and counter", async ({
   page,
 }) => {
   await open(page);
   await page.locator("#speech-text").fill("x".repeat(5001));
-  await expect(page.locator("#speech-text")).toHaveValue("x".repeat(5000));
-  await expect(page.locator("#character-count")).toHaveText("5,000 / 5,000");
+  await expect(page.locator("#speech-text")).toHaveValue("x".repeat(5001));
+  await expect(page.locator("#character-count")).toHaveText("5,001 characters");
   await page.getByRole("button", { name: "Clear", exact: true }).click();
   await expect(page.locator("#speech-text")).toHaveValue("");
   await expect(page.locator("#speech-text")).toBeFocused();
-  await expect(page.locator("#character-count")).toHaveText("0 / 5,000");
+  await expect(page.locator("#character-count")).toHaveText("0 characters");
   await expect(
     page.getByRole("button", { name: "Clear", exact: true }),
   ).toBeDisabled();
@@ -166,28 +166,53 @@ for (const [name, text, message] of [
   ["normal", "Pasted words", ""],
   ["empty", "", "The clipboard does not contain any text."],
   [
-    "over limit",
+    "long text",
     "x".repeat(5001),
-    "Clipboard text was truncated to the 5,000-character limit.",
+    "",
   ],
   [
-    "UTF-16 limit",
+    "long Unicode text",
     "\u{1f600}".repeat(2501),
-    "Clipboard text was truncated to the 5,000-character limit.",
+    "",
   ],
 ]) {
   test(`clipboard: ${name}`, async ({ page }) => {
     await open(page);
     await clipboard(page, text);
     await page.getByRole("button", { name: "Paste from clipboard" }).click();
-    await expect(page.locator("#speech-text")).toHaveValue(text.slice(0, 5000));
+    await expect(page.locator("#speech-text")).toHaveValue(text);
     await expect(page.locator("#speech-text")).toBeFocused();
     await expect(page.locator("#status")).toHaveText(message);
     await expect(page.locator("#character-count")).toHaveText(
-      `${Math.min(text.length, 5000).toLocaleString("en-US")} / 5,000`,
+      `${text.length.toLocaleString("en-US")} characters`,
     );
   });
 }
+
+test("checks the complete encoded request boundary without truncating or sending oversize input", async ({ page }) => {
+  const requests = [];
+  await page.route(`**${speechPath}`, async (route) => {
+    requests.push(route.request().postData());
+    await route.fulfill({ contentType: "audio/wav", body: audio });
+  });
+  await open(page);
+  const base = { input: "", response_format: "mp3", speed: 1, model: "macos-say" };
+  const overhead = Buffer.byteLength(JSON.stringify(base));
+  const exact = "ä".repeat(6000) + "x".repeat(32768 - overhead - 12000);
+  await page.locator("#speech-text").fill(exact);
+  await page.locator("#generate").click();
+  await expect.poll(() => requests.length).toBe(1);
+  expect(Buffer.byteLength(requests[0])).toBe(32768);
+  expect(JSON.parse(requests[0]).input).toBe(exact);
+  await expect(page.locator("#generate")).toBeEnabled();
+
+  const oversized = exact + "x";
+  await page.locator("#speech-text").fill(oversized);
+  await page.locator("#generate").click();
+  await expect(page.locator("#status")).toContainText("exceeds the 32 KiB limit");
+  await expect(page.locator("#speech-text")).toHaveValue(oversized);
+  expect(requests).toHaveLength(1);
+});
 
 test("clipboard permission errors are visible and do not lose existing input", async ({
   page,
@@ -347,13 +372,13 @@ test("discloses a successful engine without fallback", async ({ page }) => {
     route.fulfill({
       contentType: "audio/wav",
       body: audio,
-      headers: { "X-Speech-Backend": "fish-speech", "X-Speech-Fallback": "false" },
+      headers: { "X-Speech-Backend": "phonon", "X-Speech-Fallback": "false" },
     }),
   );
   await open(page);
   await generate(page);
   await expect(page.locator("#speech-engine-disclosure")).toHaveText(
-    "Actual engine: fish-speech. No fallback.",
+    "Actual engine: phonon. No fallback.",
   );
 });
 

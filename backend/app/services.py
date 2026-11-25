@@ -1,24 +1,25 @@
 from __future__ import annotations
 
-import logging
 import re
 import shutil
 import subprocess
 import tempfile
 import threading
 import time
-from dataclasses import dataclass, replace
+import io
+import wave
+from dataclasses import dataclass
 from pathlib import Path
 
 from app.config import Settings
 from app.engines import EngineDescriptor, EngineRegistration, EngineRegistry
-from app.fish_process import FishProcess, FishResourceUnavailable
-from app.fish_speech import (
-    FishSpeechAudioTooLarge,
-    FishSpeechEngine,
-    FishSpeechError,
-    FishSpeechTimeout,
-    load_qualified_reference_catalog,
+from app.phonon import (
+    PhononAudioTooLarge,
+    PhononEngine,
+    PhononFailure,
+    PhononSegmentLimitExceeded,
+    PhononTimeout,
+    PhononUnavailable,
 )
 from app.voices import (
     VoiceInventoryError,
@@ -35,7 +36,6 @@ _MAX_SPEECH_SEGMENTS = 100
 _PARAGRAPH_BREAK = re.compile(r"(?:\r\n|\r|\n)[ \t]*(?:(?:\r\n|\r|\n)[ \t]*)+")
 _SENTENCE_END = re.compile(r"[.!?]+(?:[\"'’”)\]]*)")
 _SENTENCE_CLOSERS = "\"'’”)]"
-logger = logging.getLogger(__name__)
 _ABBREVIATIONS = {
     "d.h",
     "dr",
@@ -170,18 +170,7 @@ class SpeechService:
     def __init__(self, settings: Settings):
         self.settings = settings
         self._permits = threading.BoundedSemaphore(settings.max_concurrent_synthesis)
-        self.fish_speech = FishSpeechEngine(settings)
-        self.fish_process = FishProcess(settings, self.fish_speech)
-        self.fish_reference_voices = load_qualified_reference_catalog(
-            settings.fish_reference_manifest, settings.fish_reference_root
-        )
-        if settings.fish_german_male_only and "de-DE" in self.fish_reference_voices:
-            self.fish_reference_voices = {
-                **self.fish_reference_voices,
-                "de-DE": tuple(
-                    voice for voice in self.fish_reference_voices["de-DE"] if voice == "de-male"
-                ),
-            }
+        self.phonon_engine = PhononEngine(settings)
         self.engine_registry = EngineRegistry(
             (
                 EngineRegistration(
@@ -201,12 +190,12 @@ class SpeechService:
                 ),
                 EngineRegistration(
                     descriptor=EngineDescriptor(
-                        "fish-speech", ("de-DE", "en-US"), self.fish_reference_voices
+                        "phonon", ("en-US", "de-DE"), {}
                     ),
-                    enabled=lambda: settings.fish_enabled,
-                    ready=self._fish_engine_ready,
-                    synthesize=self._synthesize_fish,
-                    voice_catalog=lambda: self.fish_reference_voices,
+                    enabled=lambda: settings.phonon_enabled,
+                    ready=self._phonon_engine_ready,
+                    synthesize=self._synthesize_phonon,
+                    voice_catalog=self._phonon_voice_catalog,
                 ),
             )
         )
@@ -218,16 +207,63 @@ class SpeechService:
         self._permits.release()
 
     def close(self) -> None:
-        self.fish_process.close()
+        return None
 
-    def _fish_engine_ready(self) -> bool:
-        # A reviewed managed launcher is lazy: readiness must not start a
-        # neural worker. An empty qualified-reference catalog is never ready.
-        if not self.fish_reference_voices:
-            return False
-        if self.settings.fish_worker_command is not None:
-            return self.settings.fish_enabled
-        return self.fish_speech.is_available()
+    def _phonon_engine_ready(self) -> bool:
+        return self.phonon_engine.is_available()
+
+    def _phonon_voice_catalog(self):
+        return self.phonon_engine.voice_catalog()
+
+    def _synthesize_phonon(
+        self,
+        text: str,
+        language: str,
+        speed: float,
+        response_format: str,
+        cancel_event: threading.Event | None = None,
+        voice: str | None = None,
+        deadline: float | None = None,
+    ) -> SynthesisResult:
+        if not self.phonon_engine.is_available():
+            raise SynthesisUnavailable
+        deadline = deadline or time.monotonic() + self.settings.request_timeout_seconds
+        try:
+            pcm = self.phonon_engine.synthesize_pcm(
+                text, language, voice, cancel_event, deadline
+            )
+        except PhononAudioTooLarge as exc:
+            raise AudioTooLarge from exc
+        except PhononSegmentLimitExceeded as exc:
+            raise SpeechSegmentLimitExceeded from exc
+        except PhononTimeout as exc:
+            raise SynthesisTimeout from exc
+        except PhononFailure as exc:
+            raise SynthesisFailure from exc
+        except PhononUnavailable as exc:
+            raise SynthesisUnavailable from exc
+        if cancel_event is not None and cancel_event.is_set():
+            raise SynthesisFailure
+        try:
+            output = io.BytesIO()
+            with wave.open(output, "wb") as wav_file:
+                wav_file.setnchannels(1)
+                wav_file.setsampwidth(2)
+                wav_file.setframerate(24_000)
+                wav_file.writeframes(pcm)
+            wav_audio = output.getvalue()
+        except (wave.Error, ValueError) as exc:
+            raise SynthesisFailure from exc
+        if len(wav_audio) > self.settings.max_temp_bytes:
+            raise AudioTooLarge
+        return self._transcode_wav(
+            wav_audio,
+            speed,
+            response_format,
+            cancel_event,
+            actual_backend="phonon",
+            deadline=deadline,
+        )
 
     def synthesize(
         self,
@@ -260,102 +296,26 @@ class SpeechService:
         deadline: float | None = None,
     ) -> SynthesisResult:
         selected_backend = backend or self.settings.default_backend
-        if selected_backend == "fish-speech" and self.settings.fish_german_male_only:
-            if voice == "de-female":
-                raise SynthesisUnavailable
-            if voice is None and language == "de-DE" and self.settings.fish_references_approved:
-                voice = "de-male"
-        if (
-            voice is None
-            and selected_backend == self.settings.default_backend == "fish-speech"
-            and self.settings.fish_references_approved
-        ):
-            voice = {"de-DE": "de-female", "en-US": "en-female"}.get(language)
-        if self.settings.fish_opportunistic and selected_backend in {"fish-speech", "vibevoice"}:
-            return self._synthesize_opportunistic(
-                text,
-                language,
-                speed,
-                response_format,
-                cancel_event,
-                selected_backend,
-                voice,
-                deadline=deadline,
-            )
         if selected_backend == "vibevoice":
             raise SynthesisUnavailable
         engine = self.engine_registry.resolve(selected_backend)
         if engine is None or not engine.enabled():
             raise SynthesisUnavailable
-        if (
-            selected_backend == "fish-speech"
-            and self.settings.fish_references_approved
-            and (
-                not self.fish_reference_voices
-                or voice not in self.fish_reference_voices.get(language, ())
-            )
-        ):
+        if selected_backend == "phonon" and not self.phonon_engine.is_available():
             raise SynthesisUnavailable
+        if selected_backend == "phonon":
+            return self._synthesize_phonon(
+                text,
+                language,
+                speed,
+                response_format,
+                cancel_event,
+                voice,
+                deadline=deadline,
+            )
         return engine.synthesize(
             text, language, speed, response_format, cancel_event, voice
         )
-
-    def _synthesize_opportunistic(
-        self,
-        text: str,
-        language: str,
-        speed: float,
-        response_format: str,
-        cancel_event: threading.Event | None,
-        selected_backend: str,
-        voice: str | None,
-        *,
-        deadline: float | None = None,
-    ) -> SynthesisResult:
-        deadline = deadline or time.monotonic() + self.settings.request_timeout_seconds
-        if cancel_event is not None and cancel_event.is_set():
-            raise SynthesisFailure
-        reason = "fish_unavailable"
-        if (
-            selected_backend == "fish-speech"
-            and self.settings.fish_enabled
-            and language in {"de-DE", "en-US"}
-            and (
-                not self.settings.fish_references_approved
-                or (
-                    self.fish_reference_voices
-                    and voice in self.fish_reference_voices.get(language, ())
-                )
-            )
-        ):
-            native_reserve = min(10, self.settings.request_timeout_seconds / 2)
-            fish_deadline = min(
-                deadline - native_reserve,
-                time.monotonic() + self.settings.fish_request_timeout_seconds,
-            )
-            try:
-                return self.fish_process.run(
-                    lambda: self._synthesize_fish(
-                        text, language, speed, response_format, cancel_event, voice,
-                        deadline=fish_deadline,
-                    ),
-                    deadline=fish_deadline,
-                    cancel_event=cancel_event,
-                )
-            except FishResourceUnavailable as exc:
-                reason = str(exc)
-            except SynthesisUnavailable:
-                reason = "fish_unavailable"
-            except SynthesisTimeout:
-                reason = "fish_timeout"
-        if cancel_event is not None and cancel_event.is_set():
-            raise SynthesisFailure
-        self._remaining(deadline)
-        logger.info("speech fallback actual_backend=macos-say locale=%s reason=%s", language, reason)
-        result = self._synthesize_macos(
-            text, language, speed, response_format, cancel_event, None, deadline=deadline
-        )
-        return replace(result, fallback=True, failure_reason=reason)
 
     def _synthesize_macos_engine(
         self,
@@ -394,46 +354,6 @@ class SpeechService:
             for language, configured in configured_voices(self.settings).items()
             if voice_available(configured, available)
         }
-
-    def _synthesize_fish(
-        self,
-        text: str,
-        _language: str,
-        speed: float,
-        response_format: str,
-        cancel_event: threading.Event | None,
-        voice: str | None,
-        *,
-        deadline: float | None = None,
-    ) -> SynthesisResult:
-        if deadline is None:
-            deadline = time.monotonic() + self.settings.request_timeout_seconds
-        try:
-            wav_audio = self.fish_speech.synthesize_wav(
-                text,
-                voice,
-                cancel_event,
-                timeout_seconds=min(
-                    self.settings.fish_request_timeout_seconds,
-                    self._remaining(deadline),
-                ),
-            )
-        except FishSpeechAudioTooLarge as exc:
-            raise AudioTooLarge from exc
-        except FishSpeechTimeout as exc:
-            raise SynthesisTimeout from exc
-        except FishSpeechError as exc:
-            if cancel_event is not None and cancel_event.is_set():
-                raise SynthesisFailure from exc
-            raise SynthesisUnavailable from None
-        return self._transcode_wav(
-            wav_audio,
-            speed,
-            response_format,
-            cancel_event,
-            actual_backend="fish-speech",
-            deadline=deadline,
-        )
 
     def _transcode_wav(
         self,

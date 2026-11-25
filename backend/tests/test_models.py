@@ -10,8 +10,6 @@ def test_input_is_trimmed_and_required():
         SpeechRequest()
     with pytest.raises(ValidationError):
         SpeechRequest(input=" \t ")
-    with pytest.raises(ValidationError):
-        SpeechRequest(input="x" * 5001)
 
 
 @pytest.mark.parametrize("text", ["x" * 5000, "\U0001f600" * 2500, "x" * 4998 + "\U0001f600"])
@@ -19,10 +17,9 @@ def test_input_accepts_up_to_5000_utf16_units(text):
     assert SpeechRequest(input=text).input == text
 
 
-@pytest.mark.parametrize("text", ["x" * 4999 + "\U0001f600", "\U0001f600" * 2501])
-def test_input_rejects_more_than_5000_utf16_units(text):
-    with pytest.raises(ValidationError):
-        SpeechRequest(input=text)
+@pytest.mark.parametrize("text", ["x" * 5001, "x" * 10000, "\U0001f600" * 2501])
+def test_input_accepts_text_beyond_5000_utf16_units(text):
+    assert SpeechRequest(input=text).input == text
 
 
 @pytest.mark.parametrize("text", ["\ud800", "\udfff", "text\ud800text"])

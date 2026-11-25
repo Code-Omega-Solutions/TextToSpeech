@@ -8,7 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).parents[2]
 
 
-def test_prototype_template_is_native_only_until_fish_gates_are_closed():
+def test_prototype_template_does_not_configure_retired_fish_runtime():
     template = Path(__file__).parents[1] / "deployment" / (
         "com.example.private-speech-studio-backend.plist"
     )
@@ -16,12 +16,11 @@ def test_prototype_template_is_native_only_until_fish_gates_are_closed():
         plist = plistlib.load(document)
 
     environment = plist["EnvironmentVariables"]
-    assert environment["TTS_FISH_ENABLED"] == "false"
-    assert environment["TTS_FISH_ARTIFACTS_APPROVED"] == "false"
-    assert environment["TTS_FISH_REFERENCES_APPROVED"] == "false"
-    assert "TTS_FISH_WORKER_COMMAND" not in environment
-    assert "FISH_SOURCE_ROOT" not in environment
-    assert "FISH_CHECKPOINT_ROOT" not in environment
+    assert not any(
+        name.startswith("TTS_FISH_")
+        or name in {"FISH_SOURCE_ROOT", "FISH_CHECKPOINT_ROOT"}
+        for name in environment
+    )
 
 
 def test_prototype_operations_quarantines_stale_startup_and_waits_boundedly():

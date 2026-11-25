@@ -31,18 +31,6 @@
     <string>&lt;API_KEY_FILE&gt;</string>
     <key>TTS_DEFAULT_BACKEND</key>
     <string>macos-say</string>
-    <key>TTS_FISH_ENABLED</key>
-    <string>false</string>
-    <key>TTS_FISH_ARTIFACTS_APPROVED</key>
-    <string>false</string>
-    <key>TTS_FISH_REFERENCES_APPROVED</key>
-    <string>false</string>
-    <key>TTS_FISH_OPPORTUNISTIC</key>
-    <string>true</string>
-    <key>TTS_FISH_WORKER_PEAK_MEMORY_BYTES</key>
-    <string>17179869184</string>
-    <key>TTS_FISH_MEMORY_RESERVE_BYTES</key>
-    <string>12884901888</string>
   </dict>
   <key>RunAtLoad</key>
   <true/>
